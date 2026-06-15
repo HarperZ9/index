@@ -7,8 +7,10 @@ beyond checking for a small set of root marker filenames.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
+import re
 import subprocess
 from dataclasses import asdict, dataclass
 from datetime import datetime
@@ -64,6 +66,10 @@ ROOT_BOOTSTRAP_FILES = {
     "WORKSPACE-REPO-MAP.json",
     "WORKSPACE-ROADMAP.md",
 }
+REMOTE_USERINFO_PATTERN = re.compile(r"(?i)(https?://)[^/@]+@")
+REMOTE_SECRET_QUERY_PATTERN = re.compile(
+    r"(?i)\b(token|password|secret|api[_-]?key)=([^@\s]+)"
+)
 
 
 @dataclass(frozen=True)
@@ -97,6 +103,24 @@ def run_git(repo: Path, args: list[str]) -> str:
     return result.stdout.strip()
 
 
+def stable_id(value: str) -> str:
+    return hashlib.sha256(value.encode("utf-8")).hexdigest()[:16]
+
+
+def relative_path(path: Path, root: Path) -> str:
+    try:
+        return path.relative_to(root).as_posix() or "."
+    except ValueError:
+        return path.name
+
+
+def sanitize_origin(origin: str, class_: str) -> str:
+    if class_ == "protected" and origin:
+        return "<protected-origin-omitted>"
+    clean = REMOTE_USERINFO_PATTERN.sub(r"\1<redacted>@", origin)
+    return REMOTE_SECRET_QUERY_PATTERN.sub(r"\1=<redacted>", clean)
+
+
 def discover_repos(root: Path) -> list[Path]:
     repos: set[Path] = set()
     for dirpath, dirnames, filenames in os.walk(root):
@@ -118,7 +142,9 @@ def build_map(root: Path) -> dict[str, Any]:
     protected_rows = [row for row in repos if row.class_ == "protected"]
     return {
         "generated_at": datetime.now().astimezone().isoformat(timespec="seconds"),
-        "root": str(root),
+        "root": "<local-root>",
+        "root_sha256_prefix": stable_id(str(root)),
+        "absolute_paths_included": False,
         "operating_model": OPERATING_MODEL,
         "top_level": top_level_entries(root),
         "repo_count": len(repos),
@@ -127,14 +153,12 @@ def build_map(root: Path) -> dict[str, Any]:
         "normal_dirty_count": sum(row.dirty_count for row in normal_rows),
         "protected_dirty_count": sum(row.dirty_count for row in protected_rows),
         "protected_policy": {
-            "path": str(root / "protected"),
+            "path": "protected",
             "redistribution": "do-not-redistribute",
             "raw_session_transcripts_copied": False,
-            "manifest": str(
-                root
-                / "protected"
-                / "manifests"
-                / "PROTECTED-MIGRATION-MANIFEST-2026-06-10.json"
+            "manifest": (
+                "protected/manifests/"
+                "PROTECTED-MIGRATION-MANIFEST-2026-06-10.json"
             ),
         },
         "repositories": [row.to_json() for row in repos],
@@ -148,13 +172,16 @@ def repo_row(repo: Path, root: Path) -> RepoRow:
     branch = run_git(repo, ["branch", "--show-current"])
     if not branch:
         branch = run_git(repo, ["rev-parse", "--abbrev-ref", "HEAD"]) or "unknown"
+    class_ = repo_class(repo, root)
+    origin = run_git(repo, ["config", "--get", "remote.origin.url"]) or ""
+    rel = relative_path(repo, root)
     return RepoRow(
-        path=str(repo),
-        relative=str(repo.relative_to(root)),
-        class_=repo_class(repo, root),
+        path=rel,
+        relative=rel,
+        class_=class_,
         branch=branch,
         head=run_git(repo, ["rev-parse", "--short=7", "HEAD"]) or "unknown",
-        origin=run_git(repo, ["config", "--get", "remote.origin.url"]) or "",
+        origin=sanitize_origin(origin, class_),
         dirty_count=dirty,
         untracked_count=untracked,
         markers=[name for name in MARKER_FILES if (repo / name).exists()],
