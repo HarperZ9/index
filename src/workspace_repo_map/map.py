@@ -1,4 +1,4 @@
-"""Refresh the C:\\dev workspace repository map.
+"""Refresh a workspace repository map.
 
 The scanner reads Git metadata only. It does not inspect repository contents
 beyond checking for a small set of root marker filenames.
@@ -17,12 +17,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-OPERATING_MODEL = (
-    "neutral local state-transform boundary; file-backed headless bootstrap; "
-    "state/public/protected/research/docs/runtime lanes; provider/API/model/"
-    "policy changes are external boundary descriptors, probes, adapter "
-    "metadata, and semantic surface contracts"
-)
 MARKER_FILES = (
     "README.md",
     "AGENTS.md",
@@ -47,8 +41,6 @@ PRUNE_DIRS = {
 ROOT_CLASSES = {
     ".claude": "local-runtime",
     ".ruff_cache": "generated-or-cache",
-    ".warden": "local-runtime",
-    ".warden-safe-cache": "generated-or-cache",
     "data": "local-private",
     "frontier-models-research": "research-capture",
     "project-docs": "workspace-docs",
@@ -145,7 +137,6 @@ def build_map(root: Path) -> dict[str, Any]:
         "root": "<local-root>",
         "root_sha256_prefix": stable_id(str(root)),
         "absolute_paths_included": False,
-        "operating_model": OPERATING_MODEL,
         "top_level": top_level_entries(root),
         "repo_count": len(repos),
         "normal_repo_count": len(normal_rows),
@@ -156,10 +147,6 @@ def build_map(root: Path) -> dict[str, Any]:
             "path": "protected",
             "redistribution": "do-not-redistribute",
             "raw_session_transcripts_copied": False,
-            "manifest": (
-                "protected/manifests/"
-                "PROTECTED-MIGRATION-MANIFEST-2026-06-10.json"
-            ),
         },
         "repositories": [row.to_json() for row in repos],
     }
@@ -238,8 +225,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--root",
         type=Path,
-        default=Path(__file__).resolve().parents[2],
-        help="Workspace root. Defaults to C:\\dev when run from the checked-in tool.",
+        default=Path.cwd(),
+        help="Workspace root. Defaults to the current working directory.",
     )
     parser.add_argument(
         "--output",
