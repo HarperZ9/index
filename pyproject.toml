@@ -4,10 +4,10 @@ build-backend = "hatchling.build"
 
 [project]
 name = "workspace-repo-map"
-version = "0.1.0"
+dynamic = ["version"]
 description = "Compact JSON repository inventory maps for multi-repo workspaces."
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 license = { text = "MIT" }
 authors = [{ name = "Zain Dana Harper" }]
 keywords = ["git", "inventory", "workspace", "cli"]
@@ -30,6 +30,9 @@ workspace-repo-map = "workspace_repo_map.cli:main"
 Homepage = "https://github.com/HarperZ9/workspace-repo-map"
 Repository = "https://github.com/HarperZ9/workspace-repo-map"
 Issues = "https://github.com/HarperZ9/workspace-repo-map/issues"
+
+[tool.hatch.version]
+path = "src/workspace_repo_map/__init__.py"
 
 [tool.pytest.ini_options]
 addopts = "-q"
