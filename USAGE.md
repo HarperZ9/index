@@ -114,6 +114,41 @@ Rules in the config are matched against each repo's workspace-relative path (fir
 match wins) before the remote-host fallback. A `--config` path that does not exist is a
 fatal error (non-zero exit).
 
+## Configuration (`.repomap.toml`)
+
+Place a `.repomap.toml` at the workspace root (auto-discovered) or pass `--config PATH`.
+Every section is optional; with no file, the neutral remote-host heuristic applies.
+
+```toml
+# Ordered classification rules — first match wins. `pattern` is matched against each
+# repo's workspace-relative POSIX path (and against top-level entry names).
+[[rule]]
+pattern = "oss/**"     # *  matches within one path segment (stops at "/")
+class   = "public"     # ** matches across segments; "oss/**" also matches bare "oss"
+
+[[rule]]
+pattern = "work/**"
+class   = "internal"
+
+[scan]
+jobs    = 16            # parallel git workers (default: a CPU heuristic)
+prune   = ["vendor"]   # ADDED to the built-in safety set (.git, node_modules, .venv, ...)
+markers = ["go.mod"]   # REPLACES the default marker-file list when present
+
+[privacy]
+omit_origin_classes = ["internal"]   # blank the `origin` for repos of these classes
+
+[output]
+portable    = true                   # false = absolute paths + a `root` field (private local maps)
+annotations = { team = "infra" }     # arbitrary key/values emitted verbatim under "annotations"
+```
+
+When no rule matches a repo, classification falls back to the remote host: no remote →
+`local`, a public-hosting domain (`github.com`, `gitlab.com`, `bitbucket.org`,
+`codeberg.org`, `git.sr.ht`) → `public`, otherwise → `private`. Credential-shaped material
+in remote URLs is redacted in **every** mode; `portable = false` additionally emits
+absolute paths and a `root` field and is meant only for maps that never leave the machine.
+
 ## Python API
 
 The package exposes a stable surface via `__all__`:
