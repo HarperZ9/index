@@ -17,10 +17,13 @@ def sanitize_credentials(origin: str) -> str:
 
 
 def run_git(repo: Path, args: list[str]) -> str:
-    result = subprocess.run(
-        ["git", "-C", str(repo), *args],
-        text=True, capture_output=True, timeout=20, check=False,
-    )
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(repo), *args],
+            text=True, capture_output=True, timeout=20, check=False,
+        )
+    except subprocess.TimeoutExpired:
+        return ""
     return result.stdout.strip() if result.returncode == 0 else ""
 
 
