@@ -29,11 +29,18 @@ workspace-repo-map --root . --output WORKSPACE-REPO-MAP.json
 workspace-repo-map --json
 ```
 
+Without `--json`, the map is written to `<root>/WORKSPACE-REPO-MAP.json` (or `--output`)
+and a one-line summary (`wrote <path>` / `repos=N dirty=M`) is printed.
+
 Classification is driven by an optional `.repomap.toml` at the workspace root (see
 `example.repomap.toml`). With no config, repos are classified by a neutral remote-host
 heuristic: `local` (no remote), `public` (origin on a public host), or `private`. Here
 `public` means "origin is on a public code-hosting platform" — a heuristic, not a
 guarantee of visibility.
+
+For a full install line, the complete flag list, the importable Python API, and worked
+examples with expected output, see [USAGE.md](USAGE.md). A runnable end-to-end demo lives
+in [`examples/demo.py`](examples/demo.py).
 
 ## Notes
 
