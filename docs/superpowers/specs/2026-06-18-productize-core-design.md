@@ -18,7 +18,9 @@ block it from being a general tool:
 1. **Hardcoded personal taxonomy.** `ROOT_CLASSES`, `ROOT_BOOTSTRAP_FILES`, and
    `repo_class`/`root_class` (`map.py:41-60, 178-214`) encode one operator's lane
    conventions. Commit `0a2e182` began scrubbing these for public release; this work
-   finishes it.
+   finishes it. A related operator-specific hardcode — the `scratch/venvs` prune
+   special-case (`_skip_generated_tree`, `map.py:241-247`) — is removed as well; pruning
+   becomes the universal safety set plus `[scan] prune` config only.
 2. **Two competing CLIs.** `map.py:build_parser` and `cli.py:build_parser` both exist;
    the entry point reconstructs an argv list and re-dispatches (`cli.py:16-19`), with a
    dead assignment at `cli.py:18` and divergent defaults.
