@@ -39,6 +39,7 @@ block it from being a general tool:
 - A stable, explicit public API (`__all__`, `__version__`) and a versioned output schema
   (`schema_version: 1`).
 - Per-repo git calls run in parallel, output remains deterministic.
+- Output portability is configurable — shareable/sanitized by default, opt-in local mode.
 - Zero runtime dependencies preserved.
 
 **Non-goals (YAGNI for this spec)**
@@ -58,6 +59,7 @@ The module seams below are placed so Tracks B and C attach without rework.
 | Output schema | **Deliberate `schema_version: 1`, free to restructure** | Nothing pins the schema yet; cheapest moment to set a clean v1 |
 | Refactor scope | **Modular split** of `map.py` into focused units | Right-sized isolation; respects file/function size gates; hosts later tracks |
 | TOML parsing | **stdlib `tomllib`** → Python floor raised to **3.11** | Keeps `dependencies = []`; aligns README (already claims 3.11+) with pyproject |
+| Output portability | **Config switch `[output] portable`, default `true`**; no CLI flag | Serves shareable and private-local maps from one tool, with no safe-default foot-gun |
 
 ## 4. Architecture
 
@@ -125,6 +127,11 @@ markers = ["go.mod", "Gemfile"]   # REPLACES the default marker list when presen
 # Privacy (optional)
 [privacy]
 omit_origin_classes = ["protected"]   # origins for these classes are dropped entirely
+
+# Output (optional)
+[output]
+portable    = true   # default; false = absolute paths + root, for private local maps
+annotations = { }    # arbitrary passthrough key/values, emitted verbatim when non-empty
 ```
 
 ### 5.2 Glob semantics
@@ -207,10 +214,44 @@ class Config:
     markers: tuple[str, ...]
     jobs: int
     omit_origin_classes: frozenset[str]
+    portable: bool
+    annotations: dict[str, Any]
 ```
 
 `load_config(path: Path | None, root: Path) -> Config`; `default_config() -> Config`.
 Neutral defaults live in `config.py` as the single source.
+
+### 5.8 Portable vs local mode
+
+`workspace-repo-map` serves two audiences: maps meant to be **shared** (issues, agent
+prompts, docs) and maps kept **private** for local navigation. One config switch covers
+both, and **portable is the default**.
+
+`[output] portable` (bool, default `true`):
+
+- **`true` (portable):** repository `path`s are workspace-relative POSIX; the real root is
+  represented only by `root_sha256_prefix`; `absolute_paths_included` is `false`. The
+  shareable default.
+- **`false` (local):** repository `path`s and an added top-level `root` are emitted
+  **absolute**; `absolute_paths_included` is `true`. For private, machine-local maps that
+  are never shared.
+
+Two invariants hold in **both** modes:
+
+- **Credential/userinfo redaction is always on** (security; §5.6). It fires only on
+  credential-shaped URLs, so it is a no-op for clean origins.
+- **`omit_origin_classes` is orthogonal to `portable`** — origin omission is a class-keyed
+  privacy choice applied regardless of mode.
+
+`[output] annotations` (table, default empty): arbitrary operator-supplied key/values
+emitted verbatim under a top-level `annotations` object, and only when non-empty. A
+passthrough for local context (e.g. an operating-model descriptor or a policy block)
+without the tool hardcoding any of it.
+
+There is **no CLI flag** for portability in v1 — non-portable output requires a deliberate
+`[output] portable = false` in a config file, preserving the safe-by-default identity. The
+library API carries it on `Config`: `build_map(root, config)` honors `config.portable`, and
+programmatic callers select local mode via `Config(portable=False, ...)`.
 
 ## 6. Output schema v1
 
@@ -244,6 +285,9 @@ Deltas from v0.1.0 output:
   These are replaced by generic `repo_count` / `dirty_count` / `class_counts`.
 - **Kept:** `root_sha256_prefix`, `absolute_paths_included` (also seed Track C correlation),
   `generated_at`, `top_level`.
+- **Mode-dependent (§5.8):** `absolute_paths_included` reflects `[output] portable`; local
+  mode (`portable = false`) additionally emits an absolute top-level `root` and absolute
+  repository `path`s. An optional `annotations` object appears when configured.
 
 `model.py` dataclasses (`to_json` maps `class_` → `class`):
 
@@ -267,12 +311,14 @@ class Map:
     tool_version: str
     generated_at: str
     root_sha256_prefix: str
+    root: str | None              # absolute root in local mode; None when portable
     absolute_paths_included: bool
     repo_count: int
     dirty_count: int
     class_counts: dict[str, int]
     top_level: list[dict]
     repositories: tuple[RepoRow, ...]
+    annotations: dict[str, Any]   # emitted only when non-empty
 ```
 
 ## 7. CLI surface
@@ -286,6 +332,8 @@ workspace-repo-map [--root PATH] [--output PATH] [--json] [--config PATH] [--job
 - `--config` explicit config path; `--jobs` worker override; `--version` prints tool
   version and exits 0.
 - Exit 0 on success; non-zero on config error / unreadable root.
+- Portability is **config-driven** (`[output] portable`); there is intentionally no CLI
+  flag for it in v1 (§5.8).
 - Entry point unchanged: `workspace_repo_map.cli:main`.
 
 ## 8. Public API
@@ -310,6 +358,9 @@ __all__ = [
 `__version__` is single-sourced here; `pyproject.toml` switches to hatchling **dynamic
 version** reading it, eliminating drift between pyproject, the README badge, and the output
 `tool_version` (which reads `__version__`).
+
+`build_map(root, config)` honors `config.portable` and `config.annotations`; programmatic
+callers select local mode by constructing `Config(portable=False, ...)`.
 
 ## 9. Error handling
 
@@ -338,6 +389,9 @@ previously-untested discovery/classification/concurrency core:
 - `test_model` — `to_json` key mapping, `schema_version` present, no `relative` field.
 - `test_cli` — arg parsing, `--json` vs `--output`, `--version`, missing `--config` →
   error exit.
+- `test_output_mode` — portable vs local emission (relative paths + `root_sha256_prefix`
+  vs absolute `path`s + absolute `root`), `absolute_paths_included` correctness, and
+  `annotations` passthrough emitted only when set.
 
 ## 11. Migration
 
