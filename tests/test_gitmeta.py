@@ -39,3 +39,11 @@ def test_repo_metadata_reads_real_repo(tmp_path: Path):
     meta = repo_metadata(tmp_path)
     assert meta["branch"] == "main"
     assert meta["head"] != "unknown"
+
+
+def test_run_git_timeout_returns_empty(monkeypatch, tmp_path):
+    import subprocess
+    def _raise(*args, **kwargs):
+        raise subprocess.TimeoutExpired(cmd="git", timeout=20)
+    monkeypatch.setattr(subprocess, "run", _raise)
+    assert run_git(tmp_path, ["status"]) == ""
