@@ -734,7 +734,7 @@ git commit -m "feat: add git metadata layer with always-on credential redaction"
 - Consumes: `Config` (Task 3), `classify` (Task 4), `repo_metadata` (Task 5), `Map`/`RepoRow`/`SCHEMA_VERSION` (Task 2).
 - Produces:
   - `discover_repos(root: Path, config: Config) -> list[Path]` — `os.walk`, prunes `config.prune`, sorted by relative POSIX path.
-  - `build_map(root: Path, config: Config, tool_version: str) -> Map` — parallel `repo_metadata`, applies `classify`, applies portability (relative + sha256 root vs absolute + `root`), applies `omit_origin_classes`, assembles `class_counts` and `top_level`.
+  - `build_map(root: Path, config: Config, tool_version: str) -> Map` — parallel `repo_metadata`, applies `classify`, applies portability (relative + sha256 root vs absolute + `root`), applies `omit_origin_classes`, assembles `class_counts` and `top_level`. A per-repo failure degrades to an `"unknown"` row (spec §9), never crashes the scan.
   - `write_map(root, config, tool_version, output: Path) -> Map`.
 
 - [ ] **Step 1: Write the failing tests**
@@ -784,6 +784,19 @@ def test_omit_origin_classes_blanks_origin(tmp_path: Path):
                  omit_origin_classes=frozenset({"protected"}))
     result = build_map(tmp_path, cfg, "0.2.0")
     assert result.repositories[0].origin == ""
+
+
+def test_build_map_degrades_when_a_repo_errors(tmp_path: Path, monkeypatch, capsys):
+    _make_repo(tmp_path / "demo")
+    import workspace_repo_map.scan as scan_mod
+    def _boom(repo):
+        raise RuntimeError("boom")
+    monkeypatch.setattr(scan_mod, "repo_metadata", _boom)
+    result = build_map(tmp_path, Config(), "0.2.0")
+    assert result.repo_count == 1
+    assert result.repositories[0].branch == "unknown"
+    assert result.repositories[0].class_ == "unknown"
+    assert "failed to scan" in capsys.readouterr().err
 ```
 
 - [ ] **Step 2: Run to verify it fails**
@@ -802,6 +815,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import sys
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from pathlib import Path
@@ -845,6 +859,20 @@ def _repo_row(repo: Path, root: Path, config: Config) -> RepoRow:
     )
 
 
+def _safe_repo_row(repo: Path, root: Path, config: Config) -> RepoRow:
+    # Spec §9: one repo's failure must degrade to a row, never crash the scan.
+    try:
+        return _repo_row(repo, root, config)
+    except Exception as exc:
+        rel = _relative(repo, root)
+        print(f"warning: failed to scan {rel}: {exc}", file=sys.stderr)
+        return RepoRow(
+            path=(rel if config.portable else str(repo)), class_="unknown",
+            branch="unknown", head="unknown", origin="", dirty_count=0,
+            untracked_count=0, markers=(),
+        )
+
+
 def _top_level(root: Path, config: Config) -> list[dict[str, Any]]:
     entries: list[dict[str, Any]] = []
     for path in sorted(root.iterdir(), key=lambda item: item.name.lower()):
@@ -867,7 +895,7 @@ def build_map(root: Path, config: Config, tool_version: str) -> Map:
     # Executor.map preserves submission order, so rows stay in discovery (sorted) order
     # regardless of thread completion order — output is deterministic.
     with ThreadPoolExecutor(max_workers=config.jobs) as pool:
-        rows = list(pool.map(lambda p: _repo_row(p, root, config), repo_paths))
+        rows = list(pool.map(lambda p: _safe_repo_row(p, root, config), repo_paths))
     class_counts: dict[str, int] = {}
     for row in rows:
         class_counts[row.class_] = class_counts.get(row.class_, 0) + 1
@@ -896,7 +924,7 @@ def write_map(root: Path, config: Config, tool_version: str, output: Path) -> Ma
 - [ ] **Step 4: Run to verify it passes**
 
 Run: `python -m pytest tests/test_scan.py -v`
-Expected: PASS (4 tests).
+Expected: PASS (5 tests).
 
 - [ ] **Step 5: Commit**
 
