@@ -4,7 +4,7 @@
 
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 ![python](https://img.shields.io/badge/python-3.11%2B-blue.svg)
-![version](https://img.shields.io/badge/version-0.1.0-informational.svg)
+![version](https://img.shields.io/badge/version-0.2.0-informational.svg)
 [![CI](https://github.com/HarperZ9/workspace-repo-map/actions/workflows/ci.yml/badge.svg)](https://github.com/HarperZ9/workspace-repo-map/actions/workflows/ci.yml)
 ![deps: none](https://img.shields.io/badge/deps-none-success.svg)
 [![part of: AI-accountability toolkit](https://img.shields.io/badge/part_of-AI--accountability_toolkit-7a5cff.svg)](https://harperz9.github.io)
@@ -25,9 +25,15 @@ python -m pip install workspace-repo-map
 ## Usage
 
 ```bash
-workspace-repo-map --root C:\dev --output WORKSPACE-REPO-MAP.json
+workspace-repo-map --root . --output WORKSPACE-REPO-MAP.json
 workspace-repo-map --json
 ```
+
+Classification is driven by an optional `.repomap.toml` at the workspace root (see
+`example.repomap.toml`). With no config, repos are classified by a neutral remote-host
+heuristic: `local` (no remote), `public` (origin on a public host), or `private`. Here
+`public` means "origin is on a public code-hosting platform" — a heuristic, not a
+guarantee of visibility.
 
 ## Notes
 
