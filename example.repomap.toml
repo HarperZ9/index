@@ -1,0 +1,21 @@
+# Example workspace-repo-map configuration. Copy to <workspace-root>/.repomap.toml.
+# Rules match each repo's workspace-relative path; first match wins. With no rule
+# match, repos fall back to a remote-host heuristic (local / public / private).
+
+[[rule]]
+pattern = "oss/**"
+class   = "public"
+
+[[rule]]
+pattern = "work/**"
+class   = "internal"
+
+[scan]
+jobs    = 16
+prune   = ["vendor", "target"]   # added to the built-in safety set
+
+[privacy]
+omit_origin_classes = ["internal"]
+
+[output]
+portable = true
