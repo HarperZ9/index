@@ -54,3 +54,18 @@ def test_build_map_degrades_when_a_repo_errors(tmp_path: Path, monkeypatch, caps
     assert result.repositories[0].branch == "unknown"
     assert result.repositories[0].class_ == "unknown"
     assert "failed to scan" in capsys.readouterr().err
+
+
+def test_top_level_skips_unstatable_entry(tmp_path: Path, monkeypatch, capsys):
+    _make_repo(tmp_path / "demo")
+    (tmp_path / "good.txt").write_text("x", encoding="utf-8")
+    real_stat = Path.stat
+    def flaky_stat(self, *args, **kwargs):
+        if self.name == "good.txt":
+            raise PermissionError("nope")
+        return real_stat(self, *args, **kwargs)
+    monkeypatch.setattr(Path, "stat", flaky_stat)
+    result = build_map(tmp_path, Config(), "0.2.0")  # must not raise
+    names = [e["name"] for e in result.top_level]
+    assert "good.txt" not in names
+    assert "skipped top-level entry good.txt" in capsys.readouterr().err

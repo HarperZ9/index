@@ -68,12 +68,17 @@ def _top_level(root: Path, config: Config) -> list[dict[str, Any]]:
     for path in sorted(root.iterdir(), key=lambda item: item.name.lower()):
         if path.name == ".git":
             continue
-        stat = path.stat()
+        try:
+            stat = path.stat()
+            is_dir = path.is_dir()
+        except OSError as exc:
+            print(f"warning: skipped top-level entry {path.name}: {exc}", file=sys.stderr)
+            continue
         entries.append({
             "name": path.name,
-            "kind": "directory" if path.is_dir() else "file",
+            "kind": "directory" if is_dir else "file",
             "class": classify(path.name, False, "", config),
-            "bytes": None if path.is_dir() else stat.st_size,
+            "bytes": None if is_dir else stat.st_size,
             "modified": datetime.fromtimestamp(stat.st_mtime).astimezone().isoformat(timespec="seconds"),
         })
     return entries
