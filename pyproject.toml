@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "workspace-repo-map"
 version = "0.1.0"
-description = "Create compact JSON repository inventory maps for multi-repo workspaces."
+description = "Compact JSON repository inventory maps for multi-repo workspaces."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
