@@ -8,3 +8,6 @@ dist/
 build/
 .ruff_cache/
 .mypy_cache/
+
+# local safe-io cache (runtime artifact, never committed)
+.warden-safe-cache/
