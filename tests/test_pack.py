@@ -12,7 +12,7 @@ FIX = Path(__file__).parent / "fixtures"
 
 
 def _graph():
-    return build_graph({"py-app": FIX / "py_app", "py-lib": FIX / "py_lib"})
+    return build_graph({"py-app": FIX / "py-app", "py-lib": FIX / "py-lib"})
 
 
 def test_render_text_has_three_sections_and_evidence():

@@ -14,18 +14,18 @@ def test_normalize_name():
 
 
 def test_matches_python_repo():
-    assert PythonResolver().matches(FIX / "py_lib") is True
-    assert PythonResolver().matches(FIX / "py_app") is True
+    assert PythonResolver().matches(FIX / "py-lib") is True
+    assert PythonResolver().matches(FIX / "py-app") is True
 
 
 def test_exposed_names_includes_dist_and_packages():
-    names = PythonResolver().exposed_names(FIX / "py_lib")
+    names = PythonResolver().exposed_names(FIX / "py-lib")
     norm = {normalize_name(n) for n in names}
     assert "py-lib" in norm  # dist name
 
 
 def test_raw_edges_manifest_and_import():
-    edges = PythonResolver().raw_edges(FIX / "py_app")
+    edges = PythonResolver().raw_edges(FIX / "py-app")
     by = {(e.target_name, e.signal) for e in edges}
     assert ("py-lib", "manifest") in by
     assert ("py_lib", "import") in by
