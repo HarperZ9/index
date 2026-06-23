@@ -5,6 +5,7 @@ import json
 import re
 from pathlib import Path
 
+from ..walk import walk_files
 from .base import RawEdge
 
 _EXTS = (".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs")
@@ -49,9 +50,7 @@ class JavaScriptResolver:
                         edges.append(RawEdge(str(name), "manifest", "package.json", None, f"{name}: {spec}"))
             except (json.JSONDecodeError, OSError):
                 pass
-        for src in repo_root.rglob("*"):
-            if src.suffix not in _EXTS or "node_modules" in src.parts:
-                continue
+        for src in walk_files(repo_root, suffixes=_EXTS):
             try:
                 lines = src.read_text(encoding="utf-8").splitlines()
             except OSError:

@@ -25,6 +25,11 @@ def test_to_json_carries_salience_and_audit():
     data = to_json(_graph())
     assert "salience" in data and "salience_audit" in data
     assert "relations" in data and "roles" in data
+    internal = [r for r in data["relations"] if not r["external"]]
+    assert internal, "expected at least one internal relation"
+    sig = internal[0]["signals"][0]
+    assert sig["file"] and sig["kind"] in {"manifest", "import"}
+    assert "line" in sig and "raw" in sig
 
 
 def test_closure_is_bidirectional_and_cycle_safe():

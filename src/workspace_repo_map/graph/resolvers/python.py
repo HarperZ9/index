@@ -7,6 +7,7 @@ import re
 import tomllib
 from pathlib import Path
 
+from ..walk import walk_files
 from .base import RawEdge
 
 _PEP508_NAME = re.compile(r"^\s*([A-Za-z0-9][A-Za-z0-9._-]*)")
@@ -94,7 +95,7 @@ class PythonResolver:
 
     def _import_edges(self, repo_root: Path) -> list[RawEdge]:
         out: list[RawEdge] = []
-        for py in repo_root.rglob("*.py"):
+        for py in walk_files(repo_root, suffixes=(".py",)):
             try:
                 tree = ast.parse(py.read_text(encoding="utf-8"))
             except (OSError, SyntaxError, ValueError):
