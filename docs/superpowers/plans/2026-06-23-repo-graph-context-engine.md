@@ -742,9 +742,9 @@ def derive_roles(repo_names: set[str], edges: list[Edge],
             rs.append("hub")
         if s["out_degree"] == max_out and s["out_degree"] >= 3:
             rs.append("orchestrator")
-        if s["in_degree"] == 0 and s["out_degree"] == 0 and mk:
+        if s["in_degree"] == 0 and s["out_degree"] == 0 and name in markers:
             rs.append("leaf")
-        if not mk:
+        if name not in markers:
             rs.append("isolated")
         roles[name] = tuple(rs)
     return roles
