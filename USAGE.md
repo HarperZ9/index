@@ -259,7 +259,7 @@ workspace-repo-map context --root ROOT [--json] [--focus REPO] [--audit]
 | `--root`      | current directory | Workspace root to scan.                                         |
 | `--json`      | off               | Emit the context pack as JSON instead of Markdown.              |
 | `--focus REPO`| —                 | Emit only the named repo's dependency neighbourhood (bidirectional closure). |
-| `--audit`     | off               | Append a salience-faithfulness audit table to the output.       |
+| `--audit`     | off               | Print only the salience-faithfulness audit (hubs + mismatches), not the pack. |
 
 Exit codes:
 
