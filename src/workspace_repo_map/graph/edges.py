@@ -28,7 +28,10 @@ def build_index(exposed: dict[str, set[str]]) -> dict[str, list[str]]:
     index: dict[str, list[str]] = {}
     for repo, names in exposed.items():
         for n in names:
-            index.setdefault(normalize_name(n), []).append(repo)
+            key = normalize_name(n)
+            bucket = index.setdefault(key, [])
+            if repo not in bucket:
+                bucket.append(repo)
     return index
 
 

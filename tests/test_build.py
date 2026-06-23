@@ -21,3 +21,8 @@ def test_build_graph_links_app_to_lib():
     assert "hub" in graph.roles["py-lib"] or "library" in graph.roles["py-lib"]
     node = next(n for n in graph.repos if n.name == "py-app")
     assert node.ecosystems == ("python",)
+    # M1 regression: a library that exposes both its dist name and package-dir name
+    # (both normalize to the same key) must NOT trigger the ambiguity path.
+    edge = next(e for e in internal if (e.from_repo, e.to_repo) == ("py-app", "py-lib"))
+    assert edge.confidence == "high"      # both manifest + import signals
+    assert graph.warnings == ()           # no spurious ambiguity warnings
