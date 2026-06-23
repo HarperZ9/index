@@ -1,7 +1,18 @@
 # Changelog
 
-## Unreleased
+## 0.3.0
 
+### Added
+- `graph` subcommand: infer a repo→repo dependency graph from Python and
+  JavaScript/TypeScript manifests and source imports. Every edge carries its
+  evidence (witnessing file/line + signal kind) and a confidence grade.
+- `context` subcommand: render a synthesis context pack (structural roles +
+  relations + extracted prose) with a salience-faithfulness audit and a
+  `--focus <repo>` neighborhood closure.
+
+### Changed
+- The CLI now uses subcommands (`map`, `graph`, `context`). The previous flat
+  invocation (`workspace-repo-map --root ...`) is preserved and dispatches to `map`.
 - Makes generated repository maps portable by default.
 - Replaces absolute local root paths with a root hash prefix.
 - Omits protected remotes and redacts credential-shaped remote URL material.
