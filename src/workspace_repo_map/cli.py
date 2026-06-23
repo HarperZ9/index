@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from dataclasses import replace
 from pathlib import Path
 
@@ -13,9 +14,6 @@ from .graph.build import build_graph
 from .scan import build_map, discover_repos, write_map
 
 _SUBCOMMANDS = {"map", "graph", "context"}
-
-
-# discover_repos(root, config) -> list[Path] of repo roots (verified against scan.py)
 
 
 def _add_map_args(p: argparse.ArgumentParser) -> None:
@@ -105,13 +103,14 @@ def _cmd_context(args) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
-    import sys
     raw = list(sys.argv[1:] if argv is None else argv)
-    # backward compat: no subcommand -> implicit `map`
-    if not raw or (raw[0].startswith("-") and raw[0] != "--version") or raw[0] not in _SUBCOMMANDS:
-        if raw and raw[0] == "--version":
-            build_parser().parse_args(raw)
-        raw = ["map", *raw] if (not raw or raw[0] not in _SUBCOMMANDS) else raw
+    # No leading subcommand: route top-level --version/--help to the root
+    # parser; otherwise treat the invocation as the implicit `map` command
+    # (preserves v0.2.0 behavior).
+    if not raw or raw[0] not in _SUBCOMMANDS:
+        if raw and raw[0] in ("--version", "-h", "--help"):
+            build_parser().parse_args(raw[:1])  # prints and exits
+        raw = ["map", *raw]
     args = build_parser().parse_args(raw)
     if args.cmd == "graph":
         return _cmd_graph(args)
