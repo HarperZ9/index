@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from .edges import Edge, build_index, resolve_edges
+from .walk import walk_files
 from .resolvers import ALL_RESOLVERS
 from .resolvers.base import RawEdge
 from .roles import derive_roles
@@ -94,7 +95,7 @@ def detect_markers(repo_root: Path, exposed: set[str]) -> set[str]:
                 mk.add("entry")
         except (json.JSONDecodeError, OSError):
             pass
-    if any(repo_root.rglob("__main__.py")):
+    if any(walk_files(repo_root, names=("__main__.py",))):
         mk.add("entry")
     return mk
 
