@@ -10,12 +10,12 @@ FIX = Path(__file__).parent / "fixtures"
 
 def test_matches_and_exposed_name():
     r = JavaScriptResolver()
-    assert r.matches(FIX / "js_app") is True
-    assert "@acme/js-lib" in r.exposed_names(FIX / "js_lib")
+    assert r.matches(FIX / "js-app") is True
+    assert "@acme/js-lib" in r.exposed_names(FIX / "js-lib")
 
 
 def test_raw_edges_manifest_and_import_skip_relative():
-    edges = JavaScriptResolver().raw_edges(FIX / "js_app")
+    edges = JavaScriptResolver().raw_edges(FIX / "js-app")
     by = {(e.target_name, e.signal) for e in edges}
     assert ("@acme/js-lib", "manifest") in by
     assert ("@acme/js-lib", "import") in by
