@@ -36,6 +36,8 @@ def build_parser() -> argparse.ArgumentParser:
     g = sub.add_parser("graph", help="Derive the repo-level dependency graph.")
     g.add_argument("--root", type=Path, default=Path.cwd())
     g.add_argument("--json", action="store_true")
+    g.add_argument("--cycles", action="store_true",
+                   help="Report dependency cycles instead of the full graph.")
 
     c = sub.add_parser("context", help="Render the synthesis context pack.")
     c.add_argument("--root", type=Path, default=Path.cwd())
@@ -80,6 +82,18 @@ def _cmd_map(args) -> int:
 
 def _cmd_graph(args) -> int:
     graph = build_graph(_repo_paths(args.root.resolve()))
+    if getattr(args, "cycles", False):
+        from .graph.cycles import find_cycles
+        cycles = find_cycles(graph.edges)
+        if args.json:
+            print(json.dumps({"cycles": [list(c) for c in cycles]}, indent=2))
+        elif not cycles:
+            print("no cycles — clean DAG")
+        else:
+            print(f"{len(cycles)} cycle(s):")
+            for c in cycles:
+                print(f"  - {' -> '.join(c)} -> {c[0]}")
+        return 0
     if args.json:
         print(json.dumps(to_json(graph), indent=2))
     else:

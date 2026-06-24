@@ -45,3 +45,23 @@ def test_no_editorializing_no_banned_phrases_in_source():
     banned = ["keystone", "the heart of", "is the most important", "clearly the",
               "obviously", "the best"]
     assert not [b for b in banned if b in src.lower()]
+
+
+def test_pack_exposes_cycles_and_in_cycle():
+    from index_graph.graph.edges import Edge
+    from index_graph.graph.build import DependencyGraph, RepoNode
+    from index_graph.context.pack import to_json
+
+    def node(n):
+        return RepoNode(n, f"/x/{n}", (), frozenset(), "d", frozenset())
+
+    def edge(a, b):
+        return Edge(a, b, b, False, "high", ())
+
+    g = DependencyGraph(
+        (node("a"), node("b")),
+        (edge("a", "b"), edge("b", "a")),
+        {"a": ("hub",), "b": ("hub",)}, ())
+    pack = to_json(g)
+    assert pack["cycles"] == [["a", "b"]]
+    assert all(r["in_cycle"] for r in pack["relations"])

@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from ..graph.build import DependencyGraph, RepoNode
 from ..graph.edges import Edge
+from ..graph.cycles import find_cycles, cycle_edge_keys
 from ..graph.roles import salience_audit, structural_salience
 
 
@@ -54,15 +55,19 @@ def render_text(graph: DependencyGraph, title: str) -> str:
 def to_json(graph: DependencyGraph) -> dict:
     sal = structural_salience(list(graph.edges))
     marked = {n.name: _marker_list(n) for n in graph.repos if _marker_list(n)}
+    cycles = find_cycles(graph.edges)
+    cyc_keys = cycle_edge_keys(graph.edges, cycles)
     relations = [{
         "from": e.from_repo, "to": e.to_repo, "target_name": e.target_name,
         "external": e.external, "confidence": e.confidence,
+        "in_cycle": (e.from_repo, e.to_repo) in cyc_keys,
         "signals": [{"kind": s.kind, "file": s.evidence_file, "line": s.evidence_line,
                      "raw": s.raw_spec} for s in e.signals],
     } for e in graph.edges]
     return {
         "roles": {n.name: list(graph.roles.get(n.name, ())) for n in graph.repos},
         "relations": relations,
+        "cycles": [list(c) for c in cycles],
         "salience": sal,
         "salience_audit": salience_audit(sal, marked),
         "repos": [{"name": n.name, "ecosystems": list(n.ecosystems),

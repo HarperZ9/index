@@ -45,3 +45,25 @@ def test_context_focus_known(workspace, capsys):
     rc = main(["context", "--root", str(workspace), "--focus", "py-lib"])
     out = capsys.readouterr().out
     assert rc == 0 and "## Relations" in out
+
+
+def test_graph_cycles_human(capsys):
+    import json as _json
+    from pathlib import Path
+    from index_graph import cli
+    # build_graph takes a name->Path dict via _repo_paths; instead drive _cmd_graph
+    # through a temp workspace with a 2-cycle.
+    import tempfile, os
+    d = Path(tempfile.mkdtemp())
+    for repo, dep in (("alpha", "beta"), ("beta", "alpha")):
+        r = d / repo
+        (r / "src" / repo).mkdir(parents=True)
+        (r / "pyproject.toml").write_text(
+            f'[project]\nname="{repo}"\ndependencies=["{dep}"]\n', encoding="utf-8")
+        (r / "src" / repo / "__init__.py").write_text(f"import {dep}\n", encoding="utf-8")
+        (r / ".git").mkdir()
+    rc = cli.main(["graph", "--root", str(d), "--cycles"])
+    out = capsys.readouterr().out
+    assert rc == 0
+    assert "cycle" in out.lower()
+    assert "alpha" in out and "beta" in out
