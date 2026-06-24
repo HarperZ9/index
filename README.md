@@ -77,16 +77,24 @@ Place an optional `.index.toml` at your workspace root to control classification
 which remotes to drop, and parallel worker count:
 
 ```toml
-# .index.toml
-[classify]
-rules = [
-  { match = "src/*", class = "source" },
-  { match = "tools/*", class = "tooling" },
-]
+# .index.toml — at your workspace root
+[[rule]]                  # classify repos by workspace-relative path; first match wins
+pattern = "oss/**"
+class   = "public"
+
+[[rule]]
+pattern = "work/**"
+class   = "internal"
 
 [scan]
-jobs = 4
-drop_origins = ["private"]
+jobs  = 16                    # parallel workers
+prune = ["vendor", "target"]  # extra dirs to skip (added to the built-in safety set)
+
+[privacy]
+omit_origin_classes = ["internal"]   # drop remote URLs for repos in these classes
+
+[output]
+portable = true               # root-relative paths + hashed root (default on)
 ```
 
 See [`example.index.toml`](example.index.toml) for the full schema and [`USAGE.md`](USAGE.md) for the
