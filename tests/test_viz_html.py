@@ -71,3 +71,23 @@ def test_salience_audit_panel_renders_entries():
     import re
     urls = re.findall(r"https?://[^\s\"')]+", doc)
     assert set(urls) <= {"http://www.w3.org/2000/svg"}
+
+
+def test_salience_audit_panel_escapes_hostile_values():
+    pack = simple_pack()
+    pack["salience_audit"] = [
+        {
+            "kind": "decorative-non-hub",
+            "node": "a<script>x",
+            "markers": [],
+            "in_degree": 0,
+            "hubs": [],
+            "note": 'b<&"c',
+        }
+    ]
+    doc = render_html(pack, svg=render_svg(build_layout(pack)), charts=render_charts(pack))
+    # The audit panel must escape HTML, so no unescaped <script> should appear
+    assert doc.count("</script>") == 1, "only the real closing script tag should exist"
+    # The escaped form should be present instead
+    assert "&lt;script&gt;" in doc, "hostile node name should be escaped"
+    assert "&lt;" in doc, "hostile characters in note should be escaped"
