@@ -99,3 +99,11 @@ def test_edge_tooltip_and_neighborhood_wiring_present():
     assert "function highlight" in doc
     assert "data-signals" in doc  # edges carry evidence the tooltip reads
     assert "'tip'" in doc         # the tooltip element is created in the embedded JS
+
+
+def test_legend_present_with_roles_and_confidence_and_cycle():
+    doc = _doc(simple_pack())
+    assert 'class="legend"' in doc
+    assert "high" in doc and "moderate" in doc  # confidence styles labelled
+    assert "cycle" in doc                       # cycle marker explained
+    assert "library" in doc                     # a role label

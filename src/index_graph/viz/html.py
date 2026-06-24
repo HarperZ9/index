@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 from xml.sax.saxutils import escape
 
-from .theme import css_variables
+from .theme import css_variables, ROLE_COLOR, THEME
 
 _CSS = """
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);
@@ -27,6 +27,11 @@ border:1px solid var(--hairline);border-radius:6px;margin-bottom:.6rem}
 .tip{position:fixed;pointer-events:none;z-index:9;max-width:24rem;background:var(--bg);
 border:1px solid var(--accent);border-radius:6px;padding:.4em .6em;font-family:var(--font-mono);
 font-size:.74rem;line-height:1.35}.tip[hidden]{display:none}
+.legend{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;margin:.2rem 0 .8rem;
+font-family:var(--font-mono);font-size:.72rem;opacity:.85}.legend b{color:var(--gold)}
+.leg{display:inline-flex;align-items:center;gap:.3rem}.leg i{width:.8rem;height:.8rem;
+border-radius:2px;display:inline-block}.leg i.ln{height:0;width:1.2rem;border-top:2px solid}
+.leg i.ln.d5{border-top-style:dashed}.leg i.ln.d2{border-top-style:dotted}
 """
 
 _JS = """
@@ -79,6 +84,19 @@ document.addEventListener('DOMContentLoaded',wire);
 """
 
 
+def _legend() -> str:
+    roles = "".join(
+        f'<span class="leg"><i style="background:{c}"></i>{escape(r)}</span>'
+        for r, c in ROLE_COLOR.items() if r != "external")
+    edges = (
+        f'<span class="leg"><i class="ln" style="border-color:{THEME.ok}"></i>high</span>'
+        f'<span class="leg"><i class="ln d5" style="border-color:{THEME.gold}"></i>moderate</span>'
+        f'<span class="leg"><i class="ln d2" style="border-color:{THEME.muted}"></i>low / external</span>'
+        f'<span class="leg"><i class="ln" style="border-color:{THEME.alert}"></i>cycle</span>')
+    return (f'<div class="legend"><b>roles</b>{roles}'
+            f'<b>edges</b>{edges}</div>')
+
+
 def _salience_audit_panel(pack: dict) -> str:
     entries = pack.get("salience_audit", [])
     rows = "".join(
@@ -107,7 +125,7 @@ def render_html(pack: dict, *, svg: str, charts: dict[str, str]) -> str:
         '<main><section id="stage">'
         f'<div class="controls"><input type="search" id="search" '
         f'placeholder="filter repos…" aria-label="filter repos">{chips}</div>'
-        f"{svg}</section>"
+        f"{_legend()}{svg}</section>"
         '<aside><div id="detail">Select a node.</div>'
         f'<h4>confidence</h4>{charts["confidence"]}'
         f'<h4>roles</h4>{charts["roles"]}'
