@@ -94,9 +94,26 @@ function searchApply(){const q=$('#search').value.trim().toLowerCase();const on=
 function wireMentions(){const b=$('#toggle-mentions');b.addEventListener('click',()=>{
   const on=b.getAttribute('aria-pressed')==='true';b.setAttribute('aria-pressed',String(!on));
   $$('.kedge-mentions').forEach(l=>{l.style.display=on?'none':'';});});}
+function neighborhood(kind,id){const keep=new Set([kind+':'+id]);
+ (DATA.relations||[]).forEach(e=>{if(e.external)return;
+  if(kind==='repo'&&e.from===id)keep.add('repo:'+e.to);
+  if(kind==='repo'&&e.to===id)keep.add('repo:'+e.from);});
+ (DATA.knowledge_edges||[]).forEach(e=>{
+  if(kind==='doc'&&e.from===id)keep.add(e.to_kind+':'+e.to);
+  if(e.to===id&&((kind==='repo'&&e.to_kind==='repo')||(kind==='doc'&&e.to_kind==='doc')))keep.add('doc:'+e.from);});
+ return keep;}
+function focusOn(kind,id){const keep=neighborhood(kind,id);
+ $$('.node').forEach(g=>g.classList.toggle('dim',!keep.has('repo:'+g.dataset.name)));
+ $$('.docnode').forEach(g=>g.classList.toggle('dim',!keep.has('doc:'+g.dataset.doc)));
+ $$('.edge').forEach(p=>p.classList.toggle('dim',!(keep.has('repo:'+p.dataset.from)&&keep.has('repo:'+p.dataset.to))));
+ $$('.kedge').forEach(l=>l.classList.toggle('dim',!(keep.has('doc:'+l.dataset.from)&&(keep.has('repo:'+l.dataset.to)||keep.has('doc:'+l.dataset.to)))));}
+function clearFocus(){$$('.dim').forEach(e=>e.classList.remove('dim'));}
 function wire(){
  $$('.node').forEach(g=>g.addEventListener('click',()=>detailRepo(g.dataset.name)));
  $$('.docnode').forEach(g=>g.addEventListener('click',()=>detailDoc(g.dataset.doc)));
+ $$('.node').forEach(g=>g.addEventListener('dblclick',()=>focusOn('repo',g.dataset.name)));
+ $$('.docnode').forEach(g=>g.addEventListener('dblclick',()=>focusOn('doc',g.dataset.doc)));
+ $('#focus-clear').addEventListener('click',clearFocus);
  $('#search').addEventListener('input',searchApply);
  wireMentions();
  wireZoom();

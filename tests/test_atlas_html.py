@@ -78,3 +78,11 @@ def test_search_and_mentions_toggle_wired():
     assert "function searchApply" in doc
     assert "function wireMentions" in doc
     assert "toggle-mentions" in doc
+
+
+def test_focus_and_trail_wired():
+    doc = _doc(*simple_atlas())
+    assert "function focusOn" in doc
+    assert "function neighborhood" in doc
+    assert "focus-clear" in doc
+    assert "function renderTrail" in doc      # nav-trail breadcrumb (reversible step-back)
