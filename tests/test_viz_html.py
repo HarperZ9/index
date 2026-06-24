@@ -91,3 +91,11 @@ def test_salience_audit_panel_escapes_hostile_values():
     # The escaped form should be present instead
     assert "&lt;script&gt;" in doc, "hostile node name should be escaped"
     assert "&lt;" in doc, "hostile characters in note should be escaped"
+
+
+def test_edge_tooltip_and_neighborhood_wiring_present():
+    doc = _doc(simple_pack())
+    assert "function edgeTip" in doc
+    assert "function highlight" in doc
+    assert "data-signals" in doc  # edges carry evidence the tooltip reads
+    assert "'tip'" in doc         # the tooltip element is created in the embedded JS

@@ -24,6 +24,9 @@ border:1px solid var(--hairline);border-radius:6px;margin-bottom:.6rem}
 .num{opacity:.7}h4{margin:.6rem 0 .2rem;color:var(--gold)}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
 @media(max-width:820px){main{grid-template-columns:1fr}aside{border-left:none}}
+.tip{position:fixed;pointer-events:none;z-index:9;max-width:24rem;background:var(--bg);
+border:1px solid var(--accent);border-radius:6px;padding:.4em .6em;font-family:var(--font-mono);
+font-size:.74rem;line-height:1.35}.tip[hidden]{display:none}
 """
 
 _JS = """
@@ -47,6 +50,17 @@ function detail(name){const r=idx[name]||{name,ecosystems:[],markers:[]};
  <div>in ${ (DATA.salience[name]||{}).in_degree||0 } · out ${ (DATA.salience[name]||{}).out_degree||0 }</div>
  <h4>depends on</h4>${outs.map(e=>`<div>${esc(e.target_name)} [${e.confidence}] <small>${sig(e)}</small></div>`).join('')||'—'}
  <h4>depended on by</h4>${ins.map(e=>`<div>${esc(e.from)} [${e.confidence}]</div>`).join('')||'—'}`;}
+const tip=Object.assign(document.createElement('div'),{className:'tip',hidden:true});
+function edgeTip(p,x,y){const sg=JSON.parse(p.getAttribute('data-signals')||'[]');
+ const conf=(p.className.baseVal.match(/edge-(high|moderate|low)/)||[])[1]||'declared';
+ const ev=sg.map(s=>`${esc(s.file)}${s.line?':'+s.line:''} (${esc(s.kind)})`).join('<br>')||'manifest';
+ tip.innerHTML=`<b>${esc(p.dataset.from)} → ${esc(p.dataset.to)}</b> · ${conf}<br>${ev}`;
+ tip.hidden=false;tip.style.left=(x+12)+'px';tip.style.top=(y+12)+'px';}
+function nbrs(name){const s=new Set([name]);DATA.relations.forEach(e=>{
+ if(e.from===name&&e.to)s.add(e.to);if(e.to===name)s.add(e.from);});return s;}
+function highlight(name){const s=nbrs(name);
+ $$('.node').forEach(g=>g.classList.toggle('dim',!s.has(g.dataset.name)));
+ $$('.edge').forEach(p=>p.classList.toggle('dim',!(s.has(p.dataset.from)&&s.has(p.dataset.to))));}
 function wire(){
  $('#search').addEventListener('input',e=>{state.q=e.target.value.toLowerCase();apply();});
  $$('.chip[data-role]').forEach(c=>c.addEventListener('click',()=>{
@@ -55,6 +69,11 @@ function wire(){
  $$('.node').forEach(g=>{const pick=()=>{$$('.node').forEach(n=>n.classList.remove('sel'));
   g.classList.add('sel');detail(g.dataset.name);};
   g.addEventListener('click',pick);g.addEventListener('keydown',e=>{if(e.key==='Enter')pick();});});
+ document.body.appendChild(tip);
+ $$('.edge').forEach(p=>{p.addEventListener('mousemove',e=>edgeTip(p,e.clientX,e.clientY));
+  p.addEventListener('mouseleave',()=>tip.hidden=true);});
+ $$('.node').forEach(g=>{g.addEventListener('mouseenter',()=>highlight(g.dataset.name));
+  g.addEventListener('mouseleave',apply);});
  apply();}
 document.addEventListener('DOMContentLoaded',wire);
 """
