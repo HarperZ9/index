@@ -1,0 +1,10 @@
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+[project]
+name = "workspace-repo-map"
+version = "0.2.1"
+description = "Renamed to 'index-graph' — pip install index-graph (CLI: index)."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = []
