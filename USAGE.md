@@ -277,7 +277,7 @@ workspace-repo-map viz --root ROOT [--format FORMAT] [--focus REPO] [--no-extern
 ```
 
 | Flag           | Default           | Meaning                                                                  |
-| -------------- | ----------------- | ────────────────────────────────────────────────────────────────────── |
+| -------------- | ----------------- | ---------------------------------------------------------------------- |
 | `--root`       | current directory | Workspace root to scan.                                                |
 | `--format`     | html              | Output format: `html`, `svg`, `mermaid`, or `all` (all formats + manifest metadata). |
 | `--focus REPO` | —                 | Render only the named repo's dependency neighborhood (bidirectional closure). |
