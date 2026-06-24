@@ -236,7 +236,7 @@ def cyclic_pack():
 ```python
 # tests/test_viz_layout.py
 from workspace_repo_map.viz.layout import build_layout, ROLE_PRECEDENCE
-from tests.viz_fixtures import simple_pack, cyclic_pack
+from viz_fixtures import simple_pack, cyclic_pack
 
 
 def _node(layout, name):
@@ -470,7 +470,7 @@ git -C c:/dev/worktrees/wrm-viz commit -m "feat(viz): layout model, role-layer a
 ```python
 # tests/test_viz_layout_geometry.py
 from workspace_repo_map.viz.layout import build_layout
-from tests.viz_fixtures import simple_pack, cyclic_pack
+from viz_fixtures import simple_pack, cyclic_pack
 
 
 def _rects(layout):
@@ -655,7 +655,7 @@ import xml.dom.minidom as minidom
 
 from workspace_repo_map.viz.layout import build_layout
 from workspace_repo_map.viz.svg import render_svg
-from tests.viz_fixtures import simple_pack
+from viz_fixtures import simple_pack
 
 
 def test_svg_is_well_formed_xml():
@@ -675,8 +675,8 @@ def test_every_node_and_edge_is_present():
 
 def test_confidence_styling_class_is_applied():
     svg = render_svg(build_layout(simple_pack()))
-    assert "edge-high" in svg
-    assert "edge-moderate" in svg  # the external requests edge
+    assert 'class="edge edge-high"' in svg  # a rendered high edge, not merely the CSS class
+    assert "edge edge-moderate" in svg       # the moderate (external) edge path
 
 
 def test_edge_carries_its_witnessed_signals():
@@ -804,7 +804,7 @@ git -C c:/dev/worktrees/wrm-viz commit -m "feat(viz): self-contained SVG rendere
 ```python
 # tests/test_viz_mermaid.py
 from workspace_repo_map.viz.mermaid import render_mermaid
-from tests.viz_fixtures import simple_pack
+from viz_fixtures import simple_pack
 
 
 def test_starts_with_flowchart_td():
@@ -925,7 +925,7 @@ git -C c:/dev/worktrees/wrm-viz commit -m "feat(viz): Mermaid flowchart renderer
 import re
 
 from workspace_repo_map.viz.charts import render_charts
-from tests.viz_fixtures import simple_pack
+from viz_fixtures import simple_pack
 
 
 def test_three_charts_returned():
@@ -1048,7 +1048,7 @@ from workspace_repo_map.viz.layout import build_layout
 from workspace_repo_map.viz.svg import render_svg
 from workspace_repo_map.viz.charts import render_charts
 from workspace_repo_map.viz.html import render_html
-from tests.viz_fixtures import simple_pack
+from viz_fixtures import simple_pack
 
 
 def _doc(pack):
@@ -1206,7 +1206,7 @@ git -C c:/dev/worktrees/wrm-viz commit -m "feat(viz): self-contained interactive
 import hashlib
 
 from workspace_repo_map.viz.manifest import render_manifest
-from tests.viz_fixtures import simple_pack
+from viz_fixtures import simple_pack
 
 
 def _artifacts():
@@ -1562,7 +1562,7 @@ def test_viz_imports_only_stdlib_or_own_package():
 from workspace_repo_map.viz.svg import render_svg
 from workspace_repo_map.viz.mermaid import render_mermaid
 from workspace_repo_map.viz.layout import build_layout
-from tests.viz_fixtures import simple_pack
+from viz_fixtures import simple_pack
 
 # words that would imply interpretation rather than reporting
 BANNED = ("keystone", "critical", "important", "should", "recommend", "best", "worst", "elegant")
