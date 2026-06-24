@@ -44,6 +44,46 @@ def simple_pack():
     }
 
 
+def simple_atlas():
+    """2 repos (app -> lib) + 3 docs. app/README describes app, lib/README describes lib,
+    docs/arch.md is cross-cutting. Exercises describes / links-to / mentions."""
+    from index_graph.knowledge.docs import Doc
+    pack = {
+        "roles": {"app": ["entrypoint"], "lib": ["library"]},
+        "relations": [_edge("app", "lib")],
+        "cycles": [],
+        "salience": {
+            "app": {"in_degree": 0, "out_degree": 1, "hub": False},
+            "lib": {"in_degree": 1, "out_degree": 0, "hub": False},
+        },
+        "salience_audit": [],
+        "repos": [
+            {"name": "app", "ecosystems": ["python"], "description": "app", "markers": ["entry"]},
+            {"name": "lib", "ecosystems": ["python"], "description": "lib", "markers": ["published"]},
+        ],
+        "warnings": [],
+        "docs": [
+            {"id": "app/README.md", "title": "App", "dir": "app"},
+            {"id": "docs/arch.md", "title": "Architecture", "dir": "docs"},
+            {"id": "lib/README.md", "title": "Lib", "dir": "lib"},
+        ],
+        "knowledge_edges": [
+            {"type": "describes", "from": "app/README.md", "to": "app", "to_kind": "repo"},
+            {"type": "links-to", "from": "app/README.md", "to": "lib", "to_kind": "repo"},
+            {"type": "links-to", "from": "docs/arch.md", "to": "app", "to_kind": "repo"},
+            {"type": "describes", "from": "lib/README.md", "to": "lib", "to_kind": "repo"},
+            {"type": "mentions", "from": "docs/arch.md", "to": "lib", "to_kind": "repo"},
+        ],
+        "knowledge_warnings": [],
+    }
+    docs = [
+        Doc("app/README.md", "App", "# App\n\nThe app. Uses [[lib]].", ("lib",), "app"),
+        Doc("docs/arch.md", "Architecture", "# Architecture\n\nApp and lib. See [[App]].", ("app",), "docs"),
+        Doc("lib/README.md", "Lib", "# Lib\n\nThe library.", (), "lib"),
+    ]
+    return pack, docs
+
+
 def cyclic_pack():
     """a -> b -> a (a cycle): forces a back-edge."""
     return {
