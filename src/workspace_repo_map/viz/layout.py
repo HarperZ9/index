@@ -104,6 +104,8 @@ def _build_edges(pack: dict, names: set[str], include_external: bool) -> list[La
         target = rel["target_name"] if external else rel["to"]
         if external and not include_external:
             continue
+        if rel["from"] not in names:
+            continue
         if target not in names:
             continue
         edges.append(
@@ -176,7 +178,6 @@ def _route(edges: list[LaidEdge], nodes: list[LaidNode]) -> list[LaidEdge]:
     for e in edges:
         src, dst = by_name.get(e.from_repo), by_name.get(e.to_repo)
         if src is None or dst is None:
-            routed.append(e)
             continue
         back = dst.layer <= src.layer
         sx, sy = src.x + src.w / 2, src.y + src.h

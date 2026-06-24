@@ -59,6 +59,38 @@ def test_back_edge_control_points_stay_within_canvas():
             assert -1 <= py <= layout.height + 1
 
 
+def test_dangling_edge_is_excluded_so_every_edge_has_four_points():
+    # A pack with two real repos and one relation whose 'from' is NOT in repos.
+    pack = {
+        "repos": [
+            {"name": "api"},
+            {"name": "lib"},
+        ],
+        "roles": {
+            "api": ["entrypoint"],
+            "lib": ["library"],
+        },
+        "salience": {
+            "api": {"in_degree": 0, "out_degree": 1, "hub": False},
+            "lib": {"in_degree": 1, "out_degree": 0, "hub": False},
+        },
+        "relations": [
+            # valid edge
+            {"from": "api", "to": "lib", "confidence": "high"},
+            # dangling source — "ghost" is not in repos
+            {"from": "ghost", "to": "lib", "confidence": "low"},
+        ],
+        "warnings": [],
+        "salience_audit": [],
+    }
+    layout = build_layout(pack, include_external=False)
+    from_repos = {e.from_repo for e in layout.edges}
+    assert "ghost" not in from_repos, "dangling-source edge must be excluded"
+    assert all(len(e.points) == 4 for e in layout.edges), (
+        "every surviving edge must have exactly 4 control points"
+    )
+
+
 def test_empty_graph_renders_a_valid_empty_canvas():
     empty = {"roles": {}, "relations": [], "salience": {},
              "salience_audit": [], "repos": [], "warnings": []}
