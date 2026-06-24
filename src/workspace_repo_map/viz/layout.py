@@ -1,11 +1,19 @@
 """Deterministic layered-by-role layout for the dependency graph."""
 from __future__ import annotations
 
-from dataclasses import dataclass, field, replace
+from dataclasses import dataclass, replace
 
 ROLE_PRECEDENCE = ("entrypoint", "orchestrator", "hub", "library", "leaf", "isolated")
 _EXTERNAL_LAYER = len(ROLE_PRECEDENCE)
 _SWEEPS = 3
+
+LAYER_GAP = 140.0
+NODE_H = 44.0
+NODE_GAP = 28.0
+CHAR_W = 8.5
+PAD_X = 24.0
+MARGIN = 40.0
+BACK_BOW = 60.0  # right-side headroom a back-edge bows into; reserved in the canvas
 
 
 @dataclass(frozen=True)
@@ -136,13 +144,65 @@ def _order_within_layers(nodes: list[LaidNode], edges: list[LaidEdge]) -> list[L
     return ordered
 
 
+def _place(nodes: list[LaidNode]) -> tuple[list[LaidNode], float, float]:
+    by_layer: dict[int, list[LaidNode]] = {}
+    for n in nodes:
+        by_layer.setdefault(n.layer, []).append(n)
+    for layer in by_layer.values():
+        layer.sort(key=lambda n: n.order)
+    widths = {
+        idx: sum(len(n.name) * CHAR_W + PAD_X for n in layer) + NODE_GAP * (len(layer) - 1)
+        for idx, layer in by_layer.items()
+    }
+    content_w = max(widths.values(), default=0.0)
+    canvas_w = content_w + 2 * MARGIN + BACK_BOW  # reserve right headroom for back-edge bows
+    placed: dict[str, LaidNode] = {}
+    for layer_idx, layer in by_layer.items():
+        cursor = MARGIN + (content_w - widths[layer_idx]) / 2  # centre within the content band
+        y = MARGIN + layer_idx * LAYER_GAP
+        for n in layer:
+            w = len(n.name) * CHAR_W + PAD_X
+            placed[n.name] = replace(n, x=cursor, y=y, w=w, h=NODE_H)
+            cursor += w + NODE_GAP
+    ordered = [placed[n.name] for n in nodes]
+    layer_count = (max(by_layer) + 1) if by_layer else 0
+    canvas_h = MARGIN * 2 + max(layer_count - 1, 0) * LAYER_GAP + NODE_H
+    return ordered, canvas_w, canvas_h
+
+
+def _route(edges: list[LaidEdge], nodes: list[LaidNode]) -> list[LaidEdge]:
+    by_name = {n.name: n for n in nodes}
+    routed: list[LaidEdge] = []
+    for e in edges:
+        src, dst = by_name.get(e.from_repo), by_name.get(e.to_repo)
+        if src is None or dst is None:
+            routed.append(e)
+            continue
+        back = dst.layer <= src.layer
+        sx, sy = src.x + src.w / 2, src.y + src.h
+        tx, ty = dst.x + dst.w / 2, dst.y
+        if back:  # route the upward/lateral return through the reserved right headroom
+            sy = src.y + src.h / 2
+            ty = dst.y + dst.h / 2
+            pts = ((sx, sy), (sx + BACK_BOW, sy), (tx + BACK_BOW, ty), (tx, ty))
+        else:
+            dy = (ty - sy) * 0.4
+            pts = ((sx, sy), (sx, sy + dy), (tx, ty - dy), (tx, ty))
+        routed.append(replace(e, back_edge=back, points=pts))
+    return routed
+
+
 def build_layout(pack: dict, *, include_external: bool = True) -> LayoutModel:
     nodes = _build_nodes(pack, include_external)
     names = {n.name for n in nodes}
     edges = _build_edges(pack, names, include_external)
     nodes = _order_within_layers(nodes, edges)
+    nodes, width, height = _place(nodes)
+    edges = _route(edges, nodes)
     present = sorted({n.layer for n in nodes})
     labels = tuple(
         (ROLE_PRECEDENCE[i] if i < len(ROLE_PRECEDENCE) else "external") for i in present
     )
-    return LayoutModel(nodes=tuple(nodes), edges=tuple(edges), layers=labels)
+    return LayoutModel(
+        nodes=tuple(nodes), edges=tuple(edges), layers=labels, width=width, height=height
+    )
