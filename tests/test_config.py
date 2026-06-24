@@ -36,7 +36,7 @@ def test_default_config_is_neutral():
 
 
 def test_load_config_parses_rules_scan_privacy_output(tmp_path):
-    (tmp_path / ".repomap.toml").write_text(
+    (tmp_path / ".index.toml").write_text(
         '[[rule]]\npattern = "public/**"\nclass = "public"\n'
         '[scan]\njobs = 4\nprune = ["vendor"]\n'
         '[privacy]\nomit_origin_classes = ["protected"]\n'
@@ -63,19 +63,19 @@ def test_missing_config_path_is_fatal(tmp_path):
 
 
 def test_rule_without_class_is_fatal(tmp_path):
-    (tmp_path / ".repomap.toml").write_text('[[rule]]\npattern = "x"\n', encoding="utf-8")
+    (tmp_path / ".index.toml").write_text('[[rule]]\npattern = "x"\n', encoding="utf-8")
     with pytest.raises(SystemExit):
         load_config(None, tmp_path)
 
 
 def test_bad_jobs_is_fatal(tmp_path):
-    (tmp_path / ".repomap.toml").write_text("[scan]\njobs = 0\n", encoding="utf-8")
+    (tmp_path / ".index.toml").write_text("[scan]\njobs = 0\n", encoding="utf-8")
     with pytest.raises(SystemExit):
         load_config(None, tmp_path)
 
 
 def test_unknown_key_warns_not_fatal(tmp_path, capsys):
-    (tmp_path / ".repomap.toml").write_text('[bogus]\nx = 1\n', encoding="utf-8")
+    (tmp_path / ".index.toml").write_text('[bogus]\nx = 1\n', encoding="utf-8")
     cfg = load_config(None, tmp_path)
     assert cfg.rules == ()
     assert "unknown config key 'bogus'" in capsys.readouterr().err

@@ -1,4 +1,3 @@
-import ast
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -18,3 +17,8 @@ def test_package_imports_under_new_name():
     import index_graph  # must resolve
     import index_graph.viz  # the dashboard subpackage
     assert index_graph.__name__ == "index_graph"
+
+
+def test_no_stale_brand_string_in_code():
+    offenders = [str(p) for p in _py_files() if "workspace-repo-map" in p.read_text(encoding="utf-8")]
+    assert not offenders, f"stale 'workspace-repo-map' brand string in: {offenders}"

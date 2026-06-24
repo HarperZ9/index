@@ -23,7 +23,7 @@ def render_manifest(pack: dict, *, artifacts: dict, meta: dict) -> dict:
     out = {
         "schema_version": "1",
         "generated": {
-            "tool": "workspace-repo-map",
+            "tool": "index",
             "version": meta.get("version", ""),
             "commit": meta.get("commit"),
             "root": meta.get("root", ""),

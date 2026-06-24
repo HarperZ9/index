@@ -22,7 +22,7 @@ def test_json_to_stdout(tmp_path, capsys):
 def test_writes_default_output(tmp_path):
     (tmp_path / "demo" / ".git").mkdir(parents=True)
     assert main(["--root", str(tmp_path)]) == 0
-    assert (tmp_path / "WORKSPACE-REPO-MAP.json").exists()
+    assert (tmp_path / "INDEX.json").exists()
 
 
 def test_missing_config_is_fatal(tmp_path):
