@@ -141,7 +141,7 @@ def discover_docs(root: Path) -> list[Doc]:
 **Files:** Create `src/index_graph/knowledge/atlas.py`; Test `tests/test_atlas.py`.
 
 **Interfaces:**
-- Consumes: `Doc` (Task 1); `index_graph.context.pack.to_json(graph) -> dict` (has `repos`/`relations`/…); `index_graph.graph.build.DependencyGraph`; `normalize_name`.
+- Consumes: `Doc` + `_norm` (Task 1's `knowledge/docs.py` — the shared atlas normalizer: space/underscore→dash, lowercased); `index_graph.context.pack.to_json(graph) -> dict` (has `repos`/`relations`/…); `index_graph.graph.build.DependencyGraph`.
 - Produces: `build_atlas_pack(graph: DependencyGraph, docs: list[Doc], repo_dirs: dict[str, str]) -> dict` — `to_json(graph)` plus `pack["docs"]` (list of `{"id","title","dir"}`), `pack["knowledge_edges"]` (sorted list of `{"type","from","to","to_kind"}`), and `pack["knowledge_warnings"]` (list[str]). `repo_dirs` maps repo name → workspace-relative dir. This task implements `describes` (by location) + `links-to` (`[[link]]` resolution); Task 3 adds `mentions`.
 
 - [ ] **Step 1: Write the failing tests** — `tests/test_atlas.py`:
@@ -185,6 +185,16 @@ def test_links_to_resolves_wikilink_to_repo_and_doc():
     assert {"type": "links-to", "from": "a.md", "to": "notes.md", "to_kind": "doc"} in ke
 
 
+def test_multiword_wikilink_resolves_to_titled_doc():
+    g = _graph("api")
+    # [[Auth Design]] (space) must resolve to the doc titled "Auth Design" — proves
+    # the target index uses docs.py's _norm (space->dash), not the bare normalize_name
+    a = Doc("a.md", "A", "[[Auth Design]]", ("auth-design",), "")
+    design = Doc("design.md", "Auth Design", "# Auth Design\n", (), "")
+    pack = build_atlas_pack(g, [a, design], {"api": "api"})
+    assert {"type": "links-to", "from": "a.md", "to": "design.md", "to_kind": "doc"} in pack["knowledge_edges"]
+
+
 def test_unresolved_wikilink_is_warned_not_an_edge():
     g = _graph("api")
     a = Doc("a.md", "A", "[[ghost]]", ("ghost",), "")
@@ -214,20 +224,23 @@ from pathlib import Path
 
 from ..context.pack import to_json
 from ..graph.build import DependencyGraph
-from ..graph.resolvers.base import normalize_name
-from .docs import Doc
+from .docs import Doc, _norm          # reuse the SAME normalizer that built link_targets
 
 _EDGE_SORT = lambda e: (e["from"], e["type"], e["to_kind"], e["to"])
 
 
 def _target_index(repo_names, docs):
-    """normalized name -> (to_kind, id); repos win over docs on collision; first doc wins."""
+    """normalized name -> (to_kind, id); repos win over docs on collision; first doc wins.
+
+    Uses `_norm` (space/underscore -> dash, lowercased) — the SAME normalization
+    docs.py applied to `[[link]]` targets — so multi-word links like [[Auth Design]]
+    resolve to a doc titled "Auth Design"."""
     idx: dict[str, tuple[str, str]] = {}
     for r in sorted(repo_names):
-        idx.setdefault(normalize_name(r), ("repo", r))
+        idx.setdefault(_norm(r), ("repo", r))
     for d in docs:
         for cand in (d.title, Path(d.rel_path).stem):
-            idx.setdefault(normalize_name(cand), ("doc", d.rel_path))
+            idx.setdefault(_norm(cand), ("doc", d.rel_path))
     return idx
 
 
