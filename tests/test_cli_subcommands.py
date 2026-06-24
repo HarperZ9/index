@@ -64,3 +64,24 @@ def test_graph_cycles_human(capsys, tmp_path):
     assert rc == 0
     assert "cycle" in out.lower()
     assert "alpha" in out and "beta" in out
+
+
+def test_atlas_json_emits_two_layer_pack(tmp_path, capsys):
+    import json
+    from index_graph import cli
+    # two repos with a doc that describes one and [[links]] the other
+    for repo, dep in (("alpha", None), ("beta", None)):
+        r = tmp_path / repo
+        (r / "src" / repo).mkdir(parents=True)
+        (r / "pyproject.toml").write_text(f'[project]\nname="{repo}"\n', encoding="utf-8")
+        (r / "src" / repo / "__init__.py").write_text("x = 1\n", encoding="utf-8")
+        (r / ".git").mkdir()
+    (tmp_path / "alpha" / "DESIGN.md").write_text("# Alpha Design\n\nUses [[beta]].\n", encoding="utf-8")
+    rc = cli.main(["atlas", "--root", str(tmp_path), "--json"])
+    assert rc == 0
+    pack = json.loads(capsys.readouterr().out)
+    assert any(d["id"].endswith("DESIGN.md") for d in pack["docs"])
+    ke = pack["knowledge_edges"]
+    assert any(e["type"] == "describes" and e["to"] == "alpha" for e in ke)
+    assert any(e["type"] == "links-to" and e["to"] == "beta" for e in ke)
+    assert "relations" in pack  # superset of the context pack
