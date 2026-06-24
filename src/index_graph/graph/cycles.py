@@ -70,4 +70,4 @@ def cycle_edge_keys(edges: Sequence[Edge],
     member: dict[str, tuple[str, ...]] = {n: c for c in cycles for n in c}
     return {(e.from_repo, e.to_repo) for e in edges
             if not e.external and e.to_repo is not None
-            and e.from_repo in member and member[e.from_repo] is member.get(e.to_repo)}
+            and e.from_repo in member and member[e.from_repo] == member.get(e.to_repo)}
