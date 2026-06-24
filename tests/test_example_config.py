@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from workspace_repo_map.config import load_config
+from index_graph.config import load_config
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 

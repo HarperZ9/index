@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from workspace_repo_map.graph.build import build_graph, detect_markers
+from index_graph.graph.build import build_graph, detect_markers
 
 FIX = Path(__file__).parent / "fixtures"
 

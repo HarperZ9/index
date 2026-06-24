@@ -1,7 +1,7 @@
 import hashlib
 import json
 
-from workspace_repo_map.viz.manifest import render_manifest
+from index_graph.viz.manifest import render_manifest
 from viz_fixtures import simple_pack
 
 

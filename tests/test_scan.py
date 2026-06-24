@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from workspace_repo_map.config import Config, Rule
-from workspace_repo_map.scan import build_map, discover_repos
+from index_graph.config import Config, Rule
+from index_graph.scan import build_map, discover_repos
 
 
 def _make_repo(path: Path):
@@ -45,7 +45,7 @@ def test_omit_origin_classes_blanks_origin(tmp_path: Path):
 
 def test_build_map_degrades_when_a_repo_errors(tmp_path: Path, monkeypatch, capsys):
     _make_repo(tmp_path / "demo")
-    import workspace_repo_map.scan as scan_mod
+    import index_graph.scan as scan_mod
     def _boom(repo):
         raise RuntimeError("boom")
     monkeypatch.setattr(scan_mod, "repo_metadata", _boom)

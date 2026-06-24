@@ -1,4 +1,4 @@
-from workspace_repo_map.viz.theme import THEME, css_variables, svg_style
+from index_graph.viz.theme import THEME, css_variables, svg_style
 
 
 def test_theme_has_dark_serious_palette():

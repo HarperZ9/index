@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from workspace_repo_map.graph.walk import EXCLUDE_DIRS, walk_files
+from index_graph.graph.walk import EXCLUDE_DIRS, walk_files
 
 
 def _make(root):

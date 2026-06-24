@@ -1,7 +1,7 @@
 import subprocess
 from pathlib import Path
 
-from workspace_repo_map.gitmeta import repo_metadata, run_git, sanitize_credentials
+from index_graph.gitmeta import repo_metadata, run_git, sanitize_credentials
 
 
 def test_sanitize_redacts_userinfo_but_keeps_host():

@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from workspace_repo_map.cli import main
+from index_graph.cli import main
 
 FIX = Path(__file__).parent / "fixtures"
 

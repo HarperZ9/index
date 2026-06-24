@@ -1,7 +1,7 @@
 # tests/test_viz_mermaid.py
 import re
 
-from workspace_repo_map.viz.mermaid import render_mermaid
+from index_graph.viz.mermaid import render_mermaid
 from viz_fixtures import simple_pack
 
 

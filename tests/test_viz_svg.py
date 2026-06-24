@@ -1,8 +1,8 @@
 import json
 import xml.dom.minidom as minidom
 
-from workspace_repo_map.viz.layout import build_layout
-from workspace_repo_map.viz.svg import render_svg
+from index_graph.viz.layout import build_layout
+from index_graph.viz.svg import render_svg
 from viz_fixtures import simple_pack
 
 

@@ -1,4 +1,4 @@
-from workspace_repo_map.viz.layout import build_layout, ROLE_PRECEDENCE
+from index_graph.viz.layout import build_layout, ROLE_PRECEDENCE
 from viz_fixtures import simple_pack, cyclic_pack
 
 

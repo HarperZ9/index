@@ -3,7 +3,7 @@ requires = ["hatchling>=1.25"]
 build-backend = "hatchling.build"
 
 [project]
-name = "workspace-repo-map"
+name = "index-graph"
 dynamic = ["version"]
 description = "Compact JSON repository inventory maps for multi-repo workspaces."
 readme = "README.md"
@@ -25,15 +25,15 @@ dependencies = []
 test = ["pytest>=8"]
 
 [project.scripts]
-workspace-repo-map = "workspace_repo_map.cli:main"
+index = "index_graph.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/HarperZ9/workspace-repo-map"
-Repository = "https://github.com/HarperZ9/workspace-repo-map"
-Issues = "https://github.com/HarperZ9/workspace-repo-map/issues"
+Homepage = "https://github.com/HarperZ9/index"
+Repository = "https://github.com/HarperZ9/index"
+Issues = "https://github.com/HarperZ9/index/issues"
 
 [tool.hatch.version]
-path = "src/workspace_repo_map/__init__.py"
+path = "src/index_graph/__init__.py"
 
 [tool.pytest.ini_options]
 addopts = "-q"

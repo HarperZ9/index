@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from workspace_repo_map.graph.edges import Edge, build_index, resolve_edges
-from workspace_repo_map.graph.resolvers.base import RawEdge
+from index_graph.graph.edges import Edge, build_index, resolve_edges
+from index_graph.graph.resolvers.base import RawEdge
 
 
 def test_internal_edge_merges_signals_to_high_confidence():

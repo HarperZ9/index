@@ -1,6 +1,6 @@
 import pytest
 
-from workspace_repo_map.config import (
+from index_graph.config import (
     Config, Rule, default_config, glob_to_regex, load_config,
 )
 

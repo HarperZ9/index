@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from workspace_repo_map.graph.edges import Edge, Signal
-from workspace_repo_map.graph.roles import (derive_roles, salience_audit,
+from index_graph.graph.edges import Edge, Signal
+from index_graph.graph.roles import (derive_roles, salience_audit,
                                             structural_salience)
 
 

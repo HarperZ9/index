@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from workspace_repo_map.cli import main
+from index_graph.cli import main
 
 
 def test_version_flag_exits_zero(capsys):
@@ -31,7 +31,7 @@ def test_missing_config_is_fatal(tmp_path):
 
 
 def test_public_api_surface():
-    import workspace_repo_map as pkg
+    import index_graph as pkg
     for name in ("build_map", "Map", "RepoRow", "Config", "Rule", "load_config", "classify"):
         assert name in pkg.__all__
         assert hasattr(pkg, name)

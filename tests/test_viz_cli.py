@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from workspace_repo_map.cli import main
+from index_graph.cli import main
 
 
 @pytest.fixture
@@ -78,7 +78,7 @@ def test_existing_commands_unaffected(workspace, tmp_path, capsys):
 
 
 def test_version_is_0_4_0():
-    from workspace_repo_map import __version__
+    from index_graph import __version__
     assert __version__ == "0.4.0"
 
 

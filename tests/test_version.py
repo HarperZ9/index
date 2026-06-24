@@ -1,5 +1,5 @@
-import workspace_repo_map
+import index_graph
 
 
 def test_version_is_0_4_0():
-    assert workspace_repo_map.__version__ == "0.4.0"
+    assert index_graph.__version__ == "0.4.0"
