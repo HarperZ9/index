@@ -32,7 +32,7 @@ workspace-repo-map [--root ROOT] [--output OUTPUT] [--json]
 | `--json`    | off                              | Print the JSON map to stdout instead of writing it.  |
 | `--config`  | `<root>/.repomap.toml` if present | Path to a `.repomap.toml`. Missing explicit path is fatal. |
 | `--jobs`    | config / CPU heuristic           | Override the parallel git worker count (must be ≥ 1).|
-| `--version` | —                                | Print `workspace-repo-map 0.2.0` and exit.           |
+| `--version` | —                                | Print `workspace-repo-map 0.3.0` and exit.           |
 
 Classification with no config falls back to a remote-host heuristic: `local` (no
 remote), `public` (origin host in the known public set), or `private`. Supply a
@@ -49,7 +49,7 @@ Expected output (illustrative — paths, hashes, and timestamps vary):
 ```json
 {
   "schema_version": 1,
-  "tool_version": "0.2.0",
+  "tool_version": "0.3.0",
   "generated_at": "2026-06-18T10:16:44-07:00",
   "root_sha256_prefix": "617a55395ac0d599",
   "absolute_paths_included": false,
@@ -205,6 +205,70 @@ cfg = default_config()
 classify("proj-a", True, "https://github.com/example/proj-a.git", cfg)  # -> "public"
 classify("proj-b", True, "", cfg)                                       # -> "local"
 ```
+
+## Dependency graph & context pack
+
+`workspace-repo-map` can infer a repo→repo dependency graph from real code and emit a
+synthesis context pack with roles, relations, and extracted prose.
+
+### `graph` subcommand
+
+```text
+workspace-repo-map graph --root ROOT [--json]
+```
+
+| Flag     | Default           | Meaning                                                     |
+| -------- | ----------------- | ----------------------------------------------------------- |
+| `--root` | current directory | Workspace root to scan.                                     |
+| `--json` | off               | Emit a JSON array of relation objects instead of text.      |
+
+Edges are derived from Python (`pyproject.toml`, `setup.cfg`, source imports) and
+JavaScript/TypeScript (`package.json`, source imports). Each edge carries the file (and
+line) that witnesses it and a confidence grade:
+
+- `high` — both a declared dependency and an observed import agree.
+- `moderate` — a single signal (manifest-only or import-only).
+- `low` — name is ambiguous (two different repos expose the same normalized name) or the
+  target name is too short to resolve reliably.
+
+#### Example — `graph --json` output shape
+
+```json
+[
+  {
+    "from": "py-app",
+    "to": "py-lib",
+    "external": false,
+    "confidence": "high",
+    "signals": [
+      { "kind": "manifest", "file": "py-app/pyproject.toml", "line": null, "raw": "py-lib" },
+      { "kind": "import",   "file": "py-app/py_app/cli.py",  "line": 3,    "raw": "import py_lib" }
+    ]
+  }
+]
+```
+
+### `context` subcommand
+
+```text
+workspace-repo-map context --root ROOT [--json] [--focus REPO] [--audit]
+```
+
+| Flag          | Default           | Meaning                                                         |
+| ------------- | ----------------- | --------------------------------------------------------------- |
+| `--root`      | current directory | Workspace root to scan.                                         |
+| `--json`      | off               | Emit the context pack as JSON instead of Markdown.              |
+| `--focus REPO`| —                 | Emit only the named repo's dependency neighbourhood (bidirectional closure). |
+| `--audit`     | off               | Print only the salience-faithfulness audit (hubs + mismatches), not the pack. |
+
+Exit codes:
+
+- `0` — context pack written (or printed) successfully.
+- `2` — `--focus <repo>` names a repo not found in the workspace; a near-match hint is
+  printed to stderr.
+
+The map subcommand (`workspace-repo-map map`, or the legacy flat invocation
+`workspace-repo-map --root ...`) is unaffected.
 
 ## Notes
 

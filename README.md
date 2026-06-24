@@ -4,7 +4,7 @@
 
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 ![python](https://img.shields.io/badge/python-3.11%2B-blue.svg)
-![version](https://img.shields.io/badge/version-0.2.0-informational.svg)
+![version](https://img.shields.io/badge/version-0.3.0-informational.svg)
 [![CI](https://github.com/HarperZ9/workspace-repo-map/actions/workflows/ci.yml/badge.svg)](https://github.com/HarperZ9/workspace-repo-map/actions/workflows/ci.yml)
 ![deps: none](https://img.shields.io/badge/deps-none-success.svg)
 [![part of: AI-accountability toolkit](https://img.shields.io/badge/part_of-AI--accountability_toolkit-7a5cff.svg)](https://harperz9.github.io)
@@ -42,6 +42,23 @@ guarantee of visibility.
 For a full install line, the complete flag list, the importable Python API, and worked
 examples with expected output, see [USAGE.md](USAGE.md). A runnable end-to-end demo lives
 in [`examples/demo.py`](examples/demo.py).
+
+## Dependency graph & context pack
+
+Beyond the inventory map, `workspace-repo-map` infers how the repos in a workspace
+depend on each other — from real code, with evidence on every edge.
+
+```bash
+workspace-repo-map graph --root .                  # repo→repo dependency graph (text)
+workspace-repo-map graph --root . --json           # ... as JSON; each edge carries its witness
+workspace-repo-map context --root .                # synthesis pack: roles + relations + prose
+workspace-repo-map context --root . --focus <repo> # one repo's dependency neighborhood
+```
+
+Edges are derived from Python and JavaScript/TypeScript manifests and source imports;
+each carries the file (and line) that witnesses it and a confidence grade
+(`high` when both a declared dependency and an observed import agree). See
+[USAGE.md](USAGE.md) for the full reference.
 
 ## Notes
 
