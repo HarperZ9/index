@@ -8,13 +8,12 @@ dynamic = ["version"]
 description = "Compact JSON repository inventory maps for multi-repo workspaces."
 readme = "README.md"
 requires-python = ">=3.11"
-license = { text = "MIT" }
+license = { text = "FSL-1.1-MIT" }
 authors = [{ name = "Zain Dana Harper" }]
 keywords = ["git", "inventory", "workspace", "cli"]
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Environment :: Console",
-  "License :: OSI Approved :: MIT License",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3 :: Only",
