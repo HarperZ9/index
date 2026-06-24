@@ -39,3 +39,17 @@ def test_render_is_deterministic():
     assert a == b  # pure function of input: no wall-clock, no host data
     for clock_marker in ("GMT", "UTC", "datetime"):  # no date library leaked a timestamp
         assert clock_marker not in a
+
+
+def test_special_chars_in_repo_name_stay_well_formed():
+    name = 'a"<&b'
+    pack = {
+        "roles": {name: ["hub"]},
+        "relations": [],
+        "salience": {name: {"in_degree": 0, "out_degree": 0, "hub": True}},
+        "salience_audit": [],
+        "repos": [{"name": name, "ecosystems": ["python"], "description": "x", "markers": []}],
+        "warnings": [],
+    }
+    svg = render_svg(build_layout(pack))
+    minidom.parseString(svg)  # must not raise

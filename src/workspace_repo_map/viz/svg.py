@@ -22,12 +22,13 @@ def _edge_svg(edge) -> str:
         classes.append("edge-external")
     if edge.back_edge:
         classes.append("edge-back")
-    sig = quoteattr(json.dumps(list(edge.signals), sort_keys=True))
     return (
-        f'<path class="{" ".join(classes)}" '
-        f'data-from={quoteattr(edge.from_repo)} data-to={quoteattr(edge.to_repo)} '
-        f'data-signals={sig} '
-        f'marker-end="url(#arrow)" d="{_path_d(edge.points)}"/>'
+        (lambda sig: (
+            f'<path class={quoteattr(" ".join(classes))} '
+            f'data-from={quoteattr(edge.from_repo)} data-to={quoteattr(edge.to_repo)} '
+            f'data-signals={sig} '
+            f'marker-end="url(#arrow)" d="{_path_d(edge.points)}"/>'
+        ))(quoteattr(json.dumps(list(edge.signals), sort_keys=True)))
         if edge.points
         else ""
     )
@@ -36,7 +37,7 @@ def _edge_svg(edge) -> str:
 def _node_svg(node) -> str:
     label = escape(node.name)
     return (
-        f'<g class="node role-{node.role}" '
+        f'<g class={quoteattr("node role-" + node.role)} '
         f'data-name={quoteattr(node.name)} data-role={quoteattr(node.role)} '
         f'data-roles={quoteattr(",".join(node.roles))} '
         f'data-indeg="{node.in_degree}" data-outdeg="{node.out_degree}" '
