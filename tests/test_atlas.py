@@ -63,9 +63,6 @@ def test_knowledge_edges_sorted_deterministic():
     assert p1["knowledge_edges"] == sorted(p1["knowledge_edges"], key=lambda e: (e["from"], e["type"], e["to_kind"], e["to"]))
 
 
-import re as _re
-
-
 def test_mentions_when_named_in_prose_and_not_already_linked():
     g = _graph("api", "core")
     # body names "core" in prose; no [[link]] / describes to core -> a mention
