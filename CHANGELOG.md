@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.4.0
+
+- Add `viz` subcommand: render the dependency graph as a self-contained interactive
+  HTML dashboard (default), a standalone SVG network graph, or a Mermaid flowchart.
+- `viz --format all` also emits `context.json` and a `context-manifest.json` handoff
+  (artifact paths + content hashes) for downstream consumers.
+- Renders are deterministic (byte-identical for identical input) and self-contained
+  (no external URLs, no runtime dependencies).
+
 ## 0.3.0
 
 ### Added

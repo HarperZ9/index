@@ -12,3 +12,6 @@ build/
 # local safe-io cache (runtime artifact, never committed)
 .warden-safe-cache/
 .superpowers/
+
+# viz dogfood output (runtime artifact, never committed)
+.viz-dogfood-out/
