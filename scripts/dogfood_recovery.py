@@ -15,9 +15,9 @@ import argparse
 import json
 from pathlib import Path
 
-from workspace_repo_map.config import load_config
-from workspace_repo_map.graph.build import build_graph
-from workspace_repo_map.scan import discover_repos
+from index_graph.config import load_config
+from index_graph.graph.build import build_graph
+from index_graph.scan import discover_repos
 
 
 def main(argv: list[str] | None = None) -> int:

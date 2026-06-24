@@ -10,7 +10,7 @@ import sys
 import time
 from pathlib import Path
 
-from workspace_repo_map.cli import main
+from index_graph.cli import main
 
 
 def run(root: str, out_dir: str) -> int:
