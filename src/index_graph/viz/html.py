@@ -83,7 +83,7 @@ def render_html(pack: dict, *, svg: str, charts: dict[str, str]) -> str:
         "<!doctype html>"
         '<html lang="en"><head><meta charset="utf-8">'
         '<meta name="viewport" content="width=device-width,initial-scale=1">'
-        "<title>workspace-repo-map · context</title>"
+        "<title>index · context</title>"
         f"<style>{css_variables()}{_CSS}</style></head><body>"
         '<main><section id="stage">'
         f'<div class="controls"><input type="search" id="search" '

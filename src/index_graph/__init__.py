@@ -7,7 +7,7 @@ from .config import Config, Rule, default_config, load_config
 from .model import SCHEMA_VERSION, Map, RepoRow
 from .scan import build_map, discover_repos, write_map
 
-__version__ = "0.4.0"
+__version__ = "1.0.0"
 __all__ = [
     "build_map", "write_map", "discover_repos",
     "Map", "RepoRow", "SCHEMA_VERSION",

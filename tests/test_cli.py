@@ -2,14 +2,14 @@ import json
 
 import pytest
 
-from workspace_repo_map.cli import main
+from index_graph.cli import main
 
 
 def test_version_flag_exits_zero(capsys):
     with pytest.raises(SystemExit) as exc:
         main(["--version"])
     assert exc.value.code == 0
-    assert "0.4.0" in capsys.readouterr().out
+    assert "1.0.0" in capsys.readouterr().out
 
 
 def test_json_to_stdout(tmp_path, capsys):
@@ -22,7 +22,7 @@ def test_json_to_stdout(tmp_path, capsys):
 def test_writes_default_output(tmp_path):
     (tmp_path / "demo" / ".git").mkdir(parents=True)
     assert main(["--root", str(tmp_path)]) == 0
-    assert (tmp_path / "WORKSPACE-REPO-MAP.json").exists()
+    assert (tmp_path / "INDEX.json").exists()
 
 
 def test_missing_config_is_fatal(tmp_path):
@@ -31,7 +31,7 @@ def test_missing_config_is_fatal(tmp_path):
 
 
 def test_public_api_surface():
-    import workspace_repo_map as pkg
+    import index_graph as pkg
     for name in ("build_map", "Map", "RepoRow", "Config", "Rule", "load_config", "classify"):
         assert name in pkg.__all__
         assert hasattr(pkg, name)

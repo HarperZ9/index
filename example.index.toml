@@ -1,4 +1,4 @@
-# Example workspace-repo-map configuration. Copy to <workspace-root>/.repomap.toml.
+# Example index configuration. Copy to <workspace-root>/.index.toml.
 # Rules match each repo's workspace-relative path; first match wins. With no rule
 # match, repos fall back to a remote-host heuristic (local / public / private).
 

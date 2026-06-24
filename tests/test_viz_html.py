@@ -1,9 +1,9 @@
 import re
 
-from workspace_repo_map.viz.layout import build_layout
-from workspace_repo_map.viz.svg import render_svg
-from workspace_repo_map.viz.charts import render_charts
-from workspace_repo_map.viz.html import render_html
+from index_graph.viz.layout import build_layout
+from index_graph.viz.svg import render_svg
+from index_graph.viz.charts import render_charts
+from index_graph.viz.html import render_html
 from viz_fixtures import simple_pack
 
 

@@ -1,5 +1,5 @@
-from workspace_repo_map.classify import classify
-from workspace_repo_map.config import Config, Rule
+from index_graph.classify import classify
+from index_graph.config import Config, Rule
 
 
 def test_first_matching_rule_wins():

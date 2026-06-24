@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from workspace_repo_map.cli import main
+from index_graph.cli import main
 
 
 @pytest.fixture
@@ -77,9 +77,9 @@ def test_existing_commands_unaffected(workspace, tmp_path, capsys):
     assert json.loads(capsys.readouterr().out)  # still valid JSON
 
 
-def test_version_is_0_4_0():
-    from workspace_repo_map import __version__
-    assert __version__ == "0.4.0"
+def test_version_is_1_0_0():
+    from index_graph import __version__
+    assert __version__ == "1.0.0"
 
 
 def test_all_format_no_external_is_consistent(workspace_with_external, tmp_path):

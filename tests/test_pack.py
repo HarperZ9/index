@@ -3,10 +3,10 @@ from __future__ import annotations
 import inspect
 from pathlib import Path
 
-from workspace_repo_map.context import pack
-from workspace_repo_map.context.pack import (closure, focus_subgraph, render_text,
+from index_graph.context import pack
+from index_graph.context.pack import (closure, focus_subgraph, render_text,
                                              to_json)
-from workspace_repo_map.graph.build import build_graph
+from index_graph.graph.build import build_graph
 
 FIX = Path(__file__).parent / "fixtures"
 

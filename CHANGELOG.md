@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.0
+
+Renamed to **index** (`pip install index-graph`, command `index`); flagship release. (Was `workspace-repo-map`.)
+
 ## 0.4.0
 
 - Add `viz` subcommand: render the dependency graph as a self-contained interactive

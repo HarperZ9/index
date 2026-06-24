@@ -26,7 +26,7 @@ def _add_map_args(p: argparse.ArgumentParser) -> None:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="workspace-repo-map",
+        prog="index",
         description="Repository inventory maps + dependency graph + context packs.")
     parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     sub = parser.add_subparsers(dest="cmd")
@@ -71,7 +71,7 @@ def _cmd_map(args) -> int:
     if args.json:
         print(json.dumps(build_map(root, config, __version__).to_json(), indent=2))
     else:
-        output = args.output.resolve() if args.output else root / "WORKSPACE-REPO-MAP.json"
+        output = args.output.resolve() if args.output else root / "INDEX.json"
         data = write_map(root, config, __version__, output)
         print(f"wrote {output}")
         print(f"repos={data.repo_count} dirty={data.dirty_count}")

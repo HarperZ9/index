@@ -1,4 +1,4 @@
-"""Configuration: .repomap.toml parsing, neutral defaults, glob translation."""
+"""Configuration: .index.toml parsing, neutral defaults, glob translation."""
 
 from __future__ import annotations
 
@@ -83,7 +83,7 @@ def default_config() -> Config:
 
 def load_config(path: Path | None, root: Path) -> Config:
     if path is None:
-        candidate = root / ".repomap.toml"
+        candidate = root / ".index.toml"
         if not candidate.exists():
             return default_config()
         path = candidate

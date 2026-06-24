@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from workspace_repo_map.graph.resolvers.base import normalize_name
-from workspace_repo_map.graph.resolvers.python import PythonResolver
+from index_graph.graph.resolvers.base import normalize_name
+from index_graph.graph.resolvers.python import PythonResolver
 
 FIX = Path(__file__).parent / "fixtures"
 

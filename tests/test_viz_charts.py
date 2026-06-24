@@ -1,6 +1,6 @@
 import re
 
-from workspace_repo_map.viz.charts import render_charts
+from index_graph.viz.charts import render_charts
 from viz_fixtures import simple_pack
 
 

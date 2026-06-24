@@ -22,7 +22,7 @@ jobs:
           python -m twine check dist/*
       - uses: actions/upload-artifact@v5
         with:
-          name: workspace-repo-child safety assessment-dist
+          name: index-graph-dist
           path: dist/*
 
   pypi-publish:
@@ -34,7 +34,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@v5
         with:
-          name: workspace-repo-child safety assessment-dist
+          name: index-graph-dist
           path: dist
       - uses: pypa/gh-action-pypi-publish@release/v1
         with:

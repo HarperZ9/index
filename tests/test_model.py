@@ -1,4 +1,4 @@
-from workspace_repo_map.model import Map, RepoRow, SCHEMA_VERSION
+from index_graph.model import Map, RepoRow, SCHEMA_VERSION
 
 
 def _row(**over):

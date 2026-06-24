@@ -1,5 +1,5 @@
 # tests/test_viz_layout_geometry.py
-from workspace_repo_map.viz.layout import build_layout
+from index_graph.viz.layout import build_layout
 from viz_fixtures import simple_pack, cyclic_pack
 
 

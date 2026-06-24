@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # Best-effort demo — not runtime-verified by author.
-"""End-to-end demo for workspace-repo-map.
+"""End-to-end demo for index.
 
 Builds a throwaway workspace with two git repos in a temp dir, then exercises the
 real public API (`build_map`, `default_config`, `classify`) and the CLI module
-(`python -m workspace_repo_map`). Everything used here exists in the package; no
+(`python -m index_graph`). Everything used here exists in the package; no
 flags or functions are invented.
 
 Run:
@@ -19,7 +19,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-from workspace_repo_map import __version__, build_map, classify, default_config
+from index_graph import __version__, build_map, classify, default_config
 
 
 def _git(repo: Path, *args: str) -> None:
@@ -40,7 +40,7 @@ def _make_repo(path: Path, *, origin: str | None, marker: str) -> None:
 
 
 def main() -> int:
-    with tempfile.TemporaryDirectory(prefix="wrm-demo-") as tmp:
+    with tempfile.TemporaryDirectory(prefix="index-demo-") as tmp:
         root = Path(tmp)
         _make_repo(root / "proj-a", origin="https://github.com/example/proj-a.git",
                    marker="README.md")
@@ -64,9 +64,9 @@ def main() -> int:
         print("proj-b ->", classify("proj-b", True, "", config))
 
         # 3) CLI module: print JSON to stdout exactly as the console script would.
-        print("\n== python -m workspace_repo_map --json ==")
+        print("\n== python -m index_graph --json ==")
         result = subprocess.run(
-            [sys.executable, "-m", "workspace_repo_map", "--root", str(root), "--json"],
+            [sys.executable, "-m", "index_graph", "--root", str(root), "--json"],
             text=True, capture_output=True, check=True,
         )
         payload = json.loads(result.stdout)
