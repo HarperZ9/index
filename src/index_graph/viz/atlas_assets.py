@@ -82,9 +82,23 @@ function wireZoom(){const stage=$('#stage'),svg=stage&&stage.querySelector('svg'
   view.tx=drag.tx+(ev.clientX-drag.x)*vb.width/r.width;view.ty=drag.ty+(ev.clientY-drag.y)*vb.height/r.height;applyView();});
  svg.addEventListener('pointerup',()=>{drag=null;stage.classList.remove('grabbing');});
  $('#zoom-reset').addEventListener('click',()=>{view={k:1,tx:0,ty:0};applyView();});}
+function searchApply(){const q=$('#search').value.trim().toLowerCase();const on=new Set();
+ $$('.node').forEach(g=>{const m=!q||g.dataset.name.toLowerCase().includes(q);
+  g.classList.toggle('dim',!m);if(m)on.add('repo:'+g.dataset.name);});
+ $$('.docnode').forEach(g=>{const d=docs[g.dataset.doc];
+  const m=!q||g.dataset.doc.toLowerCase().includes(q)||(d&&d.title.toLowerCase().includes(q));
+  g.classList.toggle('dim',!m);if(m)on.add('doc:'+g.dataset.doc);});
+ $$('.edge').forEach(p=>p.classList.toggle('dim',!!q&&!(on.has('repo:'+p.dataset.from)&&on.has('repo:'+p.dataset.to))));
+ $$('.kedge').forEach(l=>{const t=on.has('repo:'+l.dataset.to)||on.has('doc:'+l.dataset.to);
+  l.classList.toggle('dim',!!q&&!(on.has('doc:'+l.dataset.from)&&t));});}
+function wireMentions(){const b=$('#toggle-mentions');b.addEventListener('click',()=>{
+  const on=b.getAttribute('aria-pressed')==='true';b.setAttribute('aria-pressed',String(!on));
+  $$('.kedge-mentions').forEach(l=>{l.style.display=on?'none':'';});});}
 function wire(){
  $$('.node').forEach(g=>g.addEventListener('click',()=>detailRepo(g.dataset.name)));
  $$('.docnode').forEach(g=>g.addEventListener('click',()=>detailDoc(g.dataset.doc)));
+ $('#search').addEventListener('input',searchApply);
+ wireMentions();
  wireZoom();
 }
 document.addEventListener('DOMContentLoaded',wire);

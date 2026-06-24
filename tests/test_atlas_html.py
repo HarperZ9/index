@@ -71,3 +71,10 @@ def test_pan_zoom_is_wired():
     assert "#viewport" in doc
     assert "zoom-reset" in doc
     assert "wheel" in doc and "pointerdown" in doc
+
+
+def test_search_and_mentions_toggle_wired():
+    doc = _doc(*simple_atlas())
+    assert "function searchApply" in doc
+    assert "function wireMentions" in doc
+    assert "toggle-mentions" in doc
