@@ -119,6 +119,24 @@ Or from a checkout:
 pip install -e .
 ```
 
+## `index atlas` — code + knowledge map
+
+`index atlas` renders a **two-layer** map: your repositories *and* their markdown
+docs (READMEs, ADRs, design notes) as one explorable graph. Docs are first-class
+nodes, `[[wiki-linked]]` and clustered onto the code they describe.
+
+```bash
+index atlas --root /path/to/workspace --format html --out atlas.html
+```
+
+Open `atlas.html` (one self-contained file, zero dependencies, no network): pan/zoom
+the graph, search repos + docs, click a doc to read its rendered markdown with
+clickable `[[links]]`, and double-click a node to focus its neighborhood. Edge types:
+`describes` (doc→repo by location), `links-to` (`[[wiki]]`), and `mentions` (prose,
+dimmest — toggle in the legend). `index atlas --json` emits the underlying pack.
+
+See `examples/atlas-demo.html` for a rendered sample (`python examples/atlas_demo.py`).
+
 ---
 **Zain Dana Harper** — small tools with explicit edges.
 [Portfolio](https://harperz9.github.io) · [HarperZ9](https://github.com/HarperZ9)

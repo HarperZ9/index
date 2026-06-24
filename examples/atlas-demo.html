@@ -1,0 +1,117 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>index · atlas</title><style>:root{--bg:#0d1b1c;--ink:#e9e2d0;--accent:#df5e00;--teal:#476762;--gold:#efab30;--ok:#5fae93;--muted:#8a9b92;--hairline:rgba(239,171,48,.15);--font-body:"EB Garamond", Georgia, serif;--font-mono:"Spline Sans Mono", ui-monospace, monospace;}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body)}
+main{display:grid;grid-template-columns:1fr 360px;min-height:100vh}
+#stage{overflow:hidden;padding:1rem;position:relative}#stage svg{max-width:100%;height:auto;cursor:grab}
+#stage.grabbing svg{cursor:grabbing}
+aside{border-left:1px solid var(--hairline);padding:1rem;font-family:var(--font-mono);font-size:.82rem;overflow:auto}
+.controls{display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:.6rem;align-items:center}
+.chip{cursor:pointer;border:1px solid var(--hairline);border-radius:6px;padding:.2em .5em;background:transparent;color:var(--ink)}
+.chip[aria-pressed=true]{background:var(--accent);color:var(--bg)}
+input[type=search]{flex:1;min-width:8rem;padding:.4em;background:transparent;color:var(--ink);border:1px solid var(--hairline);border-radius:6px}
+#trail{font-family:var(--font-mono);font-size:.72rem;opacity:.8;margin:.2rem 0 .6rem;min-height:1.2em}
+#trail a{color:var(--gold);cursor:pointer;text-decoration:underline}
+#detail h3{margin:.2rem 0;color:var(--gold)}#detail h4{margin:.6rem 0 .2rem;color:var(--gold)}
+#detail .md{font-family:var(--font-body);font-size:.95rem;line-height:1.5;border-top:1px solid var(--hairline);margin-top:.6rem;padding-top:.6rem}
+#detail .md pre{background:rgba(0,0,0,.3);padding:.5em;overflow:auto}#detail .md table{border-collapse:collapse}
+#detail .md th,#detail .md td{border:1px solid var(--hairline);padding:.2em .5em}
+#detail .md .wikilink{color:var(--accent);cursor:pointer}#detail .md .md-img{opacity:.6;font-style:italic}
+a.wikilink{color:var(--accent)}
+@media(max-width:820px){main{grid-template-columns:1fr}aside{border-left:none}}
+</style></head><body><main><section id="stage"><div class="controls"><input type="search" id="search" placeholder="search repos + docs…" aria-label="search"><button class="chip" id="zoom-reset">reset view</button><button class="chip" id="focus-clear">clear focus</button><button class="chip" id="toggle-mentions" aria-pressed="true">mentions</button></div><div id="trail"></div><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 424.00 1064.00" width="424.00" height="1064.00"><defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#8a9b92"/></marker></defs><style>svg{background-color:#0d1b1c;}text{font-family:"Spline Sans Mono", ui-monospace, monospace;fill:#e9e2d0;} /* labels are identifiers, use monospace not font-body */rect{stroke:rgba(239,171,48,.15);}.role-entrypoint rect{fill:#df5e00;}.role-orchestrator rect{fill:#efab30;}.role-hub rect{fill:#5fae93;}.role-library rect{fill:#476762;}.role-leaf rect{fill:#8a9b92;}.role-isolated rect{fill:#8a9b92;}.role-external rect{fill:rgba(239,171,48,.15);}.edge{fill:none;stroke:#8a9b92;}.edge-high{stroke:#5fae93;}.edge-moderate{stroke:#efab30;stroke-dasharray:5 3;}.edge-low{stroke:#8a9b92;stroke-dasharray:2 3;}.edge-external{stroke:rgba(239,171,48,.15);}.edge-back{stroke:#df5e00;}.edge-cycle{stroke:#d9544d;stroke-width:2.4;stroke-dasharray:none;}.node.cycle rect{stroke:#d9544d;stroke-width:2.4;}.docnode rect{fill:#0d1b1c;stroke:#efab30;stroke-dasharray:3 2;}.docnode text{font-family:"Spline Sans Mono", ui-monospace, monospace;fill:#e9e2d0;font-size:11px;}.docnode.band rect{stroke:#476762;}.docnode.sel rect{stroke:#df5e00;stroke-width:2;stroke-dasharray:none;}.kedge{fill:none;stroke-width:1;}.kedge-describes{stroke:#efab30;}.kedge-links-to{stroke:#5fae93;stroke-dasharray:4 3;}.kedge-mentions{stroke:#8a9b92;stroke-dasharray:1 4;opacity:.35;}.kedge.dim,.node.dim,.docnode.dim,.edge.dim{opacity:.08;}</style><g id="viewport"><line class="kedge kedge-describes" data-ktype="describes" data-from="api/README.md" data-to="api" x1="304.00" y1="889.00" x2="81.75" y2="762.00"/><line class="kedge kedge-links-to" data-ktype="links-to" data-from="api/README.md" data-to="docs/architecture.md" x1="304.00" y1="889.00" x2="120.00" y2="1009.00"/><line class="kedge kedge-links-to" data-ktype="links-to" data-from="api/README.md" data-to="storage" x1="304.00" y1="889.00" x2="81.75" y2="482.00"/><line class="kedge kedge-mentions" data-ktype="mentions" data-from="api/README.md" data-to="storage/README.md" x1="304.00" y1="889.00" x2="120.00" y2="889.00"/><line class="kedge kedge-mentions" data-ktype="mentions" data-from="docs/adr-001-storage.md" data-to="storage/README.md" x1="120.00" y1="969.00" x2="120.00" y2="889.00"/><line class="kedge kedge-mentions" data-ktype="mentions" data-from="docs/adr-001-storage.md" data-to="storage" x1="120.00" y1="969.00" x2="81.75" y2="482.00"/><line class="kedge kedge-links-to" data-ktype="links-to" data-from="docs/architecture.md" data-to="api" x1="120.00" y1="1009.00" x2="81.75" y2="762.00"/><line class="kedge kedge-links-to" data-ktype="links-to" data-from="docs/architecture.md" data-to="storage" x1="120.00" y1="1009.00" x2="81.75" y2="482.00"/><line class="kedge kedge-mentions" data-ktype="mentions" data-from="docs/architecture.md" data-to="api/README.md" x1="120.00" y1="1009.00" x2="304.00" y2="889.00"/><line class="kedge kedge-mentions" data-ktype="mentions" data-from="docs/architecture.md" data-to="storage/README.md" x1="120.00" y1="1009.00" x2="120.00" y2="889.00"/><line class="kedge kedge-describes" data-ktype="describes" data-from="storage/README.md" data-to="storage" x1="120.00" y1="889.00" x2="81.75" y2="482.00"/><line class="kedge kedge-links-to" data-ktype="links-to" data-from="storage/README.md" data-to="docs/architecture.md" x1="120.00" y1="889.00" x2="120.00" y2="1009.00"/><path class="edge edge-high edge-back" data-from="api" data-to="storage" data-signals='[{"file": "pyproject.toml", "kind": "manifest", "line": null, "raw": "storage"}, {"file": "api.py", "kind": "import", "line": 1, "raw": "import storage"}]' marker-end="url(#arrow)" d="M81.75,762.00 C141.75,762.00 141.75,482.00 81.75,482.00"/><g class="node role-library" data-name="storage" data-role="library" data-roles="library" data-indeg="1" data-outdeg="0" data-hub="false" tabindex="0" role="img" aria-label="storage (library)"><rect x="40.00" y="460.00" width="83.50" height="44.00" rx="6"/><text x="81.75" y="486.00" text-anchor="middle">storage</text><title>storage — library</title></g><g class="node role-isolated" data-name="api" data-role="isolated" data-roles="" data-indeg="0" data-outdeg="1" data-hub="false" tabindex="0" role="img" aria-label="api (isolated)"><rect x="57.00" y="740.00" width="49.50" height="44.00" rx="6"/><text x="81.75" y="766.00" text-anchor="middle">api</text><title>api — isolated</title></g><g class="docnode" data-doc="api/README.md" data-title="API" tabindex="0" role="img" aria-label="API (doc)"><rect x="224.00" y="874.00" width="160.00" height="30.00" rx="3"/><text x="232.00" y="893.00">API</text></g><g class="docnode band" data-doc="docs/adr-001-storage.md" data-title="ADR 001: Storage" tabindex="0" role="img" aria-label="ADR 001: Storage (doc)"><rect x="40.00" y="954.00" width="160.00" height="30.00" rx="3"/><text x="48.00" y="973.00">ADR 001: Storage</text></g><g class="docnode band" data-doc="docs/architecture.md" data-title="Architecture" tabindex="0" role="img" aria-label="Architecture (doc)"><rect x="40.00" y="994.00" width="160.00" height="30.00" rx="3"/><text x="48.00" y="1013.00">Architecture</text></g><g class="docnode" data-doc="storage/README.md" data-title="Storage" tabindex="0" role="img" aria-label="Storage (doc)"><rect x="40.00" y="874.00" width="160.00" height="30.00" rx="3"/><text x="48.00" y="893.00">Storage</text></g></g></svg></section><aside><div id="detail">Select a node.</div></aside></main><script>const DATA = {"backlinks":{"api":[{"from":"api/README.md","type":"describes"},{"from":"docs/architecture.md","type":"links-to"}],"api/README.md":[{"from":"docs/architecture.md","type":"mentions"}],"docs/architecture.md":[{"from":"api/README.md","type":"links-to"},{"from":"storage/README.md","type":"links-to"}],"storage":[{"from":"api/README.md","type":"links-to"},{"from":"docs/adr-001-storage.md","type":"mentions"},{"from":"docs/architecture.md","type":"links-to"},{"from":"storage/README.md","type":"describes"}],"storage/README.md":[{"from":"api/README.md","type":"mentions"},{"from":"docs/adr-001-storage.md","type":"mentions"},{"from":"docs/architecture.md","type":"mentions"}]},"cycles":[],"doc_html":{"api/README.md":"\u003ch1>API\u003c/h1>\n\u003cp>HTTP surface over \u003ca class=\"wikilink\" href=\"#\" data-atlas-target=\"storage\">Storage\u003c/a>.\u003c/p>\n\u003cul>\n\u003cli>follows the \u003ca class=\"wikilink\" href=\"#\" data-atlas-target=\"architecture\">Architecture\u003c/a>\u003c/li>\n\u003cli class=\"task\">\u003cinput type=\"checkbox\" checked disabled> auth\u003c/li>\n\u003cli class=\"task\">\u003cinput type=\"checkbox\" disabled> rate limits\u003c/li>\n\u003c/ul>","docs/adr-001-storage.md":"\u003ch1>ADR 001: Storage\u003c/h1>\n\u003ctable>\n\u003cthead>\u003ctr>\u003cth>option\u003c/th>\u003cth>verdict\u003c/th>\u003c/tr>\u003c/thead>\n\u003ctbody>\u003ctr>\u003ctd>sqlite\u003c/td>\u003ctd>chosen\u003c/td>\u003c/tr>\n\u003ctr>\u003ctd>flat files\u003c/td>\u003ctd>rejected\u003c/td>\u003c/tr>\u003c/tbody>\n\u003c/table>","docs/architecture.md":"\u003ch1>Architecture\u003c/h1>\n\u003ch2>Overview\u003c/h2>\n\u003cp>\u003ccode>api\u003c/code> is the entry; \u003ccode>storage\u003c/code> is the core. See \u003ca class=\"wikilink\" href=\"#\" data-atlas-target=\"api\">API\u003c/a> and \u003ca class=\"wikilink\" href=\"#\" data-atlas-target=\"storage\">Storage\u003c/a>.\u003c/p>\n\u003cblockquote>Rule: api never imports a peer API.\u003c/blockquote>","storage/README.md":"\u003ch1>Storage\u003c/h1>\n\u003cp>Durable key-value core. See \u003ca class=\"wikilink\" href=\"#\" data-atlas-target=\"architecture\">Architecture\u003c/a>.\u003c/p>"},"docs":[{"dir":"api","id":"api/README.md","title":"API"},{"dir":"docs","id":"docs/adr-001-storage.md","title":"ADR 001: Storage"},{"dir":"docs","id":"docs/architecture.md","title":"Architecture"},{"dir":"storage","id":"storage/README.md","title":"Storage"}],"knowledge_edges":[{"from":"api/README.md","to":"api","to_kind":"repo","type":"describes"},{"from":"api/README.md","to":"docs/architecture.md","to_kind":"doc","type":"links-to"},{"from":"api/README.md","to":"storage","to_kind":"repo","type":"links-to"},{"from":"api/README.md","to":"storage/README.md","to_kind":"doc","type":"mentions"},{"from":"docs/adr-001-storage.md","to":"storage/README.md","to_kind":"doc","type":"mentions"},{"from":"docs/adr-001-storage.md","to":"storage","to_kind":"repo","type":"mentions"},{"from":"docs/architecture.md","to":"api","to_kind":"repo","type":"links-to"},{"from":"docs/architecture.md","to":"storage","to_kind":"repo","type":"links-to"},{"from":"docs/architecture.md","to":"api/README.md","to_kind":"doc","type":"mentions"},{"from":"docs/architecture.md","to":"storage/README.md","to_kind":"doc","type":"mentions"},{"from":"storage/README.md","to":"storage","to_kind":"repo","type":"describes"},{"from":"storage/README.md","to":"docs/architecture.md","to_kind":"doc","type":"links-to"}],"knowledge_warnings":[],"relations":[{"confidence":"high","external":false,"from":"api","in_cycle":false,"signals":[{"file":"pyproject.toml","kind":"manifest","line":null,"raw":"storage"},{"file":"api.py","kind":"import","line":1,"raw":"import storage"}],"target_name":"storage","to":"storage"}],"repos":[{"description":"HTTP surface over [[Storage]].","ecosystems":["python"],"markers":["published"],"name":"api"},{"description":"Durable key-value core. See [[Architecture]].","ecosystems":["python"],"markers":["published"],"name":"storage"}],"roles":{"api":[],"storage":["library"]},"salience":{"api":{"hub":false,"in_degree":0,"out_degree":1},"storage":{"hub":false,"in_degree":1,"out_degree":0}},"salience_audit":[{"hubs":[],"in_degree":0,"kind":"decorative-non-hub","markers":["published"],"node":"api","note":"marked node is not the structural hub; a render must not let its marker outshine the hub(s)"},{"hubs":[],"in_degree":1,"kind":"decorative-non-hub","markers":["published"],"node":"storage","note":"marked node is not the structural hub; a render must not let its marker outshine the hub(s)"}],"warnings":[]};
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const norm=s=>String(s).trim().toLowerCase().replace(/_/g,'-').replace(/ /g,'-');
+const repos={};(DATA.repos||[]).forEach(r=>repos[r.name]=r);
+const docs={};(DATA.docs||[]).forEach(d=>docs[d.id]=d);
+const tgt={};                       // normalized name -> {kind,id}
+(DATA.repos||[]).forEach(r=>{if(!(norm(r.name)in tgt))tgt[norm(r.name)]={kind:'repo',id:r.name};});
+(DATA.docs||[]).forEach(d=>{[d.title,d.id.split('/').pop().replace(/\.[^.]+$/,'')].forEach(c=>{if(!(norm(c)in tgt))tgt[norm(c)]={kind:'doc',id:d.id};});});
+function kedgesFrom(id){return (DATA.knowledge_edges||[]).filter(e=>e.from===id);}
+function selectClear(){$$('.node,.docnode').forEach(n=>n.classList.remove('sel'));}
+function detailRepo(name){selectClear();
+ const g=$(`.node[data-name="${cssEsc(name)}"]`);if(g)g.classList.add('sel');
+ const outs=(DATA.relations||[]).filter(e=>e.from===name&&!e.external);
+ const descBy=(DATA.knowledge_edges||[]).filter(e=>e.type==='describes'&&e.to===name);
+ $('#detail').innerHTML=`<h3>${esc(name)} <small>repo</small></h3>`+
+  `<div>roles: ${esc((DATA.roles[name]||[]).join(', '))||'—'}</div>`+
+  `<h4>depends on</h4>`+(outs.map(e=>`<div>${esc(e.to)} [${esc(e.confidence)}]</div>`).join('')||'—')+
+  `<h4>documented by</h4>`+(descBy.map(e=>linkNode(e.from,'doc')).join('')||'—');
+ pushTrail({kind:'repo',id:name});}
+function detailDoc(id){selectClear();
+ const g=$(`.docnode[data-doc="${cssEsc(id)}"]`);if(g)g.classList.add('sel');
+ const d=docs[id]||{title:id};
+ const out=kedgesFrom(id);
+ const desc=out.filter(e=>e.type==='describes').map(e=>esc(e.to)).join(', ');
+ const links=out.filter(e=>e.type!=='describes').map(e=>linkNode(e.to,e.to_kind)).join('')||'—';
+ const back=(DATA.backlinks&&DATA.backlinks[id]||[]).map(b=>linkNode(b.from,'doc')).join('')||'—';
+ $('#detail').innerHTML=`<h3>${esc(d.title)} <small>doc</small></h3>`+
+  (desc?`<div>describes <b>${desc}</b></div>`:'')+
+  `<h4>links</h4>${links}<h4>linked from</h4>${back}`+
+  `<div class="md">${DATA.doc_html[id]||''}</div>`;
+ wireWikilinks();pushTrail({kind:'doc',id});}
+function linkNode(id,kind){const label=kind==='repo'?id:(docs[id]?docs[id].title:id);
+ return `<div><a class="navlink" data-kind="${kind}" data-id="${esc(id)}">${esc(label)}</a></div>`;}
+function cssEsc(s){return String(s).replace(/["\\]/g,'\\$&');}
+function go(kind,id){kind==='repo'?detailRepo(id):detailDoc(id);
+ const sel=kind==='repo'?`.node[data-name="${cssEsc(id)}"]`:`.docnode[data-doc="${cssEsc(id)}"]`;
+ const el=$(sel);if(el&&el.scrollIntoView)el.scrollIntoView({block:'center',inline:'center'});}
+function wireWikilinks(){$$('#detail .wikilink,#detail .navlink').forEach(a=>a.addEventListener('click',ev=>{
+  ev.preventDefault();const t=a.dataset.atlasTarget?tgt[a.dataset.atlasTarget]:{kind:a.dataset.kind,id:a.dataset.id};
+  if(t)go(t.kind,t.id);}));}
+let trail=[];
+function pushTrail(node){if(trail.length&&trail[trail.length-1].id===node.id)return;trail.push(node);renderTrail();}
+function renderTrail(){$('#trail').innerHTML=trail.map((n,i)=>`<a data-i="${i}">${esc(n.id)}</a>`).join(' › ');
+ $$('#trail a').forEach(a=>a.addEventListener('click',()=>{const n=trail[+a.dataset.i];trail=trail.slice(0,+a.dataset.i);go(n.kind,n.id);}));}
+let view={k:1,tx:0,ty:0};
+function applyView(){const vp=$('#viewport');if(vp)vp.setAttribute('transform',`translate(${view.tx},${view.ty}) scale(${view.k})`);}
+function svgPt(svg,cx,cy){const r=svg.getBoundingClientRect();const vb=svg.viewBox.baseVal;
+ return {x:(cx-r.left)/r.width*vb.width,y:(cy-r.top)/r.height*vb.height};}
+function wireZoom(){const stage=$('#stage'),svg=stage&&stage.querySelector('svg');if(!svg)return;
+ svg.addEventListener('wheel',ev=>{ev.preventDefault();const p=svgPt(svg,ev.clientX,ev.clientY);
+  const f=ev.deltaY<0?1.1:1/1.1,nk=Math.min(8,Math.max(.2,view.k*f));
+  view.tx=p.x-(p.x-view.tx)*(nk/view.k);view.ty=p.y-(p.y-view.ty)*(nk/view.k);view.k=nk;applyView();},{passive:false});
+ let drag=null;
+ svg.addEventListener('pointerdown',ev=>{drag={x:ev.clientX,y:ev.clientY,tx:view.tx,ty:view.ty};
+  stage.classList.add('grabbing');svg.setPointerCapture(ev.pointerId);});
+ svg.addEventListener('pointermove',ev=>{if(!drag)return;const r=svg.getBoundingClientRect(),vb=svg.viewBox.baseVal;
+  view.tx=drag.tx+(ev.clientX-drag.x)*vb.width/r.width;view.ty=drag.ty+(ev.clientY-drag.y)*vb.height/r.height;applyView();});
+ svg.addEventListener('pointerup',()=>{drag=null;stage.classList.remove('grabbing');});
+ $('#zoom-reset').addEventListener('click',()=>{view={k:1,tx:0,ty:0};applyView();});}
+function searchApply(){const q=$('#search').value.trim().toLowerCase();const on=new Set();
+ $$('.node').forEach(g=>{const m=!q||g.dataset.name.toLowerCase().includes(q);
+  g.classList.toggle('dim',!m);if(m)on.add('repo:'+g.dataset.name);});
+ $$('.docnode').forEach(g=>{const d=docs[g.dataset.doc];
+  const m=!q||g.dataset.doc.toLowerCase().includes(q)||(d&&d.title.toLowerCase().includes(q));
+  g.classList.toggle('dim',!m);if(m)on.add('doc:'+g.dataset.doc);});
+ $$('.edge').forEach(p=>p.classList.toggle('dim',!!q&&!(on.has('repo:'+p.dataset.from)&&on.has('repo:'+p.dataset.to))));
+ $$('.kedge').forEach(l=>{const t=on.has('repo:'+l.dataset.to)||on.has('doc:'+l.dataset.to);
+  l.classList.toggle('dim',!!q&&!(on.has('doc:'+l.dataset.from)&&t));});}
+function wireMentions(){const b=$('#toggle-mentions');b.addEventListener('click',()=>{
+  const on=b.getAttribute('aria-pressed')==='true';b.setAttribute('aria-pressed',String(!on));
+  $$('.kedge-mentions').forEach(l=>{l.style.display=on?'none':'';});});}
+function neighborhood(kind,id){const keep=new Set([kind+':'+id]);
+ (DATA.relations||[]).forEach(e=>{if(e.external)return;
+  if(kind==='repo'&&e.from===id)keep.add('repo:'+e.to);
+  if(kind==='repo'&&e.to===id)keep.add('repo:'+e.from);});
+ (DATA.knowledge_edges||[]).forEach(e=>{
+  if(kind==='doc'&&e.from===id)keep.add(e.to_kind+':'+e.to);
+  if(e.to===id&&((kind==='repo'&&e.to_kind==='repo')||(kind==='doc'&&e.to_kind==='doc')))keep.add('doc:'+e.from);});
+ return keep;}
+function focusOn(kind,id){const keep=neighborhood(kind,id);
+ $$('.node').forEach(g=>g.classList.toggle('dim',!keep.has('repo:'+g.dataset.name)));
+ $$('.docnode').forEach(g=>g.classList.toggle('dim',!keep.has('doc:'+g.dataset.doc)));
+ $$('.edge').forEach(p=>p.classList.toggle('dim',!(keep.has('repo:'+p.dataset.from)&&keep.has('repo:'+p.dataset.to))));
+ $$('.kedge').forEach(l=>l.classList.toggle('dim',!(keep.has('doc:'+l.dataset.from)&&(keep.has('repo:'+l.dataset.to)||keep.has('doc:'+l.dataset.to)))));}
+function clearFocus(){$$('.dim').forEach(e=>e.classList.remove('dim'));}
+function wire(){
+ $$('.node').forEach(g=>g.addEventListener('click',()=>detailRepo(g.dataset.name)));
+ $$('.docnode').forEach(g=>g.addEventListener('click',()=>detailDoc(g.dataset.doc)));
+ $$('.node').forEach(g=>g.addEventListener('dblclick',()=>focusOn('repo',g.dataset.name)));
+ $$('.docnode').forEach(g=>g.addEventListener('dblclick',()=>focusOn('doc',g.dataset.doc)));
+ $('#focus-clear').addEventListener('click',clearFocus);
+ $('#search').addEventListener('input',searchApply);
+ wireMentions();
+ wireZoom();
+}
+document.addEventListener('DOMContentLoaded',wire);
+</script></body></html>
