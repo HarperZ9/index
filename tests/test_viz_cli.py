@@ -1,3 +1,4 @@
+import hashlib
 import json
 from pathlib import Path
 
@@ -40,6 +41,8 @@ def test_viz_all_emits_every_artifact_and_manifest(workspace, tmp_path):
         assert (out / f).exists()
     manifest = json.loads((out / "context-manifest.json").read_text(encoding="utf-8"))
     assert manifest["renders"]["svg"]["path"] == "graph.svg"
+    for key, fname in (("svg", "graph.svg"), ("mermaid", "graph.mmd"), ("html", "graph.html")):
+        assert manifest["renders"][key]["sha256"] == hashlib.sha256((out / fname).read_bytes()).hexdigest()
 
 
 def test_unknown_focus_exits_2(workspace, tmp_path):
