@@ -1,6 +1,7 @@
 """Assemble repos (index) + docs into the two-layer atlas pack."""
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 from ..context.pack import to_json
@@ -39,6 +40,12 @@ def _describes(doc: Doc, repo_dirs: dict[str, str]) -> str | None:
     return best
 
 
+def _mentions_name(body: str, name: str) -> bool:
+    # case-insensitive whole-token match; treat '-'/'_' and spaces as separators
+    pattern = r"(?<![0-9a-z])" + re.escape(name.lower()) + r"(?![0-9a-z])"
+    return re.search(pattern, body.lower()) is not None
+
+
 def build_atlas_pack(graph: DependencyGraph, docs: list[Doc],
                      repo_dirs: dict[str, str]) -> dict:
     pack = to_json(graph)
@@ -73,6 +80,18 @@ def build_atlas_pack(graph: DependencyGraph, docs: list[Doc],
             if to_kind == "doc" and to == d.rel_path:
                 continue                         # self-link
             add("links-to", d.rel_path, to_kind, to)
+
+    # mentions (prose name-drops) — weakest; deduped via `seen` against describes/links-to
+    name_of = {("repo", r): r for r in repo_names}
+    name_of.update({("doc", d.rel_path): d.title for d in docs})
+    for d in docs:
+        for (to_kind, to), display in sorted(name_of.items()):
+            if (d.rel_path, to_kind, to) in seen:      # already a stronger edge
+                continue
+            if to_kind == "doc" and to == d.rel_path:
+                continue
+            if _mentions_name(d.body, display):       # display = repo name or doc title
+                add("mentions", d.rel_path, to_kind, to)
 
     pack["knowledge_edges"] = sorted(edges, key=_EDGE_SORT)
     pack["knowledge_warnings"] = warnings

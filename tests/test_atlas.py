@@ -61,3 +61,31 @@ def test_knowledge_edges_sorted_deterministic():
     p2 = build_atlas_pack(g, [a], {"api": "api", "core": "core"})
     assert p1["knowledge_edges"] == p2["knowledge_edges"]
     assert p1["knowledge_edges"] == sorted(p1["knowledge_edges"], key=lambda e: (e["from"], e["type"], e["to_kind"], e["to"]))
+
+
+import re as _re
+
+
+def test_mentions_when_named_in_prose_and_not_already_linked():
+    g = _graph("api", "core")
+    # body names "core" in prose; no [[link]] / describes to core -> a mention
+    a = Doc("a.md", "A", "We call into core for storage.", (), "")
+    pack = build_atlas_pack(g, [a], {"api": "api", "core": "core"})
+    assert {"type": "mentions", "from": "a.md", "to": "core", "to_kind": "repo"} in pack["knowledge_edges"]
+
+
+def test_mention_deduped_against_stronger_edge():
+    g = _graph("core")
+    # both a [[link]] AND a prose mention of core -> only links-to survives (no duplicate mention)
+    a = Doc("a.md", "A", "[[core]] and core again", ("core",), "")
+    pack = build_atlas_pack(g, [a], {"core": "core"})
+    core_edges = [e for e in pack["knowledge_edges"] if e["to"] == "core"]
+    assert core_edges == [{"type": "links-to", "from": "a.md", "to": "core", "to_kind": "repo"}]
+
+
+def test_mention_requires_word_boundary():
+    g = _graph("api")
+    # "apiary" must NOT mention "api"
+    a = Doc("a.md", "A", "the apiary is unrelated", (), "")
+    pack = build_atlas_pack(g, [a], {"api": "api"})
+    assert not any(e["type"] == "mentions" for e in pack["knowledge_edges"])
