@@ -13,6 +13,7 @@ class Theme:
     gold: str = "#efab30"
     ok: str = "#5fae93"
     muted: str = "#8a9b92"
+    alert: str = "#d9544d"
     hairline: str = "rgba(239,171,48,.15)"
     font_body: str = '"EB Garamond", Georgia, serif'
     font_mono: str = '"Spline Sans Mono", ui-monospace, monospace'
@@ -59,4 +60,6 @@ def svg_style() -> str:
         f".edge-low{{stroke:{t.muted};stroke-dasharray:2 3;}}"
         f".edge-external{{stroke:{t.hairline};}}"
         f".edge-back{{stroke:{t.accent};}}"
+        f".edge-cycle{{stroke:{t.alert};stroke-width:2.4;stroke-dasharray:none;}}"
+        f".node.cycle rect{{stroke:{t.alert};stroke-width:2.4;}}"
     )

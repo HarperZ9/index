@@ -31,6 +31,7 @@ class LaidNode:
     in_degree: int = 0
     out_degree: int = 0
     hub: bool = False
+    in_cycle: bool = False
 
 
 @dataclass(frozen=True)
@@ -40,6 +41,7 @@ class LaidEdge:
     confidence: str
     external: bool
     back_edge: bool = False
+    in_cycle: bool = False
     points: tuple[tuple[float, float], ...] = ()
     signals: tuple[dict, ...] = ()
 
@@ -64,6 +66,7 @@ def _primary_role(roles: list[str]) -> str:
 def _build_nodes(pack: dict, include_external: bool) -> list[LaidNode]:
     roles = pack.get("roles", {})
     salience = pack.get("salience", {})
+    cycle_members = {n for c in pack.get("cycles", []) for n in c}
     nodes: list[LaidNode] = []
     for repo in pack.get("repos", []):
         name = repo["name"]
@@ -79,6 +82,7 @@ def _build_nodes(pack: dict, include_external: bool) -> list[LaidNode]:
                 in_degree=int(sal.get("in_degree", 0)),
                 out_degree=int(sal.get("out_degree", 0)),
                 hub=bool(sal.get("hub", False)),
+                in_cycle=name in cycle_members,
             )
         )
     if include_external:
@@ -115,6 +119,7 @@ def _build_edges(pack: dict, names: set[str], include_external: bool) -> list[La
                 to_repo=target,
                 confidence=rel.get("confidence", "low"),
                 external=external,
+                in_cycle=rel.get("in_cycle", False),
                 signals=tuple(rel.get("signals", ())),
             )
         )

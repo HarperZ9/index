@@ -53,3 +53,24 @@ def test_special_chars_in_repo_name_stay_well_formed():
     }
     svg = render_svg(build_layout(pack))
     minidom.parseString(svg)  # must not raise
+
+
+def test_cycle_edge_and_node_get_cycle_class():
+    from index_graph.viz.layout import build_layout
+    from index_graph.viz.svg import render_svg
+    pack = {
+        "repos": [{"name": "a"}, {"name": "b"}],
+        "roles": {"a": ["hub"], "b": ["hub"]},
+        "salience": {"a": {"in_degree": 1, "out_degree": 1},
+                     "b": {"in_degree": 1, "out_degree": 1}},
+        "cycles": [["a", "b"]],
+        "relations": [
+            {"from": "a", "to": "b", "confidence": "high", "external": False,
+             "in_cycle": True, "signals": []},
+            {"from": "b", "to": "a", "confidence": "high", "external": False,
+             "in_cycle": True, "signals": []},
+        ],
+    }
+    svg = render_svg(build_layout(pack))
+    assert "edge-cycle" in svg
+    assert "cycle" in svg  # node class

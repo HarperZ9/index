@@ -22,6 +22,8 @@ def _edge_svg(edge) -> str:
         classes.append("edge-external")
     if edge.back_edge:
         classes.append("edge-back")
+    if getattr(edge, "in_cycle", False):
+        classes.append("edge-cycle")
     return (
         (lambda sig: (
             f'<path class={quoteattr(" ".join(classes))} '
@@ -36,8 +38,9 @@ def _edge_svg(edge) -> str:
 
 def _node_svg(node) -> str:
     label = escape(node.name)
+    node_classes = "node role-" + node.role + (" cycle" if getattr(node, "in_cycle", False) else "")
     return (
-        f'<g class={quoteattr("node role-" + node.role)} '
+        f'<g class={quoteattr(node_classes)} '
         f'data-name={quoteattr(node.name)} data-role={quoteattr(node.role)} '
         f'data-roles={quoteattr(",".join(node.roles))} '
         f'data-indeg="{node.in_degree}" data-outdeg="{node.out_degree}" '

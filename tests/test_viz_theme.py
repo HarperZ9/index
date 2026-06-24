@@ -23,3 +23,10 @@ def test_svg_style_references_palette_and_role_classes():
     # one class per structural role + edge confidence classes
     for cls in (".role-entrypoint", ".role-orchestrator", ".role-hub", ".role-library", ".role-leaf", ".role-isolated", ".role-external", ".edge-high", ".edge-moderate", ".edge-low", ".edge-external", ".edge-back", "svg{"):
         assert cls in style
+
+
+def test_theme_has_cycle_styles():
+    from index_graph.viz.theme import svg_style, THEME
+    s = svg_style()
+    assert ".edge-cycle" in s
+    assert THEME.alert  # cycle accent token present
