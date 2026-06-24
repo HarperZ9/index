@@ -15,7 +15,7 @@ local-only classification hints.
 
 Generated maps are portable by default: repository paths are root-relative, the local
 root is represented by a short hash, and credential-shaped material in remote URLs is
-always redacted. Dropping whole origins by class is opt-in via `.repomap.toml`.
+always redacted. Dropping whole origins by class is opt-in via `.index.toml`.
 
 ## Install
 
