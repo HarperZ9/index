@@ -33,3 +33,37 @@ def test_image_renders_alt_text_only_no_src():
     out = render_inline("![a diagram](https://evil/x.png)")
     assert out == '<span class="md-img">a diagram</span>'
     assert "evil" not in out and "http" not in out
+
+
+from index_graph.knowledge.markdown import render_markdown
+
+
+def test_heading_levels():
+    assert render_markdown("# A\n\n### B") == "<h1>A</h1>\n<h3>B</h3>"
+
+
+def test_paragraph_joins_wrapped_lines_and_renders_inline():
+    assert render_markdown("hello **world**\nsecond line") == "<p>hello <strong>world</strong> second line</p>"
+
+
+def test_fenced_code_block_is_escaped_verbatim():
+    md = "```\nif a < b: pass\n```"
+    assert render_markdown(md) == "<pre><code>if a &lt; b: pass</code></pre>"
+
+
+def test_unordered_list():
+    assert render_markdown("- one\n- two") == "<ul>\n<li>one</li>\n<li>two</li>\n</ul>"
+
+
+def test_ordered_list():
+    assert render_markdown("1. one\n2. two") == "<ol>\n<li>one</li>\n<li>two</li>\n</ol>"
+
+
+def test_task_list_items_render_checkboxes():
+    out = render_markdown("- [ ] todo\n- [x] done")
+    assert '<li class="task"><input type="checkbox" disabled> todo</li>' in out
+    assert '<li class="task"><input type="checkbox" checked disabled> done</li>' in out
+
+
+def test_blockquote():
+    assert render_markdown("> quoted **b**") == "<blockquote>quoted <strong>b</strong></blockquote>"

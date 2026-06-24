@@ -46,3 +46,72 @@ def render_inline(text: str) -> str:
     text = _ITALIC.sub(r"<em>\1</em>", text)
     text = re.sub(r"\x00(\d+)\x00", lambda m: codes[int(m.group(1))], text)
     return text
+
+
+_HEADING = re.compile(r"(#{1,6})\s+(.*)$")
+_ULI = re.compile(r"\s*[-*+]\s+(.*)$")
+_OLI = re.compile(r"\s*\d+[.)]\s+(.*)$")
+_TASK = re.compile(r"\s*[-*+]\s+\[([ xX])\]\s+(.*)$")
+_BQ = re.compile(r">\s?(.*)$")
+
+
+def _starts_block(line: str) -> bool:
+    return bool(_HEADING.match(line) or _ULI.match(line) or _OLI.match(line)
+                or line.startswith("```") or line.startswith(">") or "|" in line)
+
+
+def _render_li(text: str) -> str:
+    task = _TASK.match(text)
+    if task:
+        checked = " checked" if task.group(1) in ("x", "X") else ""
+        return ('<li class="task"><input type="checkbox"%s disabled> %s</li>'
+                % (checked, render_inline(task.group(2).strip())))
+    body = (_ULI.match(text) or _OLI.match(text)).group(1)
+    return "<li>" + render_inline(body.strip()) + "</li>"
+
+
+def _consume_list(lines: list[str], i: int) -> tuple[str, int]:
+    ordered = bool(_OLI.match(lines[i]) and not _ULI.match(lines[i]))
+    items: list[str] = []
+    while i < len(lines) and (_ULI.match(lines[i]) or _OLI.match(lines[i])):
+        items.append(_render_li(lines[i]))
+        i += 1
+    tag = "ol" if ordered else "ul"
+    return "<%s>\n%s\n</%s>" % (tag, "\n".join(items), tag), i
+
+
+def render_markdown(text: str) -> str:
+    lines = text.replace("\r\n", "\n").replace("\r", "\n").split("\n")
+    out: list[str] = []
+    i, n = 0, len(lines)
+    while i < n:
+        line = lines[i]
+        if line.startswith("```"):
+            i += 1
+            buf: list[str] = []
+            while i < n and not lines[i].startswith("```"):
+                buf.append(lines[i]); i += 1
+            i += 1                                    # skip the closing fence (or run off end)
+            out.append("<pre><code>" + _esc("\n".join(buf)) + "</code></pre>")
+            continue
+        h = _HEADING.match(line)
+        if h:
+            lvl = len(h.group(1))
+            out.append("<h%d>%s</h%d>" % (lvl, render_inline(h.group(2).strip()), lvl))
+            i += 1; continue
+        if line.startswith(">"):
+            buf = []
+            while i < n and lines[i].startswith(">"):
+                buf.append(_BQ.match(lines[i]).group(1)); i += 1
+            out.append("<blockquote>" + render_inline(" ".join(b for b in buf if b)) + "</blockquote>")
+            continue
+        if _ULI.match(line) or _OLI.match(line):
+            block, i = _consume_list(lines, i)
+            out.append(block); continue
+        if line.strip() == "":
+            i += 1; continue
+        buf = []
+        while i < n and lines[i].strip() != "" and not _starts_block(lines[i]):
+            buf.append(lines[i]); i += 1
+        out.append("<p>" + render_inline(" ".join(buf)) + "</p>")
+    return "\n".join(out)
