@@ -13,7 +13,7 @@ def test_theme_has_dark_serious_palette():
 def test_css_variables_is_a_root_block_with_every_token():
     css = css_variables()
     assert css.startswith(":root{")
-    for token in ("--bg", "--ink", "--accent", "--teal", "--gold", "--ok", "--muted"):
+    for token in ("--bg", "--ink", "--accent", "--teal", "--gold", "--ok", "--muted", "--hairline", "--font-body", "--font-mono"):
         assert token in css
 
 
@@ -21,5 +21,5 @@ def test_svg_style_references_palette_and_role_classes():
     style = svg_style()
     assert THEME.bg in style
     # one class per structural role + edge confidence classes
-    for cls in (".role-entrypoint", ".role-hub", ".edge-high", ".edge-low"):
+    for cls in (".role-entrypoint", ".role-orchestrator", ".role-hub", ".role-library", ".role-leaf", ".role-isolated", ".role-external", ".edge-high", ".edge-moderate", ".edge-low", ".edge-external", ".edge-back", "svg{"):
         assert cls in style

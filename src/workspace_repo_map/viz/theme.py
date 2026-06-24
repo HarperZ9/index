@@ -50,11 +50,11 @@ def svg_style() -> str:
     )
     return (
         f"svg{{background-color:{t.bg};}}"
-        f"text{{font-family:{t.font_mono};fill:{t.ink};}}"
+        f"text{{font-family:{t.font_mono};fill:{t.ink};}} /* labels are identifiers, use monospace not font-body */"
         f"rect{{stroke:{t.hairline};}}"
         f"{roles}"
         f".edge{{fill:none;stroke:{t.muted};}}"
-        f".edge-high{{stroke:{t.ok};stroke-dasharray:none;}}"
+        f".edge-high{{stroke:{t.ok};}}"
         f".edge-moderate{{stroke:{t.gold};stroke-dasharray:5 3;}}"
         f".edge-low{{stroke:{t.muted};stroke-dasharray:2 3;}}"
         f".edge-external{{stroke:{t.hairline};}}"
