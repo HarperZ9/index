@@ -6,9 +6,10 @@ from .charts import render_charts
 from .html import render_html
 from .manifest import render_manifest
 from .atlas_layout import build_atlas_layout
+from .atlas_svg import render_atlas_svg
 
 __all__ = [
     "build_layout", "render_svg", "render_mermaid",
     "render_charts", "render_html", "render_manifest",
-    "build_atlas_layout",
+    "build_atlas_layout", "render_atlas_svg",
 ]
