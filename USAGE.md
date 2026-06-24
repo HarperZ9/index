@@ -1,13 +1,13 @@
 # Usage
 
-`workspace-repo-map` scans a workspace root for Git repositories and emits a compact
-JSON inventory map. It ships a CLI (`workspace-repo-map`) and a small importable Python
+`index` scans a workspace root for Git repositories and emits a compact
+JSON inventory map. It ships a CLI (`index`) and a small importable Python
 API. Runtime dependencies: none. Python: 3.11+.
 
 ## Install
 
 ```bash
-python -m pip install workspace-repo-map
+python -m pip install index-graph
 ```
 
 Or from a checkout (editable):
@@ -18,30 +18,30 @@ python -m pip install -e .
 
 ## CLI
 
-The console script is `workspace-repo-map` (equivalently `python -m workspace_repo_map`).
+The console script is `index` (equivalently `python -m index_graph`).
 
 ```text
-workspace-repo-map [--root ROOT] [--output OUTPUT] [--json]
-                   [--config CONFIG] [--jobs JOBS] [--version]
+index [--root ROOT] [--output OUTPUT] [--json]
+      [--config CONFIG] [--jobs JOBS] [--version]
 ```
 
 | Flag        | Default                          | Meaning                                              |
 | ----------- | -------------------------------- | ---------------------------------------------------- |
 | `--root`    | current directory                | Workspace root to scan.                              |
-| `--output`  | `<root>/WORKSPACE-REPO-MAP.json` | Output path (ignored when `--json` is given).        |
+| `--output`  | `<root>/INDEX.json` | Output path (ignored when `--json` is given).        |
 | `--json`    | off                              | Print the JSON map to stdout instead of writing it.  |
-| `--config`  | `<root>/.repomap.toml` if present | Path to a `.repomap.toml`. Missing explicit path is fatal. |
+| `--config`  | `<root>/.index.toml` if present | Path to a `.index.toml`. Missing explicit path is fatal. |
 | `--jobs`    | config / CPU heuristic           | Override the parallel git worker count (must be ≥ 1).|
-| `--version` | —                                | Print `workspace-repo-map 0.3.0` and exit.           |
+| `--version` | —                                | Print `index 1.0.0` and exit.           |
 
 Classification with no config falls back to a remote-host heuristic: `local` (no
 remote), `public` (origin host in the known public set), or `private`. Supply a
-`.repomap.toml` (see `example.repomap.toml`) for ordered path-glob rules.
+`.index.toml` (see `example.index.toml`) for ordered path-glob rules.
 
 ### Example 1 — print a map to stdout
 
 ```bash
-workspace-repo-map --root ./my-workspace --json
+index --root ./my-workspace --json
 ```
 
 Expected output (illustrative — paths, hashes, and timestamps vary):
@@ -49,7 +49,7 @@ Expected output (illustrative — paths, hashes, and timestamps vary):
 ```json
 {
   "schema_version": 1,
-  "tool_version": "0.3.0",
+  "tool_version": "1.0.0",
   "generated_at": "2026-06-18T10:16:44-07:00",
   "root_sha256_prefix": "617a55395ac0d599",
   "absolute_paths_included": false,
@@ -79,13 +79,13 @@ Expected output (illustrative — paths, hashes, and timestamps vary):
 ### Example 2 — write a map file (default mode)
 
 ```bash
-workspace-repo-map --root ./my-workspace
+index --root ./my-workspace
 ```
 
 Expected output (illustrative):
 
 ```text
-wrote /path/to/my-workspace/WORKSPACE-REPO-MAP.json
+wrote /path/to/my-workspace/INDEX.json
 repos=2 dirty=0
 ```
 
@@ -94,7 +94,7 @@ The JSON file content matches the structure shown in Example 1.
 ### Example 3 — custom output path and worker count
 
 ```bash
-workspace-repo-map --root ./my-workspace --output ./inventory.json --jobs 8
+index --root ./my-workspace --output ./inventory.json --jobs 8
 ```
 
 Expected output (illustrative):
@@ -107,16 +107,16 @@ repos=2 dirty=0
 ### Example 4 — use an explicit config
 
 ```bash
-workspace-repo-map --root ./my-workspace --config ./example.repomap.toml --json
+index --root ./my-workspace --config ./example.index.toml --json
 ```
 
 Rules in the config are matched against each repo's workspace-relative path (first
 match wins) before the remote-host fallback. A `--config` path that does not exist is a
 fatal error (non-zero exit).
 
-## Configuration (`.repomap.toml`)
+## Configuration (`.index.toml`)
 
-Place a `.repomap.toml` at the workspace root (auto-discovered) or pass `--config PATH`.
+Place a `.index.toml` at the workspace root (auto-discovered) or pass `--config PATH`.
 Every section is optional; with no file, the neutral remote-host heuristic applies.
 
 ```toml
@@ -154,7 +154,7 @@ absolute paths and a `root` field and is meant only for maps that never leave th
 The package exposes a stable surface via `__all__`:
 
 ```python
-from workspace_repo_map import (
+from index_graph import (
     build_map, write_map, discover_repos,
     Map, RepoRow, SCHEMA_VERSION,
     Config, Rule, load_config, default_config,
@@ -176,7 +176,7 @@ Key entry points:
 
 ```python
 from pathlib import Path
-from workspace_repo_map import build_map, default_config, __version__
+from index_graph import build_map, default_config, __version__
 
 config = default_config()
 m = build_map(Path("./my-workspace"), config, __version__)
@@ -199,7 +199,7 @@ proj-b local main e4f1b0c
 ### Example — classify a single path
 
 ```python
-from workspace_repo_map import classify, default_config
+from index_graph import classify, default_config
 
 cfg = default_config()
 classify("proj-a", True, "https://github.com/example/proj-a.git", cfg)  # -> "public"
@@ -208,13 +208,13 @@ classify("proj-b", True, "", cfg)                                       # -> "lo
 
 ## Dependency graph & context pack
 
-`workspace-repo-map` can infer a repo→repo dependency graph from real code and emit a
+`index` can infer a repo→repo dependency graph from real code and emit a
 synthesis context pack with roles, relations, and extracted prose.
 
 ### `graph` subcommand
 
 ```text
-workspace-repo-map graph --root ROOT [--json]
+index graph --root ROOT [--json]
 ```
 
 | Flag     | Default           | Meaning                                                     |
@@ -251,7 +251,7 @@ line) that witnesses it and a confidence grade:
 ### `context` subcommand
 
 ```text
-workspace-repo-map context --root ROOT [--json] [--focus REPO] [--audit]
+index context --root ROOT [--json] [--focus REPO] [--audit]
 ```
 
 | Flag          | Default           | Meaning                                                         |
@@ -267,13 +267,13 @@ Exit codes:
 - `2` — `--focus <repo>` names a repo not found in the workspace; a near-match hint is
   printed to stderr.
 
-The map subcommand (`workspace-repo-map map`, or the legacy flat invocation
-`workspace-repo-map --root ...`) is unaffected.
+The map subcommand (`index map`, or the legacy flat invocation
+`index --root ...`) is unaffected.
 
 ### `viz` subcommand
 
 ```text
-workspace-repo-map viz --root ROOT [--format FORMAT] [--focus REPO] [--no-external] [--out PATH | --out-dir DIR]
+index viz --root ROOT [--format FORMAT] [--focus REPO] [--no-external] [--out PATH | --out-dir DIR]
 ```
 
 | Flag           | Default           | Meaning                                                                  |
@@ -304,7 +304,7 @@ workspace-repo-map viz --root ROOT [--format FORMAT] [--focus REPO] [--no-extern
 #### Example — render the full graph as HTML
 
 ```bash
-workspace-repo-map viz --root ./my-workspace
+index viz --root ./my-workspace
 ```
 
 Expected output: writes `/my-workspace/graph.html`; open it in any browser from `file://`.
@@ -312,13 +312,13 @@ Expected output: writes `/my-workspace/graph.html`; open it in any browser from 
 #### Example — render one repo's neighborhood as a Mermaid diagram
 
 ```bash
-workspace-repo-map viz --root ./my-workspace --focus my-app --format mermaid --out ./my-app-deps.mmd
+index viz --root ./my-workspace --focus my-app --format mermaid --out ./my-app-deps.mmd
 ```
 
 #### Example — batch render all formats with manifest
 
 ```bash
-workspace-repo-map viz --root ./my-workspace --format all --out-dir ./viz-output
+index viz --root ./my-workspace --format all --out-dir ./viz-output
 ```
 
 Expected: writes `viz-output/graph.{html,svg,mmd}`, `context.json`, and `context-manifest.json`.
