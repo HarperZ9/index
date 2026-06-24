@@ -1,4 +1,5 @@
 import hashlib
+import json
 
 from workspace_repo_map.viz.manifest import render_manifest
 from viz_fixtures import simple_pack
@@ -27,4 +28,15 @@ def test_hashes_match_artifact_bytes():
     m = render_manifest(simple_pack(), artifacts=arts, meta={"version": "0.4.0", "commit": "abc", "root": "/r"})
     assert m["renders"]["svg"]["sha256"] == hashlib.sha256(arts["svg"][1]).hexdigest()
     assert m["renders"]["svg"]["path"] == "graph.svg"
+    assert m["renders"]["mermaid"]["sha256"] == hashlib.sha256(arts["mermaid"][1]).hexdigest()
+    assert m["renders"]["mermaid"]["path"] == "graph.mmd"
+    assert m["renders"]["html"]["sha256"] == hashlib.sha256(arts["html"][1]).hexdigest()
+    assert m["renders"]["html"]["path"] == "graph.html"
     assert m["context_pack"]["sha256"] == hashlib.sha256(arts["context"][1]).hexdigest()
+
+
+def test_snapshot_sha256_is_canonical_hash_of_pack():
+    pack = simple_pack()
+    m = render_manifest(pack, artifacts=_artifacts(), meta={"version": "0.4.0", "commit": "abc", "root": "/r"})
+    expected = hashlib.sha256(json.dumps(pack, sort_keys=True, separators=(",", ":")).encode("utf-8")).hexdigest()
+    assert m["graph"]["snapshot_sha256"] == expected
