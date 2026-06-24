@@ -50,11 +50,11 @@ function apply(){$$('.node').forEach(g=>{g.classList.toggle('dim',!match(g.datas
 function detail(name){const r=idx[name]||{name,ecosystems:[],markers:[]};
  const outs=DATA.relations.filter(e=>e.from===name);
  const ins=DATA.relations.filter(e=>e.to===name);
- const sig=e=>(e.signals||[]).map(s=>`${esc(s.file)}${s.line?':'+s.line:''} ${esc(s.kind)}`).join('; ');
- $('#detail').innerHTML=`<h3>${esc(name)}</h3><div>roles: ${(DATA.roles[name]||[]).join(', ')||'—'}</div>
+ const sig=e=>(e.signals||[]).map(s=>`${esc(s.file)}${s.line?':'+esc(s.line):''} ${esc(s.kind)}`).join('; ');
+ $('#detail').innerHTML=`<h3>${esc(name)}</h3><div>roles: ${esc((DATA.roles[name]||[]).join(', '))||'—'}</div>
  <div>in ${ (DATA.salience[name]||{}).in_degree||0 } · out ${ (DATA.salience[name]||{}).out_degree||0 }</div>
- <h4>depends on</h4>${outs.map(e=>`<div>${esc(e.target_name)} [${e.confidence}] <small>${sig(e)}</small></div>`).join('')||'—'}
- <h4>depended on by</h4>${ins.map(e=>`<div>${esc(e.from)} [${e.confidence}]</div>`).join('')||'—'}`;}
+ <h4>depends on</h4>${outs.map(e=>`<div>${esc(e.target_name)} [${esc(e.confidence)}] <small>${sig(e)}</small></div>`).join('')||'—'}
+ <h4>depended on by</h4>${ins.map(e=>`<div>${esc(e.from)} [${esc(e.confidence)}]</div>`).join('')||'—'}`;}
 const tip=Object.assign(document.createElement('div'),{className:'tip',hidden:true});
 function edgeTip(p,x,y){const sg=JSON.parse(p.getAttribute('data-signals')||'[]');
  const conf=(p.className.baseVal.match(/edge-(high|moderate|low)/)||[])[1]||'declared';

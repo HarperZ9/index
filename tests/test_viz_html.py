@@ -107,3 +107,14 @@ def test_legend_present_with_roles_and_confidence_and_cycle():
     assert "high" in doc and "moderate" in doc  # confidence styles labelled
     assert "cycle" in doc                       # cycle marker explained
     assert "library" in doc                     # a role label
+
+
+def test_detail_panel_escapes_confidence_roles_and_line():
+    doc = _doc(simple_pack())
+    # the three previously-unescaped sinks must now route through esc()
+    assert "esc(e.confidence)" in doc
+    assert "esc(s.line)" in doc
+    assert "esc((DATA.roles[name]" in doc
+    # and the raw unescaped interpolations must be gone
+    assert "${e.confidence}" not in doc
+    assert "':'+s.line:" not in doc
