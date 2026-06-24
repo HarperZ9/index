@@ -1,8 +1,6 @@
 # Usage
 
-`index` scans a workspace root for Git repositories and emits a compact
-JSON inventory map. It ships a CLI (`index`) and a small importable Python
-API. Runtime dependencies: none. Python: 3.11+.
+`index` scans a workspace for Git repositories and shows you how they fit together. It began as a compact JSON inventory map, and it has grown into a small family of commands: the inventory map, a repo dependency graph built from real code evidence, a synthesis context pack, an interactive dependency dashboard, and `index atlas`, the two-layer map that brings your markdown docs in alongside the code. It ships a CLI (`index`) and a small importable Python API. There are no runtime dependencies, and it needs Python 3.11 or newer.
 
 ## Install
 
@@ -18,7 +16,7 @@ python -m pip install -e .
 
 ## CLI
 
-The console script is `index` (equivalently `python -m index_graph`).
+The console script is `index` (equivalently `python -m index_graph`). With no subcommand it runs `map`, which preserves the original flat invocation.
 
 ```text
 index [--root ROOT] [--output OUTPUT] [--json]
@@ -28,23 +26,21 @@ index [--root ROOT] [--output OUTPUT] [--json]
 | Flag        | Default                          | Meaning                                              |
 | ----------- | -------------------------------- | ---------------------------------------------------- |
 | `--root`    | current directory                | Workspace root to scan.                              |
-| `--output`  | `<root>/INDEX.json` | Output path (ignored when `--json` is given).        |
+| `--output`  | `<root>/INDEX.json`              | Output path (ignored when `--json` is given).        |
 | `--json`    | off                              | Print the JSON map to stdout instead of writing it.  |
-| `--config`  | `<root>/.index.toml` if present | Path to a `.index.toml`. Missing explicit path is fatal. |
-| `--jobs`    | config / CPU heuristic           | Override the parallel git worker count (must be ≥ 1).|
-| `--version` | —                                | Print `index 1.0.0` and exit.           |
+| `--config`  | `<root>/.index.toml` if present  | Path to a `.index.toml`. A missing explicit path is fatal. |
+| `--jobs`    | config or a CPU heuristic        | Override the parallel git worker count (must be at least 1). |
+| `--version` | n/a                              | Print the version (for example `index 1.0.0`) and exit. |
 
-Classification with no config falls back to a remote-host heuristic: `local` (no
-remote), `public` (origin host in the known public set), or `private`. Supply a
-`.index.toml` (see `example.index.toml`) for ordered path-glob rules.
+With no config, classification falls back to a remote-host heuristic: `local` (no remote), `public` (the origin host is in the known public set), or `private`. Supply a `.index.toml` (see `example.index.toml`) for ordered path-glob rules.
 
-### Example 1 — print a map to stdout
+### Example 1, print a map to stdout
 
 ```bash
 index --root ./my-workspace --json
 ```
 
-Expected output (illustrative — paths, hashes, and timestamps vary):
+Example output (yours will differ in paths, hashes, and timestamps):
 
 ```json
 {
@@ -76,13 +72,13 @@ Expected output (illustrative — paths, hashes, and timestamps vary):
 }
 ```
 
-### Example 2 — write a map file (default mode)
+### Example 2, write a map file (default mode)
 
 ```bash
 index --root ./my-workspace
 ```
 
-Expected output (illustrative):
+Example output:
 
 ```text
 wrote /path/to/my-workspace/INDEX.json
@@ -91,36 +87,33 @@ repos=2 dirty=0
 
 The JSON file content matches the structure shown in Example 1.
 
-### Example 3 — custom output path and worker count
+### Example 3, custom output path and worker count
 
 ```bash
 index --root ./my-workspace --output ./inventory.json --jobs 8
 ```
 
-Expected output (illustrative):
+Example output:
 
 ```text
 wrote /path/to/inventory.json
 repos=2 dirty=0
 ```
 
-### Example 4 — use an explicit config
+### Example 4, use an explicit config
 
 ```bash
 index --root ./my-workspace --config ./example.index.toml --json
 ```
 
-Rules in the config are matched against each repo's workspace-relative path (first
-match wins) before the remote-host fallback. A `--config` path that does not exist is a
-fatal error (non-zero exit).
+Rules in the config are matched against each repo's workspace-relative path (first match wins) before the remote-host fallback. A `--config` path that does not exist is a fatal error (non-zero exit).
 
 ## Configuration (`.index.toml`)
 
-Place a `.index.toml` at the workspace root (auto-discovered) or pass `--config PATH`.
-Every section is optional; with no file, the neutral remote-host heuristic applies.
+Place a `.index.toml` at the workspace root (auto-discovered) or pass `--config PATH`. Every section is optional, and with no file the neutral remote-host heuristic applies.
 
 ```toml
-# Ordered classification rules — first match wins. `pattern` is matched against each
+# Ordered classification rules, first match wins. `pattern` is matched against each
 # repo's workspace-relative POSIX path (and against top-level entry names).
 [[rule]]
 pattern = "oss/**"     # *  matches within one path segment (stops at "/")
@@ -143,11 +136,7 @@ portable    = true                   # false = absolute paths + a `root` field (
 annotations = { team = "infra" }     # arbitrary key/values emitted verbatim under "annotations"
 ```
 
-When no rule matches a repo, classification falls back to the remote host: no remote →
-`local`, a public-hosting domain (`github.com`, `gitlab.com`, `bitbucket.org`,
-`codeberg.org`, `git.sr.ht`) → `public`, otherwise → `private`. Credential-shaped material
-in remote URLs is redacted in **every** mode; `portable = false` additionally emits
-absolute paths and a `root` field and is meant only for maps that never leave the machine.
+When no rule matches a repo, classification falls back to the remote host. No remote becomes `local`, a public-hosting domain (`github.com`, `gitlab.com`, `bitbucket.org`, `codeberg.org`, `git.sr.ht`) becomes `public`, and anything else becomes `private`. Credential-shaped material in remote URLs is redacted in **every** mode. Setting `portable = false` additionally emits absolute paths and a `root` field, and is meant only for maps that never leave the machine.
 
 ## Python API
 
@@ -164,15 +153,13 @@ from index_graph import (
 
 Key entry points:
 
-- `build_map(root: Path, config: Config, tool_version: str) -> Map` — scan and return
-  the in-memory map.
-- `write_map(root, config, tool_version, output: Path) -> Map` — same, but also writes
-  pretty JSON to `output`.
-- `load_config(path: Path | None, root: Path) -> Config` / `default_config() -> Config`.
+- `build_map(root: Path, config: Config, tool_version: str) -> Map`. Scan and return the in-memory map.
+- `write_map(root, config, tool_version, output: Path) -> Map`. The same, but also writes pretty JSON to `output`.
+- `load_config(path: Path | None, root: Path) -> Config` and `default_config() -> Config`.
 - `classify(path: str, is_repo: bool, origin: str, config: Config) -> str`.
-- `Map.to_json()` / `RepoRow.to_json()` — plain-dict serialization.
+- `Map.to_json()` and `RepoRow.to_json()`. Plain-dict serialization.
 
-### Example — build a map in code
+### Example, build a map in code
 
 ```python
 from pathlib import Path
@@ -187,7 +174,7 @@ for row in m.repositories:
     print(row.path, row.class_, row.branch, row.head)
 ```
 
-Expected output (illustrative):
+Example output:
 
 ```text
 2 0
@@ -196,7 +183,7 @@ proj-a public main eb4e19b
 proj-b local main e4f1b0c
 ```
 
-### Example — classify a single path
+### Example, classify a single path
 
 ```python
 from index_graph import classify, default_config
@@ -206,32 +193,31 @@ classify("proj-a", True, "https://github.com/example/proj-a.git", cfg)  # -> "pu
 classify("proj-b", True, "", cfg)                                       # -> "local"
 ```
 
-## Dependency graph & context pack
+## Dependency graph and context pack
 
-`index` can infer a repo→repo dependency graph from real code and emit a
-synthesis context pack with roles, relations, and extracted prose.
+`index` can infer a repo to repo dependency graph from real code, and emit a synthesis context pack with roles, relations, and extracted prose.
 
 ### `graph` subcommand
 
 ```text
-index graph --root ROOT [--json]
+index graph --root ROOT [--json] [--cycles]
 ```
 
-| Flag     | Default           | Meaning                                                     |
-| -------- | ----------------- | ----------------------------------------------------------- |
-| `--root` | current directory | Workspace root to scan.                                     |
-| `--json` | off               | Emit a JSON array of relation objects instead of text.      |
+| Flag       | Default           | Meaning                                                     |
+| ---------- | ----------------- | ----------------------------------------------------------- |
+| `--root`   | current directory | Workspace root to scan.                                     |
+| `--json`   | off               | Emit a JSON array of relation objects instead of text.      |
+| `--cycles` | off               | Report dependency cycles instead of the full graph.         |
 
-Edges are derived from Python (`pyproject.toml`, `setup.cfg`, source imports) and
-JavaScript/TypeScript (`package.json`, source imports). Each edge carries the file (and
-line) that witnesses it and a confidence grade:
+Edges are derived from Python (`pyproject.toml`, `setup.cfg`, source imports) and JavaScript or TypeScript (`package.json`, source imports). Each edge carries the file (and line) that witnesses it, and a confidence grade:
 
-- `high` — both a declared dependency and an observed import agree.
-- `moderate` — a single signal (manifest-only or import-only).
-- `low` — name is ambiguous (two different repos expose the same normalized name) or the
-  target name is too short to resolve reliably.
+- `high`: both a declared dependency and an observed import agree.
+- `moderate`: a single signal, manifest-only or import-only.
+- `low`: the name is ambiguous (two different repos expose the same normalized name), or the target name is too short to resolve reliably.
 
-#### Example — `graph --json` output shape
+With `--cycles`, `index graph` lists any dependency cycles it finds and says so plainly when the graph is a clean DAG.
+
+#### Example, `graph --json` output shape
 
 ```json
 [
@@ -254,21 +240,19 @@ line) that witnesses it and a confidence grade:
 index context --root ROOT [--json] [--focus REPO] [--audit]
 ```
 
-| Flag          | Default           | Meaning                                                         |
-| ------------- | ----------------- | --------------------------------------------------------------- |
-| `--root`      | current directory | Workspace root to scan.                                         |
-| `--json`      | off               | Emit the context pack as JSON instead of Markdown.              |
-| `--focus REPO`| —                 | Emit only the named repo's dependency neighbourhood (bidirectional closure). |
-| `--audit`     | off               | Print only the salience-faithfulness audit (hubs + mismatches), not the pack. |
+| Flag           | Default           | Meaning                                                         |
+| -------------- | ----------------- | --------------------------------------------------------------- |
+| `--root`       | current directory | Workspace root to scan.                                         |
+| `--json`       | off               | Emit the context pack as JSON instead of Markdown.              |
+| `--focus REPO` | none              | Emit only the named repo's dependency neighborhood (bidirectional closure). |
+| `--audit`      | off               | Print only the salience-faithfulness audit (hubs and mismatches), not the pack. |
 
 Exit codes:
 
-- `0` — context pack written (or printed) successfully.
-- `2` — `--focus <repo>` names a repo not found in the workspace; a near-match hint is
-  printed to stderr.
+- `0`: the context pack was written or printed successfully.
+- `2`: `--focus <repo>` names a repo not found in the workspace. A near-match hint is printed to stderr.
 
-The map subcommand (`index map`, or the legacy flat invocation
-`index --root ...`) is unaffected.
+The map subcommand (`index map`, or the flat `index --root ...`) is unaffected.
 
 ### `viz` subcommand
 
@@ -277,56 +261,97 @@ index viz --root ROOT [--format FORMAT] [--focus REPO] [--no-external] [--out PA
 ```
 
 | Flag           | Default           | Meaning                                                                  |
-| -------------- | ----------------- | ---------------------------------------------------------------------- |
-| `--root`       | current directory | Workspace root to scan.                                                |
-| `--format`     | html              | Output format: `html`, `svg`, `mermaid`, or `all` (all formats + manifest metadata). |
-| `--focus REPO` | —                 | Render only the named repo's dependency neighborhood (bidirectional closure). |
-| `--no-external`| off               | Omit external (third-party) dependencies from the graph.               |
+| -------------- | ----------------- | ------------------------------------------------------------------------ |
+| `--root`       | current directory | Workspace root to scan.                                                  |
+| `--format`     | html              | Output format: `html`, `svg`, `mermaid`, or `all` (every format plus a manifest). |
+| `--focus REPO` | none              | Render only the named repo's dependency neighborhood (bidirectional closure). |
+| `--no-external`| off               | Omit external (third-party) dependencies from the graph.                 |
 | `--out PATH`   | `<root>/graph.html` (or format-dependent) | Write a single format to a specific file path. |
-| `--out-dir DIR`| `<root>/`         | Write all outputs to a directory.                                      |
+| `--out-dir DIR`| `<root>/`         | Write all outputs to a directory.                                        |
 
 #### Format details
 
-- **html** (default): Self-contained interactive dashboard with drag/pan zoom, color-coded nodes,
-  and bidirectional edge visibility. Opens directly from `file://` with no external URLs or
-  runtime dependencies. Double-render of the same input produces byte-identical output.
+- **html** (default): a self-contained interactive dashboard. Click a node to see its dependencies and evidence, filter by role and confidence, read an edge tooltip back to the witnessing file, and see cycles highlighted. It opens from `file://` with no external URLs and no runtime dependencies, and a double render of the same input is byte-identical. (Pan and zoom live in `index atlas`, below.)
+- **svg**: a standalone SVG network graph, good for embedding or printing. Self-contained and deterministic.
+- **mermaid**: Mermaid flowchart markup (`.mmd`). It renders in GitHub markdown and online Mermaid editors. Deterministic, though it needs a Mermaid renderer to produce the picture.
+- **all**: writes `graph.html`, `graph.svg`, `graph.mmd`, `context.json`, and `context-manifest.json`. The manifest holds artifact paths and per-file SHA-256 hashes, for auditing and for handing off to a static-site builder or asset verifier.
 
-- **svg**: Standalone SVG network graph (force-directed layout). Suitable for embedding or
-  printing. Also self-contained and deterministic.
-
-- **mermaid**: Mermaid flowchart markup (`.mmd`). Renders in GitHub markdown and online Mermaid
-  editors. Deterministic but depends on Mermaid renderer to produce visual output.
-
-- **all**: Writes `graph.html`, `graph.svg`, `graph.mmd`, `context.json`, and `context-manifest.json`.
-  The manifest contains artifact paths and per-file content hashes (SHA-256) for auditing and
-  downstream handoff (e.g., to a static site builder or asset verifier).
-
-#### Example — render the full graph as HTML
+#### Example, render the full graph as HTML
 
 ```bash
 index viz --root ./my-workspace
 ```
 
-Expected output: writes `/my-workspace/graph.html`; open it in any browser from `file://`.
+This writes `/my-workspace/graph.html`. Open it in any browser from `file://`.
 
-#### Example — render one repo's neighborhood as a Mermaid diagram
+#### Example, render one repo's neighborhood as a Mermaid diagram
 
 ```bash
 index viz --root ./my-workspace --focus my-app --format mermaid --out ./my-app-deps.mmd
 ```
 
-#### Example — batch render all formats with manifest
+#### Example, batch render all formats with a manifest
 
 ```bash
 index viz --root ./my-workspace --format all --out-dir ./viz-output
 ```
 
-Expected: writes `viz-output/graph.{html,svg,mmd}`, `context.json`, and `context-manifest.json`.
+This writes `viz-output/graph.{html,svg,mmd}`, `context.json`, and `context-manifest.json`.
+
+### `atlas` subcommand
+
+`index atlas` is the headline. It builds the same dependency graph and then layers your markdown documents on top of it, so the code and the prose that explains it sit on one map.
+
+```text
+index atlas --root ROOT [--format html] [--json] [--out PATH] [--no-external]
+```
+
+| Flag            | Default           | Meaning                                                                 |
+| --------------- | ----------------- | ----------------------------------------------------------------------- |
+| `--root`        | current directory | Workspace root to scan.                                                 |
+| `--format html` | none              | Render the interactive two-layer dashboard as one self-contained HTML file. |
+| `--json`        | off               | Print the two-layer pack as JSON (a strict superset of the context pack). |
+| `--out PATH`    | stdout            | Write the HTML to a file instead of printing it.                        |
+| `--no-external` | off               | Omit external (third-party) dependency nodes.                           |
+
+With neither `--format` nor `--json`, `atlas` prints a one-line summary with the repo, doc, and edge counts.
+
+The pack adds three keys on top of the context pack:
+
+- `docs`: one entry per markdown file, as `{ "id": <workspace-relative path>, "title": <first heading or filename>, "dir": <directory> }`.
+- `knowledge_edges`: the doc edges, each as `{ "type": "describes" | "links-to" | "mentions", "from": <doc id>, "to": <repo name or doc id>, "to_kind": "repo" | "doc" }`.
+- `knowledge_warnings`: any `[[wiki-link]]` that did not resolve to a repo or doc.
+
+The three doc edge types come from evidence, not inference. `describes` means the doc lives inside that repo's tree. `links-to` comes from a `[[wiki-link]]` in the body. `mentions` comes from a repo or doc name appearing in prose, and it is the weakest of the three, so it is deduped against the stronger two and dimmed in the dashboard.
+
+#### Example, the atlas pack shape
+
+```json
+{
+  "repos": [ "..." ],
+  "relations": [ "..." ],
+  "docs": [
+    { "id": "api/README.md", "title": "API", "dir": "api" },
+    { "id": "docs/architecture.md", "title": "Architecture", "dir": "docs" }
+  ],
+  "knowledge_edges": [
+    { "type": "describes", "from": "api/README.md", "to": "api", "to_kind": "repo" },
+    { "type": "links-to",  "from": "api/README.md", "to": "docs/architecture.md", "to_kind": "doc" }
+  ],
+  "knowledge_warnings": []
+}
+```
+
+#### Example, render the two-layer dashboard
+
+```bash
+index atlas --root ./my-workspace --format html --out atlas.html
+```
+
+Open `atlas.html` in any browser, offline. Pan and zoom the graph, search repos and doc titles together, click a doc to read its rendered markdown with clickable `[[links]]`, and double-click a node to focus its neighborhood. The whole file is self-contained, and the markdown is rendered server-side and escaped, so untrusted doc content cannot inject anything.
 
 ## Notes
 
-- This CLI is agent assisted. Review output before sharing it in public.
-- Maps are portable by default: repo paths are root-relative, the absolute root is
-  replaced by a short hash prefix, and credential-shaped material in remote URLs is
-  redacted.
+- This CLI is agent assisted. Review the output before sharing it in public.
+- Maps are portable by default. Repo paths are root-relative, the absolute root is replaced by a short hash prefix, and credential-shaped material in remote URLs is redacted.
 - The output schema is versioned (`schema_version: 1`).
