@@ -27,6 +27,7 @@ border:1px solid var(--hairline);border-radius:6px;margin-bottom:.6rem}
 
 _JS = """
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const state={q:'',roles:new Set(),conf:new Set(),ext:true};
 const idx={};DATA.repos.forEach(r=>idx[r.name]=r);
 function match(name){const r=idx[name];if(!r)return state.ext;
@@ -40,11 +41,11 @@ function apply(){$$('.node').forEach(g=>{g.classList.toggle('dim',!match(g.datas
 function detail(name){const r=idx[name]||{name,ecosystems:[],markers:[]};
  const outs=DATA.relations.filter(e=>e.from===name);
  const ins=DATA.relations.filter(e=>e.to===name);
- const sig=e=>(e.signals||[]).map(s=>`${s.file}${s.line?':'+s.line:''} ${s.kind}`).join('; ');
- $('#detail').innerHTML=`<h3>${name}</h3><div>roles: ${(DATA.roles[name]||[]).join(', ')||'—'}</div>
+ const sig=e=>(e.signals||[]).map(s=>`${esc(s.file)}${s.line?':'+s.line:''} ${esc(s.kind)}`).join('; ');
+ $('#detail').innerHTML=`<h3>${esc(name)}</h3><div>roles: ${(DATA.roles[name]||[]).join(', ')||'—'}</div>
  <div>in ${ (DATA.salience[name]||{}).in_degree||0 } · out ${ (DATA.salience[name]||{}).out_degree||0 }</div>
- <h4>depends on</h4>${outs.map(e=>`<div>${e.target_name} [${e.confidence}] <small>${sig(e)}</small></div>`).join('')||'—'}
- <h4>depended on by</h4>${ins.map(e=>`<div>${e.from} [${e.confidence}]</div>`).join('')||'—'}`;}
+ <h4>depends on</h4>${outs.map(e=>`<div>${esc(e.target_name)} [${e.confidence}] <small>${sig(e)}</small></div>`).join('')||'—'}
+ <h4>depended on by</h4>${ins.map(e=>`<div>${esc(e.from)} [${e.confidence}]</div>`).join('')||'—'}`;}
 function wire(){
  $('#search').addEventListener('input',e=>{state.q=e.target.value.toLowerCase();apply();});
  $$('.chip[data-role]').forEach(c=>c.addEventListener('click',()=>{
@@ -59,7 +60,7 @@ document.addEventListener('DOMContentLoaded',wire);
 
 
 def render_html(pack: dict, *, svg: str, charts: dict[str, str]) -> str:
-    data = json.dumps(pack, sort_keys=True, separators=(",", ":"))
+    data = json.dumps(pack, sort_keys=True, separators=(",", ":")).replace("<", "\\u003c")
     roles = sorted({(rs or ["isolated"])[0] for rs in pack.get("roles", {}).values()})
     chips = "".join(
         f'<button class="chip" data-role="{r}" aria-pressed="false">{r}</button>' for r in roles

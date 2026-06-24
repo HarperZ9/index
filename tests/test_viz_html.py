@@ -31,7 +31,21 @@ def test_is_self_contained_no_external_urls():
     assert set(urls) <= {"http://www.w3.org/2000/svg"}
     assert "cdn" not in doc.lower()
     assert "<link" not in doc.lower()
+    assert "@import" not in doc
+    assert re.search(r'''(?:href|src|url\()\s*["']?//''', doc) is None
 
 
 def test_render_is_deterministic():
     assert _doc(simple_pack()) == _doc(simple_pack())
+
+
+def test_script_breakout_name_is_neutralized():
+    bad_name = "x</script>y"
+    pack = {
+        "repos": [{"name": bad_name}],
+        "roles": {bad_name: ["service"]},
+        "salience": {bad_name: {"in_degree": 0, "out_degree": 0}},
+        "relations": [],
+    }
+    doc = render_html(pack, svg=render_svg(build_layout(pack)), charts=render_charts(pack))
+    assert doc.count("</script>") == 1
