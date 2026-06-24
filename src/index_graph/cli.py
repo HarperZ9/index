@@ -13,7 +13,7 @@ from .context.pack import closure, focus_subgraph, render_text, to_json
 from .graph.build import build_graph
 from .scan import build_map, discover_repos, write_map
 
-_SUBCOMMANDS = {"map", "graph", "context", "viz"}
+_SUBCOMMANDS = {"map", "graph", "context", "viz", "atlas"}
 
 
 def _add_map_args(p: argparse.ArgumentParser) -> None:
@@ -52,6 +52,10 @@ def build_parser() -> argparse.ArgumentParser:
     v.add_argument("--no-external", action="store_true")
     v.add_argument("--out", default=None)
     v.add_argument("--out-dir", default=None)
+
+    a = sub.add_parser("atlas", help="Two-layer code + knowledge map (repos + docs).")
+    a.add_argument("--root", type=Path, default=Path.cwd())
+    a.add_argument("--json", action="store_true")
     return parser
 
 
@@ -77,6 +81,29 @@ def _cmd_map(args) -> int:
         data = write_map(root, config, __version__, output)
         print(f"wrote {output}")
         print(f"repos={data.repo_count} dirty={data.dirty_count}")
+    return 0
+
+
+def _cmd_atlas(args) -> int:
+    from .knowledge.atlas import build_atlas_pack
+    from .knowledge.docs import discover_docs
+    root = args.root.resolve()
+    if not root.is_dir():
+        raise SystemExit(f"root not found: {root}")
+    repo_paths = _repo_paths(root)
+
+    def _rel(p: Path) -> str:
+        r = p.resolve().relative_to(root).as_posix()
+        return "" if r == "." else r          # a repo AT the root -> "" dir
+
+    repo_dirs = {name: _rel(p) for name, p in repo_paths.items()}
+    graph = build_graph(repo_paths)
+    pack = build_atlas_pack(graph, discover_docs(root), repo_dirs)
+    if args.json:
+        print(json.dumps(pack, indent=2))
+    else:
+        print(f"repos={len(pack['repos'])} docs={len(pack['docs'])} "
+              f"knowledge_edges={len(pack['knowledge_edges'])}")
     return 0
 
 
@@ -199,6 +226,8 @@ def main(argv: list[str] | None = None) -> int:
             build_parser().parse_args(raw[:1])  # prints and exits
         raw = ["map", *raw]
     args = build_parser().parse_args(raw)
+    if args.cmd == "atlas":
+        return _cmd_atlas(args)
     if args.cmd == "graph":
         return _cmd_graph(args)
     if args.cmd == "context":
