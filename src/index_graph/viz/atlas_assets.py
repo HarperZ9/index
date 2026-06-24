@@ -67,9 +67,25 @@ let trail=[];
 function pushTrail(node){if(trail.length&&trail[trail.length-1].id===node.id)return;trail.push(node);renderTrail();}
 function renderTrail(){$('#trail').innerHTML=trail.map((n,i)=>`<a data-i="${i}">${esc(n.id)}</a>`).join(' › ');
  $$('#trail a').forEach(a=>a.addEventListener('click',()=>{const n=trail[+a.dataset.i];trail=trail.slice(0,+a.dataset.i);go(n.kind,n.id);}));}
+let view={k:1,tx:0,ty:0};
+function applyView(){const vp=$('#viewport');if(vp)vp.setAttribute('transform',`translate(${view.tx},${view.ty}) scale(${view.k})`);}
+function svgPt(svg,cx,cy){const r=svg.getBoundingClientRect();const vb=svg.viewBox.baseVal;
+ return {x:(cx-r.left)/r.width*vb.width,y:(cy-r.top)/r.height*vb.height};}
+function wireZoom(){const stage=$('#stage'),svg=stage&&stage.querySelector('svg');if(!svg)return;
+ svg.addEventListener('wheel',ev=>{ev.preventDefault();const p=svgPt(svg,ev.clientX,ev.clientY);
+  const f=ev.deltaY<0?1.1:1/1.1,nk=Math.min(8,Math.max(.2,view.k*f));
+  view.tx=p.x-(p.x-view.tx)*(nk/view.k);view.ty=p.y-(p.y-view.ty)*(nk/view.k);view.k=nk;applyView();},{passive:false});
+ let drag=null;
+ svg.addEventListener('pointerdown',ev=>{drag={x:ev.clientX,y:ev.clientY,tx:view.tx,ty:view.ty};
+  stage.classList.add('grabbing');svg.setPointerCapture(ev.pointerId);});
+ svg.addEventListener('pointermove',ev=>{if(!drag)return;const r=svg.getBoundingClientRect(),vb=svg.viewBox.baseVal;
+  view.tx=drag.tx+(ev.clientX-drag.x)*vb.width/r.width;view.ty=drag.ty+(ev.clientY-drag.y)*vb.height/r.height;applyView();});
+ svg.addEventListener('pointerup',()=>{drag=null;stage.classList.remove('grabbing');});
+ $('#zoom-reset').addEventListener('click',()=>{view={k:1,tx:0,ty:0};applyView();});}
 function wire(){
  $$('.node').forEach(g=>g.addEventListener('click',()=>detailRepo(g.dataset.name)));
  $$('.docnode').forEach(g=>g.addEventListener('click',()=>detailDoc(g.dataset.doc)));
+ wireZoom();
 }
 document.addEventListener('DOMContentLoaded',wire);
 """

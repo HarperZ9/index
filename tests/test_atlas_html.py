@@ -63,3 +63,11 @@ def test_wikilink_navigation_is_wired():
 
 def test_render_is_deterministic():
     assert _doc(*simple_atlas()) == _doc(*simple_atlas())
+
+
+def test_pan_zoom_is_wired():
+    doc = _doc(*simple_atlas())
+    assert "function applyView" in doc
+    assert "#viewport" in doc
+    assert "zoom-reset" in doc
+    assert "wheel" in doc and "pointerdown" in doc
