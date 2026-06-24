@@ -1,0 +1,37 @@
+import re
+
+from workspace_repo_map.viz.layout import build_layout
+from workspace_repo_map.viz.svg import render_svg
+from workspace_repo_map.viz.charts import render_charts
+from workspace_repo_map.viz.html import render_html
+from viz_fixtures import simple_pack
+
+
+def _doc(pack):
+    return render_html(pack, svg=render_svg(build_layout(pack)), charts=render_charts(pack))
+
+
+def test_is_a_complete_html_document():
+    doc = _doc(simple_pack())
+    assert doc.lstrip().lower().startswith("<!doctype html>")
+    assert "</html>" in doc
+
+
+def test_embeds_data_svg_and_charts():
+    doc = _doc(simple_pack())
+    assert "const DATA =" in doc
+    assert "<svg" in doc
+    assert 'class="chart"' in doc
+
+
+def test_is_self_contained_no_external_urls():
+    doc = _doc(simple_pack())
+    urls = re.findall(r"https?://[^\s\"')]+", doc)
+    # the ONLY permitted http(s) token is the SVG XML namespace
+    assert set(urls) <= {"http://www.w3.org/2000/svg"}
+    assert "cdn" not in doc.lower()
+    assert "<link" not in doc.lower()
+
+
+def test_render_is_deterministic():
+    assert _doc(simple_pack()) == _doc(simple_pack())
