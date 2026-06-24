@@ -160,7 +160,7 @@ def _cmd_viz(args) -> int:
             "html": ("graph.html", files["graph.html"]),
             "context": ("context.json", files["context.json"]),
         }
-        meta = {"version": __version__, "commit": _head_commit(args.root), "root": str(args.root)}
+        meta = {"version": __version__, "commit": _head_commit(args.root.resolve()), "root": str(args.root)}
         manifest = viz.render_manifest(pack, artifacts=artifacts, meta=meta)
         (out_dir / "context-manifest.json").write_text(
             json.dumps(manifest, indent=2), encoding="utf-8"
