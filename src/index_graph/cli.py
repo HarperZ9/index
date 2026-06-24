@@ -56,6 +56,9 @@ def build_parser() -> argparse.ArgumentParser:
     a = sub.add_parser("atlas", help="Two-layer code + knowledge map (repos + docs).")
     a.add_argument("--root", type=Path, default=Path.cwd())
     a.add_argument("--json", action="store_true")
+    a.add_argument("--format", choices=["html"], default=None)
+    a.add_argument("--out", default=None)
+    a.add_argument("--no-external", action="store_true")
     return parser
 
 
@@ -98,7 +101,19 @@ def _cmd_atlas(args) -> int:
 
     repo_dirs = {name: _rel(p) for name, p in repo_paths.items()}
     graph = build_graph(repo_paths)
-    pack = build_atlas_pack(graph, discover_docs(root), repo_dirs)
+    docs = discover_docs(root)
+    pack = build_atlas_pack(graph, docs, repo_dirs)
+    if args.format == "html":
+        from . import viz
+        include_external = not args.no_external
+        svg = viz.render_atlas_svg(viz.build_atlas_layout(pack, include_external=include_external))
+        html = viz.render_atlas_html(pack, docs, svg=svg, include_external=include_external)
+        if args.out:
+            Path(args.out).write_text(html, encoding="utf-8")
+            print(f"wrote {args.out}")
+        else:
+            print(html)
+        return 0
     if args.json:
         print(json.dumps(pack, indent=2))
     else:
