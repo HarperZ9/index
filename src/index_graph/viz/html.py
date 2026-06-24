@@ -53,8 +53,8 @@ function detail(name){const r=idx[name]||{name,ecosystems:[],markers:[]};
 const tip=Object.assign(document.createElement('div'),{className:'tip',hidden:true});
 function edgeTip(p,x,y){const sg=JSON.parse(p.getAttribute('data-signals')||'[]');
  const conf=(p.className.baseVal.match(/edge-(high|moderate|low)/)||[])[1]||'declared';
- const ev=sg.map(s=>`${esc(s.file)}${s.line?':'+s.line:''} (${esc(s.kind)})`).join('<br>')||'manifest';
- tip.innerHTML=`<b>${esc(p.dataset.from)} → ${esc(p.dataset.to)}</b> · ${conf}<br>${ev}`;
+ const ev=sg.map(s=>`${esc(s.file)}${s.line?':'+esc(s.line):''} (${esc(s.kind)})`).join('<br>')||'manifest';
+ tip.innerHTML=`<b>${esc(p.dataset.from)} → ${esc(p.dataset.to)}</b> · ${esc(conf)}<br>${ev}`;
  tip.hidden=false;tip.style.left=(x+12)+'px';tip.style.top=(y+12)+'px';}
 function nbrs(name){const s=new Set([name]);DATA.relations.forEach(e=>{
  if(e.from===name&&e.to)s.add(e.to);if(e.to===name)s.add(e.from);});return s;}
