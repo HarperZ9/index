@@ -74,3 +74,21 @@ def test_cycle_edge_and_node_get_cycle_class():
     svg = render_svg(build_layout(pack))
     assert "edge-cycle" in svg
     assert "cycle" in svg  # node class
+
+
+def test_cycle_free_render_applies_no_cycle_class():
+    # the .edge-cycle/.node.cycle CSS rules are always in <style>; the constraint
+    # is that no ELEMENT carries the cycle class when the pack has no cycles.
+    import re
+    pack = {
+        "repos": [{"name": "a"}, {"name": "b"}],
+        "roles": {"a": ["hub"], "b": ["leaf"]},
+        "salience": {"a": {"in_degree": 0, "out_degree": 1},
+                     "b": {"in_degree": 1, "out_degree": 0}},
+        "cycles": [],
+        "relations": [{"from": "a", "to": "b", "confidence": "high",
+                       "external": False, "in_cycle": False, "signals": []}],
+    }
+    body = re.sub(r"<style>.*?</style>", "", render_svg(build_layout(pack)), flags=re.S)
+    assert "edge-cycle" not in body  # no cycle class on any edge path
+    assert "cycle" not in body       # no " cycle" class on any node group
