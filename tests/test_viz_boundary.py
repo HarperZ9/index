@@ -3,6 +3,7 @@ import sys
 from pathlib import Path
 
 VIZ_DIR = Path(__file__).resolve().parents[1] / "src" / "index_graph" / "viz"
+KNOWLEDGE_DIR = Path(__file__).resolve().parents[1] / "src" / "index_graph" / "knowledge"
 PRIVATE_ORGANS = {"statechain", "provenance", "ledger", "coherence_membrane"}
 STDLIB = set(sys.stdlib_module_names)
 
@@ -30,5 +31,12 @@ def test_no_viz_module_imports_a_private_organ():
 def test_viz_imports_only_stdlib_or_own_package():
     allowed = STDLIB | {"index_graph"}
     for path in VIZ_DIR.glob("*.py"):
+        for mod in _imports(path):
+            assert mod in allowed, f"{path.name} imports third-party {mod!r}"
+
+
+def test_knowledge_imports_only_stdlib_or_own_package():
+    allowed = STDLIB | {"index_graph"}
+    for path in KNOWLEDGE_DIR.glob("*.py"):
         for mod in _imports(path):
             assert mod in allowed, f"{path.name} imports third-party {mod!r}"

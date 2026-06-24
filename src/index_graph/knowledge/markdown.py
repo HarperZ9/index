@@ -31,6 +31,7 @@ def _link_sub(m: "re.Match") -> str:
 
 
 def render_inline(text: str) -> str:
+    text = text.replace("\x00", "")   # strip NUL so a doc body can't forge a code-span sentinel
     codes: list[str] = []
 
     def _stash(m: "re.Match") -> str:

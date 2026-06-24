@@ -89,3 +89,8 @@ def test_hostile_content_is_fully_escaped_no_breakout():
 def test_render_is_deterministic():
     md = "# T\n\n- a\n- b\n\n> q\n\n| x | y |\n| - | - |\n| 1 | 2 |"
     assert render_markdown(md) == render_markdown(md)
+
+
+def test_literal_null_bytes_do_not_forge_a_code_sentinel():
+    # a doc body with raw NUL + digits must not IndexError on the sentinel-restore step
+    assert render_inline("x\x000\x00y") == "x0y"
