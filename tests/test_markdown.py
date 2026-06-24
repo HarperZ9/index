@@ -67,3 +67,25 @@ def test_task_list_items_render_checkboxes():
 
 def test_blockquote():
     assert render_markdown("> quoted **b**") == "<blockquote>quoted <strong>b</strong></blockquote>"
+
+
+def test_pipe_table():
+    md = "| A | B |\n| --- | --- |\n| 1 | 2 |"
+    out = render_markdown(md)
+    assert "<table>" in out and "</table>" in out
+    assert "<th>A</th>" in out and "<th>B</th>" in out
+    assert "<td>1</td>" in out and "<td>2</td>" in out
+
+
+def test_hostile_content_is_fully_escaped_no_breakout():
+    md = "# <script>alert(1)</script>\n\n`</script>` and **<img src=x onerror=y>**"
+    out = render_markdown(md)
+    assert "<script>" not in out          # no raw opening tag survives
+    assert "</script>" not in out         # no raw closing tag survives
+    assert "&lt;script&gt;" in out
+    assert "onerror" in out and "<img" not in out  # the literal text is kept, but escaped
+
+
+def test_render_is_deterministic():
+    md = "# T\n\n- a\n- b\n\n> q\n\n| x | y |\n| - | - |\n| 1 | 2 |"
+    assert render_markdown(md) == render_markdown(md)

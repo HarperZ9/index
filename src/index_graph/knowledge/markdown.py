@@ -53,6 +53,7 @@ _ULI = re.compile(r"\s*[-*+]\s+(.*)$")
 _OLI = re.compile(r"\s*\d+[.)]\s+(.*)$")
 _TASK = re.compile(r"\s*[-*+]\s+\[([ xX])\]\s+(.*)$")
 _BQ = re.compile(r">\s?(.*)$")
+_TABLE_SEP = re.compile(r"^\s*\|?\s*:?-{1,}:?\s*(\|\s*:?-{1,}:?\s*)+\|?\s*$")
 
 
 def _starts_block(line: str) -> bool:
@@ -80,6 +81,25 @@ def _consume_list(lines: list[str], i: int) -> tuple[str, int]:
     return "<%s>\n%s\n</%s>" % (tag, "\n".join(items), tag), i
 
 
+def _is_table(lines: list[str], i: int) -> bool:
+    return ("|" in lines[i] and i + 1 < len(lines) and bool(_TABLE_SEP.match(lines[i + 1])))
+
+
+def _row_cells(line: str) -> list[str]:
+    return [c.strip() for c in line.strip().strip("|").split("|")]
+
+
+def _consume_table(lines: list[str], i: int) -> tuple[str, int]:
+    head = _row_cells(lines[i]); i += 2          # header row + separator row
+    body: list[str] = []
+    while i < len(lines) and "|" in lines[i] and lines[i].strip():
+        cells = _row_cells(lines[i])
+        body.append("<tr>" + "".join("<td>" + render_inline(c) + "</td>" for c in cells) + "</tr>")
+        i += 1
+    thead = "<tr>" + "".join("<th>" + render_inline(c) + "</th>" for c in head) + "</tr>"
+    return "<table>\n<thead>%s</thead>\n<tbody>%s</tbody>\n</table>" % (thead, "\n".join(body)), i
+
+
 def render_markdown(text: str) -> str:
     lines = text.replace("\r\n", "\n").replace("\r", "\n").split("\n")
     out: list[str] = []
@@ -105,6 +125,9 @@ def render_markdown(text: str) -> str:
                 buf.append(_BQ.match(lines[i]).group(1)); i += 1
             out.append("<blockquote>" + render_inline(" ".join(b for b in buf if b)) + "</blockquote>")
             continue
+        if _is_table(lines, i):
+            block, i = _consume_table(lines, i)
+            out.append(block); continue
         if _ULI.match(line) or _OLI.match(line):
             block, i = _consume_list(lines, i)
             out.append(block); continue
