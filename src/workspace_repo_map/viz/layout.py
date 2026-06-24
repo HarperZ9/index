@@ -48,6 +48,7 @@ class LaidEdge:
 class LayoutModel:
     nodes: tuple[LaidNode, ...]
     edges: tuple[LaidEdge, ...]
+    # Lists only PRESENT layers in ascending order; NOT index-aligned to ROLE_PRECEDENCE.
     layers: tuple[str, ...]
     width: float = 0.0
     height: float = 0.0

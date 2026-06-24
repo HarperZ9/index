@@ -27,12 +27,16 @@ def _id_map(names):
     return out
 
 
-def render_mermaid(pack: dict) -> str:
+def render_mermaid(pack: dict, *, include_external: bool = True) -> str:
     roles = pack.get("roles", {})
     lines = ["flowchart TD"]
     # deterministic node declarations
     internal = sorted(r["name"] for r in pack.get("repos", []))
-    externals = sorted({r["target_name"] for r in pack.get("relations", []) if r.get("external")})
+    externals = (
+        sorted({r["target_name"] for r in pack.get("relations", []) if r.get("external")})
+        if include_external
+        else []
+    )
     ids = _id_map(internal + externals)
     node_role: dict[str, str] = {}
     for name in internal:
@@ -42,12 +46,14 @@ def render_mermaid(pack: dict) -> str:
     for name in externals:
         node_role[name] = "external"
         lines.append(f'    {ids[name]}(("{name}"))')
-    # edges, deterministic order
+    # edges, deterministic order (skip external edges when include_external=False)
     rels = sorted(
         pack.get("relations", []),
         key=lambda r: (r["from"], (r["target_name"] if r.get("external") else r["to"]), r.get("confidence", "")),
     )
     for r in rels:
+        if r.get("external") and not include_external:
+            continue
         target = r["target_name"] if r.get("external") else r["to"]
         kinds = {s["kind"] for s in r.get("signals", []) if s.get("kind")}
         conf = r.get("confidence", "low")

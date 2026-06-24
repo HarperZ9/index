@@ -49,3 +49,25 @@ def test_script_breakout_name_is_neutralized():
     }
     doc = render_html(pack, svg=render_svg(build_layout(pack)), charts=render_charts(pack))
     assert doc.count("</script>") == 1
+
+
+def test_salience_audit_panel_renders_entries():
+    pack = simple_pack()
+    pack["salience_audit"] = [
+        {
+            "kind": "decorative-non-hub",
+            "node": "web",
+            "markers": ["entry"],
+            "in_degree": 0,
+            "hubs": [],
+            "note": "marked node is not the structural hub",
+        }
+    ]
+    doc = render_html(pack, svg=render_svg(build_layout(pack)), charts=render_charts(pack))
+    assert "salience audit" in doc
+    assert "web" in doc
+    assert "marked node is not the structural hub" in doc
+    # self-containment still holds
+    import re
+    urls = re.findall(r"https?://[^\s\"')]+", doc)
+    assert set(urls) <= {"http://www.w3.org/2000/svg"}

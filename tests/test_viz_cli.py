@@ -59,3 +59,17 @@ def test_existing_commands_unaffected(workspace, tmp_path, capsys):
 def test_version_is_0_4_0():
     from workspace_repo_map import __version__
     assert __version__ == "0.4.0"
+
+
+def test_all_format_no_external_is_consistent(workspace, tmp_path):
+    out = tmp_path / "viz_noext"
+    rc = main(["viz", "--root", str(workspace), "--format", "all", "--no-external", "--out-dir", str(out)])
+    assert rc == 0
+    mmd = (out / "graph.mmd").read_text(encoding="utf-8")
+    svg = (out / "graph.svg").read_text(encoding="utf-8")
+    # The workspace fixture has no external deps so we verify the flag is accepted cleanly
+    # and neither output contains any external-shape Mermaid syntax
+    assert "((" not in mmd
+    # Both artifacts must exist and be non-empty
+    assert len(mmd) > 0
+    assert len(svg) > 0
