@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+from xml.sax.saxutils import escape
 
 from .theme import css_variables
 
@@ -59,12 +60,25 @@ document.addEventListener('DOMContentLoaded',wire);
 """
 
 
+def _salience_audit_panel(pack: dict) -> str:
+    entries = pack.get("salience_audit", [])
+    rows = "".join(
+        f'<div class="audit-row"><b>{escape(str(e.get("node", "")))}</b>'
+        f' [{escape(str(e.get("kind", "")))}]'
+        f' — {escape(str(e.get("note", "")))}</div>'
+        for e in entries
+    )
+    body = rows if rows else '<div class="audit-row" style="opacity:.5">none</div>'
+    return f"<h4>salience audit</h4>{body}"
+
+
 def render_html(pack: dict, *, svg: str, charts: dict[str, str]) -> str:
     data = json.dumps(pack, sort_keys=True, separators=(",", ":")).replace("<", "\\u003c")
     roles = sorted({(rs or ["isolated"])[0] for rs in pack.get("roles", {}).values()})
     chips = "".join(
         f'<button class="chip" data-role="{r}" aria-pressed="false">{r}</button>' for r in roles
     )
+    audit_panel = _salience_audit_panel(pack)
     return (
         "<!doctype html>"
         '<html lang="en"><head><meta charset="utf-8">'
@@ -78,7 +92,8 @@ def render_html(pack: dict, *, svg: str, charts: dict[str, str]) -> str:
         '<aside><div id="detail">Select a node.</div>'
         f'<h4>confidence</h4>{charts["confidence"]}'
         f'<h4>roles</h4>{charts["roles"]}'
-        f'{charts["fanio"]}</aside></main>'
+        f'{charts["fanio"]}'
+        f'{audit_panel}</aside></main>'
         f"<script>const DATA = {data};{_JS}</script>"
         "</body></html>"
     )

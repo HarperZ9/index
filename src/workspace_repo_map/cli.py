@@ -141,13 +141,13 @@ def _cmd_viz(args) -> int:
         return viz.render_svg(viz.build_layout(pack, include_external=include_external))
 
     def _html() -> str:
-        return viz.render_html(pack, svg=_svg(), charts=viz.render_charts(pack))
+        return viz.render_html(pack, svg=_svg(), charts=viz.render_charts(pack, include_external=include_external))
 
     if args.format == "all":
         out_dir = Path(args.out_dir or ".")
         out_dir.mkdir(parents=True, exist_ok=True)
         files = {
-            "graph.mmd": viz.render_mermaid(pack).encode("utf-8"),
+            "graph.mmd": viz.render_mermaid(pack, include_external=include_external).encode("utf-8"),
             "graph.svg": _svg().encode("utf-8"),
             "graph.html": _html().encode("utf-8"),
             "context.json": json.dumps(pack, indent=2).encode("utf-8"),
@@ -167,7 +167,7 @@ def _cmd_viz(args) -> int:
         )
         return 0
 
-    text = {"svg": _svg, "mermaid": lambda: viz.render_mermaid(pack), "html": _html}[args.format]()
+    text = {"svg": _svg, "mermaid": lambda: viz.render_mermaid(pack, include_external=include_external), "html": _html}[args.format]()
     if args.out:
         Path(args.out).write_text(text, encoding="utf-8")
     else:

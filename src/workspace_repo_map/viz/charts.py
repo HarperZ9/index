@@ -27,9 +27,10 @@ def _bars(pairs: list[tuple[str, int]]) -> str:
     return '<div class="chart">' + "".join(rows) + "</div>"
 
 
-def render_charts(pack: dict) -> dict[str, str]:
+def render_charts(pack: dict, *, include_external: bool = True) -> dict[str, str]:
     rels = pack.get("relations", [])
-    conf = Counter(r.get("confidence", "low") for r in rels)
+    counted_rels = rels if include_external else [r for r in rels if not r.get("external")]
+    conf = Counter(r.get("confidence", "low") for r in counted_rels)
     confidence = _bars([(k, conf.get(k, 0)) for k in ("high", "moderate", "low")])
 
     roles = pack.get("roles", {})

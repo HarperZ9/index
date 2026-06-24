@@ -29,3 +29,10 @@ def test_fanio_lists_top_indegree_repo():
 
 def test_charts_are_deterministic():
     assert render_charts(simple_pack()) == render_charts(simple_pack())
+
+
+def test_no_external_excludes_external_edges_from_confidence():
+    charts = render_charts(simple_pack(), include_external=False)
+    counts = [int(x) for x in re.findall(r'data-count="(\d+)"', charts["confidence"])]
+    # simple_pack has 4 relations total (1 external); only 3 internal should be counted
+    assert sum(counts) == 3

@@ -56,3 +56,13 @@ def test_empty_pack_renders_header_only():
     out = render_mermaid({})
     assert out.splitlines()[0].strip() == "flowchart TD"
     assert "-->" not in out
+
+
+def test_no_external_omits_external_nodes_and_edges():
+    out = render_mermaid(simple_pack(), include_external=False)
+    # external dep must not appear at all
+    assert "requests" not in out
+    # no double-paren external-shape node
+    assert "((" not in out
+    # only internal edges remain (simple_pack has 3 internal + 1 external = 4 total)
+    assert out.count("-->") == 3
