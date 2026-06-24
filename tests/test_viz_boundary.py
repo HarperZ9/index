@@ -17,6 +17,11 @@ def _imports(path):
             yield node.module.split(".")[0]
 
 
+def test_boundary_scan_is_not_vacuous():
+    files = list(VIZ_DIR.glob("*.py"))
+    assert len(files) >= 6, f"VIZ_DIR resolved to {VIZ_DIR} with only {len(files)} .py files — scan would be vacuous"
+
+
 def test_no_viz_module_imports_a_private_organ():
     for path in VIZ_DIR.glob("*.py"):
         assert PRIVATE_ORGANS.isdisjoint(set(_imports(path))), path.name

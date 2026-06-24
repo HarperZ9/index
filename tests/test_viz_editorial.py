@@ -10,6 +10,7 @@ BANNED = ("keystone", "critical", "important", "should", "recommend", "best", "w
 def test_renderers_do_not_editorialize():
     pack = simple_pack()
     outputs = [render_mermaid(pack), render_svg(build_layout(pack))]
+    assert all(out.strip() for out in outputs), "a renderer produced empty output — editorial check would be vacuous"
     for out in outputs:
         low = out.lower()
         for word in BANNED:
