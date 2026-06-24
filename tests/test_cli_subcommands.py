@@ -47,14 +47,11 @@ def test_context_focus_known(workspace, capsys):
     assert rc == 0 and "## Relations" in out
 
 
-def test_graph_cycles_human(capsys):
-    import json as _json
-    from pathlib import Path
+def test_graph_cycles_human(capsys, tmp_path):
     from index_graph import cli
-    # build_graph takes a name->Path dict via _repo_paths; instead drive _cmd_graph
-    # through a temp workspace with a 2-cycle.
-    import tempfile, os
-    d = Path(tempfile.mkdtemp())
+    # build_graph takes a name->Path dict via _repo_paths; drive _cmd_graph
+    # through a temp workspace with a 2-cycle (tmp_path auto-cleaned).
+    d = tmp_path
     for repo, dep in (("alpha", "beta"), ("beta", "alpha")):
         r = d / repo
         (r / "src" / repo).mkdir(parents=True)
