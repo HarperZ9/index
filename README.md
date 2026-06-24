@@ -53,6 +53,7 @@ workspace-repo-map graph --root .                  # repo→repo dependency grap
 workspace-repo-map graph --root . --json           # ... as JSON; each edge carries its witness
 workspace-repo-map context --root .                # synthesis pack: roles + relations + prose
 workspace-repo-map context --root . --focus <repo> # one repo's dependency neighborhood
+workspace-repo-map viz --root .                    # render the graph as an interactive HTML dashboard, SVG, or Mermaid
 ```
 
 Edges are derived from Python and JavaScript/TypeScript manifests and source imports;

@@ -270,6 +270,59 @@ Exit codes:
 The map subcommand (`workspace-repo-map map`, or the legacy flat invocation
 `workspace-repo-map --root ...`) is unaffected.
 
+### `viz` subcommand
+
+```text
+workspace-repo-map viz --root ROOT [--format FORMAT] [--focus REPO] [--no-external] [--out PATH | --out-dir DIR]
+```
+
+| Flag           | Default           | Meaning                                                                  |
+| -------------- | ----------------- | ---------------------------------------------------------------------- |
+| `--root`       | current directory | Workspace root to scan.                                                |
+| `--format`     | html              | Output format: `html`, `svg`, `mermaid`, or `all` (all formats + manifest metadata). |
+| `--focus REPO` | —                 | Render only the named repo's dependency neighborhood (bidirectional closure). |
+| `--no-external`| off               | Omit external (third-party) dependencies from the graph.               |
+| `--out PATH`   | `<root>/graph.html` (or format-dependent) | Write a single format to a specific file path. |
+| `--out-dir DIR`| `<root>/`         | Write all outputs to a directory.                                      |
+
+#### Format details
+
+- **html** (default): Self-contained interactive dashboard with drag/pan zoom, color-coded nodes,
+  and bidirectional edge visibility. Opens directly from `file://` with no external URLs or
+  runtime dependencies. Double-render of the same input produces byte-identical output.
+
+- **svg**: Standalone SVG network graph (force-directed layout). Suitable for embedding or
+  printing. Also self-contained and deterministic.
+
+- **mermaid**: Mermaid flowchart markup (`.mmd`). Renders in GitHub markdown and online Mermaid
+  editors. Deterministic but depends on Mermaid renderer to produce visual output.
+
+- **all**: Writes `graph.html`, `graph.svg`, `graph.mmd`, `context.json`, and `context-manifest.json`.
+  The manifest contains artifact paths and per-file content hashes (SHA-256) for auditing and
+  downstream handoff (e.g., to a static site builder or asset verifier).
+
+#### Example — render the full graph as HTML
+
+```bash
+workspace-repo-map viz --root ./my-workspace
+```
+
+Expected output: writes `/my-workspace/graph.html`; open it in any browser from `file://`.
+
+#### Example — render one repo's neighborhood as a Mermaid diagram
+
+```bash
+workspace-repo-map viz --root ./my-workspace --focus my-app --format mermaid --out ./my-app-deps.mmd
+```
+
+#### Example — batch render all formats with manifest
+
+```bash
+workspace-repo-map viz --root ./my-workspace --format all --out-dir ./viz-output
+```
+
+Expected: writes `viz-output/graph.{html,svg,mmd}`, `context.json`, and `context-manifest.json`.
+
 ## Notes
 
 - This CLI is agent assisted. Review output before sharing it in public.
