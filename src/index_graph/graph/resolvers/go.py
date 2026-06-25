@@ -15,6 +15,9 @@ _GROUPED_IMPORT = re.compile(r'^\s*(?:[A-Za-z0-9_.]+\s+)?"([^"]+)"')
 
 class GoResolver:
     name = "go"
+    # files whose content feeds the graph (read by the freshness fingerprint)
+    fingerprint_names = ("go.mod",)
+    fingerprint_suffixes = (".go",)
 
     def matches(self, repo_root: Path) -> bool:
         return (repo_root / "go.mod").is_file()

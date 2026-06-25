@@ -15,6 +15,9 @@ _SPEC_NAME = re.compile(r"""(?:spec|s)\.name\s*=\s*['"]([^'"]+)['"]""")
 
 class RubyResolver:
     name = "ruby"
+    # files whose content feeds the graph (read by the freshness fingerprint)
+    fingerprint_names = ("Gemfile",)
+    fingerprint_suffixes = (".rb", ".gemspec")
 
     def matches(self, repo_root: Path) -> bool:
         if (repo_root / "Gemfile").is_file():

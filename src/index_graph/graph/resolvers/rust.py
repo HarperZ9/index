@@ -17,6 +17,9 @@ _INTRA = {"crate", "self", "super"}   # path roots that name the current crate, 
 
 class RustResolver:
     name = "rust"
+    # files whose content feeds the graph (read by the freshness fingerprint)
+    fingerprint_names = ("Cargo.toml",)
+    fingerprint_suffixes = (".rs",)
 
     def matches(self, repo_root: Path) -> bool:
         return (repo_root / "Cargo.toml").is_file()

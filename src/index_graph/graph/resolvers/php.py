@@ -20,6 +20,9 @@ _USE_STMT = re.compile(
 
 class PhpResolver:
     name = "php"
+    # files whose content feeds the graph (read by the freshness fingerprint)
+    fingerprint_names = ("composer.json",)
+    fingerprint_suffixes = (".php",)
 
     def matches(self, repo_root: Path) -> bool:
         return (repo_root / "composer.json").is_file()

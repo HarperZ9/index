@@ -14,7 +14,8 @@ from .graph.build import build_graph
 from .scan import build_map, discover_repos, write_map
 
 _SUBCOMMANDS = {"map", "graph", "context", "viz", "atlas",
-                "internals", "check", "snapshot", "drift", "router", "verify", "mcp"}
+                "internals", "check", "snapshot", "drift", "router", "verify",
+                "freshness", "mcp"}
 
 
 def _add_map_args(p: argparse.ArgumentParser) -> None:
@@ -70,6 +71,8 @@ def build_parser() -> argparse.ArgumentParser:
     ck = sub.add_parser("check", help="Check structure against the declared [architecture] criterion.")
     ck.add_argument("--root", type=Path, default=Path.cwd())
     ck.add_argument("--internals", action="store_true", help="Include intra-repo module checks.")
+    ck.add_argument("--freshness", action="store_true",
+                    help="Stamp the certificate with a workspace content fingerprint.")
     ck.add_argument("--json", action="store_true")
     ck.add_argument("--config", type=Path, default=None)
 
@@ -91,6 +94,13 @@ def build_parser() -> argparse.ArgumentParser:
     vf.add_argument("--depends", default=None, help="claim 'A -> B' (A depends on B)")
     vf.add_argument("--exists", default=None, help="claim that repo NAME exists")
     vf.add_argument("--json", action="store_true")
+
+    fr = sub.add_parser("freshness",
+                        help="Has the workspace changed since a certificate was minted? (FRESH/STALE).")
+    fr.add_argument("--cert", type=Path, required=True,
+                    help="A certificate JSON carrying a freshness stamp (index check --freshness).")
+    fr.add_argument("--root", type=Path, default=Path.cwd())
+    fr.add_argument("--json", action="store_true")
 
     sub.add_parser("mcp", help="Serve the MCP-shaped stdio protocol face (JSON-RPC over stdin/stdout).")
     return parser
@@ -164,7 +174,7 @@ def _cmd_graph(args) -> int:
         if args.json:
             print(json.dumps({"cycles": [list(c) for c in cycles]}, indent=2))
         elif not cycles:
-            print("no cycles — clean DAG")
+            print("no cycles, a clean DAG")
         else:
             print(f"{len(cycles)} cycle(s):")
             for c in cycles:
@@ -186,14 +196,14 @@ def _cmd_context(args) -> int:
         data = to_json(graph)
         print(f"salience-faithfulness warnings: {len(data['salience_audit'])}")
         for w in data["salience_audit"]:
-            print(f"  [{w['kind']}] {w['node']} (in={w['in_degree']}) — {w['note']}")
+            print(f"  [{w['kind']}] {w['node']} (in={w['in_degree']}): {w['note']}")
         return 0
     preserved = None
     if args.focus:
         if args.focus not in names:
             near = [n for n in names if args.focus.lower() in n.lower()]
             print(f"unknown project: {args.focus!r}"
-                  + (f" — did you mean: {', '.join(sorted(near))}?" if near else ""))
+                  + (f". Did you mean: {', '.join(sorted(near))}?" if near else ""))
             return 2
         keep = closure(list(graph.edges), args.focus, hops=args.hops)
         preserved = preservation(list(graph.edges), keep, args.focus, args.hops)
@@ -239,7 +249,7 @@ def _cmd_viz(args) -> int:
         if args.focus not in names:
             near = [n for n in names if args.focus.lower() in n.lower()]
             print(f"unknown project: {args.focus!r}"
-                  + (f" — did you mean: {', '.join(sorted(near))}?" if near else ""))
+                  + (f". Did you mean: {', '.join(sorted(near))}?" if near else ""))
             return 2
         graph = focus_subgraph(graph, closure(list(graph.edges), args.focus))
     pack = to_json(graph)
@@ -345,6 +355,7 @@ def _cmd_check(args) -> int:
     from .arch.check import check_graph
     from .certify import build_certificate
     from .context.pack import to_json
+    from .freshness import workspace_fingerprint
     from .internals import build_internals
     root = args.root.resolve()
     if not root.is_dir():
@@ -355,13 +366,16 @@ def _cmd_check(args) -> int:
     graph = build_graph(repo_paths)
     pack = to_json(graph)
     names = set(pack.get("roles", {}).keys())
+    fresh_stamp = workspace_fingerprint(repo_paths) if args.freshness else None
+    fresh_flag = " --freshness" if args.freshness else ""
 
     if not crit.declared:
         cert = build_certificate(
             "check", content=pack, criterion=None, verdict="UNVERIFIABLE",
             findings=[{"rule": "criterion", "detail": "no [architecture] criterion declared",
                        "edge": None, "evidence": None}],
-            recheck=f"index check --root {args.root}", tool_version=__version__)
+            recheck=f"index check --root {args.root}{fresh_flag}", tool_version=__version__,
+            freshness=fresh_stamp)
         return _emit_cert(cert, args.json)
 
     # repo-level findings
@@ -419,10 +433,12 @@ def _cmd_check(args) -> int:
         incomplete = {n: internal_content[n]["coverage"] for n in internal_content
                       if not internal_content[n]["coverage"]["complete"]}
         coverage_doc = {"complete": not incomplete, "unverifiable_repos": incomplete}
-    recheck = f"index check --root {args.root}" + (" --internals" if args.internals else "")
+    recheck = (f"index check --root {args.root}"
+               + (" --internals" if args.internals else "") + fresh_flag)
     cert = build_certificate("check", content=content, criterion=criterion_doc,
                              verdict=verdict, findings=findings, recheck=recheck,
-                             tool_version=__version__, coverage=coverage_doc)
+                             tool_version=__version__, coverage=coverage_doc,
+                             freshness=fresh_stamp)
     return _emit_cert(cert, args.json)
 
 
@@ -511,6 +527,42 @@ def _cmd_verify(args) -> int:
     return {"MATCH": 0, "REFUTED": 1, "UNVERIFIABLE": 2}[rec["verdict"]]
 
 
+def _cmd_freshness(args) -> int:
+    from .freshness import REPORT_SCHEMA, compare_freshness, workspace_fingerprint
+    root = args.root.resolve()
+    if not root.is_dir():
+        raise SystemExit(f"root not found: {root}")
+    try:
+        cert = json.loads(args.cert.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise SystemExit(f"freshness: cannot read certificate {args.cert}: {exc}")
+    stamp = cert.get("freshness") if isinstance(cert, dict) else None
+    if not stamp:
+        report = {"schema": REPORT_SCHEMA, "verdict": "UNVERIFIABLE",
+                  "detail": "certificate carries no freshness stamp "
+                            "(mint it with index check --freshness)"}
+    else:
+        try:
+            report = compare_freshness(stamp, workspace_fingerprint(_repo_paths(root)))
+        except ValueError as exc:
+            report = {"schema": REPORT_SCHEMA, "verdict": "UNVERIFIABLE", "detail": str(exc)}
+    report["recheck"] = f'index freshness --cert "{args.cert}" --root "{args.root}"'
+    if args.json:
+        print(json.dumps(report, indent=2, sort_keys=True))
+    else:
+        line = f"verdict={report['verdict']}"
+        if report.get("detail"):
+            line += f": {report['detail']}"
+        print(line)
+        for n in report.get("repos_changed", []):
+            print(f"  changed: {n}")
+        for n in report.get("repos_added", []):
+            print(f"  added: {n}")
+        for n in report.get("repos_removed", []):
+            print(f"  removed: {n}")
+    return {"FRESH": 0, "STALE": 1, "UNVERIFIABLE": 2}[report["verdict"]]
+
+
 def _cmd_mcp(args) -> int:
     from .mcp import serve
     return serve()
@@ -546,6 +598,8 @@ def main(argv: list[str] | None = None) -> int:
         return _cmd_router(args)
     if args.cmd == "verify":
         return _cmd_verify(args)
+    if args.cmd == "freshness":
+        return _cmd_freshness(args)
     if args.cmd == "mcp":
         return _cmd_mcp(args)
     return _cmd_map(args)

@@ -24,6 +24,9 @@ def _bare_package(spec: str) -> str | None:
 
 class JavaScriptResolver:
     name = "javascript"
+    # files whose content feeds the graph (read by the freshness fingerprint)
+    fingerprint_names = ("package.json",)
+    fingerprint_suffixes = _EXTS
 
     def matches(self, repo_root: Path) -> bool:
         return (repo_root / "package.json").is_file()

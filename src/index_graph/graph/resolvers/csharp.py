@@ -16,6 +16,8 @@ _USING = re.compile(r"^\s*using\s+([\w.]+)\s*;")
 
 class CSharpResolver:
     name = "csharp"
+    # files whose content feeds the graph (read by the freshness fingerprint)
+    fingerprint_suffixes = (".csproj", ".cs")
 
     def matches(self, repo_root: Path) -> bool:
         # walk_files is fail-closed (never raises on a permission-denied subdir)

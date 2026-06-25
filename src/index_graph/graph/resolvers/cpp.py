@@ -34,6 +34,9 @@ _INCLUDE = re.compile(r'^\s*#\s*include\s*["<]([^">]+)[">]')
 
 class CppResolver:
     name = "cpp"
+    # files whose content feeds the graph (read by the freshness fingerprint)
+    fingerprint_names = ("CMakeLists.txt",)
+    fingerprint_suffixes = (".c", ".cc", ".cpp", ".cxx", ".h", ".hpp")
 
     def matches(self, repo_root: Path) -> bool:
         return any(True for _ in walk_files(repo_root, names=("CMakeLists.txt",)))

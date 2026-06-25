@@ -21,6 +21,10 @@ def _dep_name(spec: str) -> str | None:
 
 class PythonResolver:
     name = "python"
+    # files whose content feeds the graph (read by the freshness fingerprint)
+    fingerprint_names = ("pyproject.toml", "setup.cfg", "setup.py")
+    fingerprint_suffixes = (".py",)
+    fingerprint_globs = ("requirements*.txt",)
 
     def matches(self, repo_root: Path) -> bool:
         if any((repo_root / m).is_file() for m in _MANIFESTS):

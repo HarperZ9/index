@@ -41,6 +41,8 @@ def _pom_coords(pom: Path) -> tuple[str, str] | None:
 
 class JavaResolver:
     name = "java"
+    # files whose content feeds the graph (read by the freshness fingerprint); manifest-only
+    fingerprint_names = ("pom.xml", "build.gradle", "build.gradle.kts")
 
     def matches(self, repo_root: Path) -> bool:
         return ((repo_root / "pom.xml").is_file()
