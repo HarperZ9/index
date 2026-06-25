@@ -84,16 +84,30 @@ def test_cpp_exposed_names_strip_trailing_paren(tmp_path):
     assert not any(")" in n for n in names)
 
 
-def test_php_use_function_not_treated_as_dependency(tmp_path):
-    """`use function X\\y;` / `use const X\\Y;` import a symbol, not a namespace dep:
-    they must not produce a 'function' or 'const' edge, while a real `use X\\Y;` does."""
+def test_php_use_function_and_const_capture_namespace(tmp_path):
+    """`use function Ns\\fn;` / `use const Ns\\C;` are dependencies on Ns, not on the
+    'function'/'const' keyword, and must not be dropped. All three use-forms here
+    resolve to the Vendor namespace, so three import edges all targeting Vendor."""
     from index_graph.graph.resolvers.php import PhpResolver
     (tmp_path / "composer.json").write_text('{"name": "org/app"}', encoding="utf-8")
     (tmp_path / "app.php").write_text(
         "<?php\nuse Vendor\\Thing;\nuse function Vendor\\helper;\nuse const Vendor\\MAX;\n",
         encoding="utf-8",
     )
-    imports = {e.target_name for e in PhpResolver().raw_edges(tmp_path) if e.signal == "import"}
-    assert "Vendor" in imports
-    assert "function" not in imports
-    assert "const" not in imports
+    imports = [e for e in PhpResolver().raw_edges(tmp_path) if e.signal == "import"]
+    targets = {e.target_name for e in imports}
+    assert targets == {"Vendor"}        # every use-line is a dependency on Vendor
+    assert "function" not in targets    # the keyword is never the target
+    assert "const" not in targets
+    assert len(imports) == 3            # no line dropped (old code captured only 1)
+
+
+def test_php_namespace_starting_with_function_keyword(tmp_path):
+    """A namespace that merely starts with 'function' must not be read as the keyword."""
+    from index_graph.graph.resolvers.php import PhpResolver
+    (tmp_path / "composer.json").write_text('{"name": "org/app"}', encoding="utf-8")
+    (tmp_path / "app.php").write_text(
+        "<?php\nuse functional\\Pipe;\n", encoding="utf-8"
+    )
+    targets = {e.target_name for e in PhpResolver().raw_edges(tmp_path) if e.signal == "import"}
+    assert targets == {"functional"}

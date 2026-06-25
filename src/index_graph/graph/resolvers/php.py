@@ -8,7 +8,14 @@ from pathlib import Path
 from ..walk import walk_files
 from .base import RawEdge
 
-_USE_STMT = re.compile(r"^\s*use\s+\\?([A-Za-z_][A-Za-z0-9_]*)(?:\\[^;]*)?\s*;")
+# `use Ns\Thing;`, and also `use function Ns\fn;` / `use const Ns\C;`: a symbol
+# import still depends on namespace Ns, so the optional function/const modifier is
+# consumed and the leading namespace segment is captured as the target. The trailing
+# \s+ in the modifier keeps a namespace that merely starts with "function" (say
+# `use functional\X;`) from being mistaken for the keyword.
+_USE_STMT = re.compile(
+    r"^\s*use\s+(?:function\s+|const\s+)?\\?([A-Za-z_][A-Za-z0-9_]*)(?:\\[^;]*)?\s*;"
+)
 
 
 class PhpResolver:
@@ -47,6 +54,6 @@ class PhpResolver:
             rel = src.relative_to(repo_root).as_posix()
             for i, line in enumerate(lines, 1):
                 m = _USE_STMT.match(line)
-                if m and m.group(1) not in ("function", "const"):
+                if m:
                     edges.append(RawEdge(m.group(1), "import", rel, i, line.strip()))
         return edges
