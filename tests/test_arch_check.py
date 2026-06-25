@@ -49,10 +49,22 @@ def test_clean_graph_no_findings():
 
 
 def test_absence_when_required_edge_missing():
-    pack = _pack([{"from": "web", "to": "api", "external": False, "confidence": "high", "signals": []}])
+    # web and core both exist as repos, but web does not depend on core
+    pack = _pack([{"from": "web", "to": "api", "external": False, "confidence": "high", "signals": []}],
+                 roles={"web": [], "api": [], "core": []})
     crit = ArchitectureCriteria(require=(RequireRule("web", "core"),))
     findings = check_graph(pack, crit)
     assert any(f.rule == "absence" for f in findings)
+
+
+def test_require_unmatched_when_endpoint_absent():
+    # 'ghost' is not in the workspace: a criterion-quality gap, not a confirmed absence
+    pack = _pack([{"from": "web", "to": "api", "external": False, "confidence": "high", "signals": []}],
+                 roles={"web": [], "api": []})
+    crit = ArchitectureCriteria(require=(RequireRule("web", "ghost"),))
+    findings = check_graph(pack, crit)
+    assert any(f.rule == "require_unmatched" for f in findings)
+    assert not any(f.rule == "absence" for f in findings)
 
 
 def test_convergence_when_required_edge_present():

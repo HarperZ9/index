@@ -358,7 +358,8 @@ def _cmd_check(args) -> int:
                               f"exceed the ceiling of {crit.max_cycles}",
                     "edge": None, "evidence": None})
 
-    real_violations = len(findings) > 0
+    # require_unmatched is a criterion-quality gap (UNVERIFIABLE), not a confirmed breach
+    real_violations = any(f["rule"] != "require_unmatched" for f in findings)
 
     # criterion-quality warnings: layers that name no repo
     unmatched = [layer for layer in crit.layers
@@ -371,15 +372,16 @@ def _cmd_check(args) -> int:
     # a confirmed breach outranks an unverifiable criterion
     if real_violations:
         verdict = "DRIFT"
-    elif unmatched:
+    elif unmatched or any(f["rule"] == "require_unmatched" for f in findings):
         verdict = "UNVERIFIABLE"
     else:
         verdict = "MATCH"
 
     criterion_doc = {"layers": list(crit.layers),
                      "forbid": [{"from": f.from_glob, "to": f.to_glob} for f in crit.forbid],
-                     "require": [{"from": r.from_glob, "to": r.to_glob} for r in crit.require],
                      "max_cycles": crit.max_cycles, "owns": [list(o) for o in crit.owns]}
+    if crit.require:  # keep empty-require criteria byte-identical to 2.1.0 (hash stability)
+        criterion_doc["require"] = [{"from": r.from_glob, "to": r.to_glob} for r in crit.require]
     content = pack if internal_content is None else {"pack": pack, "internals": internal_content}
     coverage_doc = None
     if internal_content is not None:

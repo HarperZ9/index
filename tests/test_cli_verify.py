@@ -106,3 +106,25 @@ def test_check_internals_certificate_carries_coverage(tmp_path):
     assert "coverage" in cert
     assert cert["coverage"]["complete"] is False
     assert "myrepo" in cert["coverage"]["unverifiable_repos"]
+
+
+def test_check_require_absence_is_drift(tmp_path):
+    # two repos exist; a required edge between them is missing -> absence -> DRIFT
+    for name in ("web", "core"):
+        (tmp_path / name / ".git").mkdir(parents=True)
+        (tmp_path / name / "pyproject.toml").write_text(
+            f"[project]\nname='{name}'\nversion='0'\n", encoding="utf-8")
+    (tmp_path / ".index.toml").write_text(
+        "[architecture]\nrequire = [{from = 'web', to = 'core'}]\n", encoding="utf-8")
+    cert = json.loads(_run(["check", "--root", str(tmp_path), "--json"]).stdout)
+    assert cert["verdict"] == "DRIFT"
+    assert any(f["rule"] == "absence" for f in cert["findings"])
+
+
+def test_empty_require_does_not_change_criterion_hash(tmp_path):
+    # a criterion with no require rule must hash exactly as it did before require existed
+    from index_graph.certify import canonical_sha
+    (tmp_path / ".index.toml").write_text("[architecture]\nmax_cycles = 0\n", encoding="utf-8")
+    cert = json.loads(_run(["check", "--root", str(tmp_path), "--json"]).stdout)
+    expected = canonical_sha({"layers": [], "forbid": [], "max_cycles": 0, "owns": []})
+    assert cert["criterion_sha256"] == expected

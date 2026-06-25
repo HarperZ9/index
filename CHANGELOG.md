@@ -5,10 +5,11 @@
 ### Added
 - Required-edge conformance. The `[architecture]` block gains `require` rules: intended
   dependencies that must exist. `index check` reports an `absence` finding (DRIFT) when a
-  required edge is not realized. With the existing forbidden-edge and layer checks
-  (divergence), this completes the Reflexion-model conformance triad: convergence (the
-  intended edges that exist), divergence (edges that violate the model), and absence (the
-  intended edges that are missing). The criterion hash covers `require`.
+  required edge between two existing repos is not realized, and `require_unmatched`
+  (UNVERIFIABLE) when a rule names a repo not in the workspace, mirroring an unmatched
+  layer. With the existing forbidden-edge and layer checks (divergence), this completes the
+  Reflexion-model conformance triad: convergence, divergence, and absence. An empty
+  `require` leaves the criterion hash byte-identical to 2.1.0.
 
 ### Notes
 - Additive and backward compatible. Zero new dependencies.

@@ -79,19 +79,32 @@ def check_graph(pack: dict, criteria: ArchitectureCriteria) -> list[Finding]:
                 f"{n} dependency cycle(s) exceed the ceiling of {criteria.max_cycles}",
                 None, None))
 
-    # ownership: a declared owner glob that matches no repo is a finding
-    if criteria.owns:
+    # repo names present in the workspace (used by both owns and require endpoint checks)
+    names: list[str] = []
+    if criteria.owns or criteria.require:
         names_src = [r.get("from") for r in pack.get("relations", [])]
         names_src += [r.get("to") for r in pack.get("relations", []) if r.get("to")]
         names_src += list(pack.get("roles", {}).keys())
         names = sorted({n for n in names_src if n})
-        for glob, owner in criteria.owns:
-            if not any(_match(glob, n) for n in names):
-                findings.append(Finding(
-                    "owns", f"ownership glob {glob} ({owner}) matches no repo", None, None))
 
-    # required edges (Reflexion absence): an intended dependency that is not realized
+    # ownership: a declared owner glob that matches no repo is a finding
+    for glob, owner in criteria.owns:
+        if not any(_match(glob, n) for n in names):
+            findings.append(Finding(
+                "owns", f"ownership glob {glob} ({owner}) matches no repo", None, None))
+
+    # required edges (Reflexion conformance). An intended dependency between repos that
+    # both exist but are not connected is an 'absence' (a confirmed breach -> DRIFT). A
+    # require rule whose endpoints are not in the workspace at all is 'require_unmatched',
+    # a criterion-quality gap that reads UNVERIFIABLE, mirroring an unmatched layer.
     for rule in criteria.require:
+        if not (any(_match(rule.from_glob, n) for n in names)
+                and any(_match(rule.to_glob, n) for n in names)):
+            findings.append(Finding(
+                "require_unmatched",
+                f"require {rule.from_glob} -> {rule.to_glob} names a repo not in the workspace",
+                None, None))
+            continue
         present = any(
             r.get("to") and _match(rule.from_glob, r.get("from")) and _match(rule.to_glob, r.get("to"))
             for r in relations)
