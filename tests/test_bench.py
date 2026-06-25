@@ -1,0 +1,63 @@
+"""Tests for the token-economy benchmark (index bench)."""
+import json
+
+from index_graph.bench import SCHEMA, bench_workspace
+from index_graph.cli import main
+
+
+def _repo(d, name, dep=None, body_files=3):
+    (d / ".git").mkdir(parents=True, exist_ok=True)
+    deps = f'["{dep}"]' if dep else "[]"
+    (d / "pyproject.toml").write_text(
+        f'[project]\nname = "{name}"\nversion = "0.1.0"\ndependencies = {deps}\n', encoding="utf-8")
+    (d / "main.py").write_text(
+        ("import %s\n" % dep if dep else "") + "def f():\n    return 1\n" * 40, encoding="utf-8")
+    for i in range(body_files):
+        (d / f"mod{i}.py").write_text("x = 1\n" * 60, encoding="utf-8")
+    return d
+
+
+def test_bench_report_shape(tmp_path):
+    _repo(tmp_path / "app", "app", dep="lib")
+    _repo(tmp_path / "lib", "lib")
+    rep = bench_workspace({"app": tmp_path / "app", "lib": tmp_path / "lib"})
+    assert rep["schema"] == SCHEMA
+    assert rep["repos"] == 2
+    assert rep["source_bytes"] > 0 and rep["pack_bytes"] > 0
+    assert rep["source_files"] >= 8  # 2 manifests + 2 main.py + 6 mod*.py
+    assert rep["approx_tokens_source"] == rep["source_bytes"] // rep["bytes_per_token"]
+
+
+def test_bench_reduction_gt_one_for_real_source(tmp_path):
+    # plenty of source: the structural pack must be smaller than the code it distills
+    _repo(tmp_path / "app", "app", dep="lib", body_files=6)
+    _repo(tmp_path / "lib", "lib", body_files=6)
+    rep = bench_workspace({"app": tmp_path / "app", "lib": tmp_path / "lib"})
+    assert rep["reduction"] > 1.0
+    assert rep["reduction"] == round(rep["source_bytes"] / rep["pack_bytes"], 1)
+
+
+def test_bench_is_deterministic(tmp_path):
+    _repo(tmp_path / "app", "app")
+    paths = {"app": tmp_path / "app"}
+    assert bench_workspace(paths) == bench_workspace(paths)
+
+
+def test_bench_cli_json(tmp_path, capsys):
+    _repo(tmp_path / "app", "app", dep="lib")
+    _repo(tmp_path / "lib", "lib")
+    rc = main(["bench", "--root", str(tmp_path), "--json"])
+    assert rc == 0
+    rep = json.loads(capsys.readouterr().out)
+    assert rep["schema"] == SCHEMA
+    assert rep["reduction"] > 1.0
+    assert rep["recheck"].startswith("index bench")
+
+
+def test_bench_cli_human(tmp_path, capsys):
+    _repo(tmp_path / "app", "app")
+    rc = main(["bench", "--root", str(tmp_path)])
+    assert rc == 0
+    out = capsys.readouterr().out
+    assert "token economy" in out
+    assert "x smaller" in out
