@@ -1,5 +1,20 @@
 # Changelog
 
+## 2.1.0
+
+### Added
+- Soundness-typed coverage on the module graph. `index internals` and the `index check`
+  certificate now report what the static scan could not verify: files it failed to parse,
+  and dynamic imports (`importlib.import_module`, `__import__`, `require` of a variable).
+  A certificate is now honest about its soundness scope instead of implying completeness.
+  `internals --json` carries a `coverage` object; the certificate carries an optional
+  `coverage` field naming the repos with unverifiable regions. Grounded in the call-graph
+  soundness literature: a static tool cannot see dynamic dispatch, so it says so.
+
+### Notes
+- Additive and backward compatible. Zero new dependencies. `extract_internal_edges` keeps
+  its signature.
+
 ## 2.0.0
 
 ### Added

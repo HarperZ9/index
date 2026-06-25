@@ -94,6 +94,31 @@ There are three answers and there is no fourth. There is deliberately no `TRUSTE
   says why. It is not a failure and it is not a pass. It is the honest answer when an
   answer cannot be earned.
 
+### Coverage (optional)
+
+When a check runs with `--internals`, the certificate carries a `coverage` object stating
+what the module scan could and could not verify:
+
+```json
+"coverage": {
+  "complete": false,
+  "unverifiable_repos": {
+    "myrepo": {
+      "parse_errors": ["pkg/broken.py"],
+      "dynamic_imports": [["pkg/loader.py", 12]]
+    }
+  }
+}
+```
+
+`complete` is true when every module parsed and every import resolved statically. When it
+is false, `unverifiable_repos` names the files the scan could not parse and the dynamic
+imports it could not follow (`importlib.import_module`, `__import__`, `require` of a
+variable). This is the honest scope of the verdict: a static tool cannot see dynamic
+dispatch, so the certificate says so rather than implying the graph is complete. Read a
+MATCH as "no violation found in the structurally verifiable portion", not "proven
+complete". `index internals --json` carries the same coverage detail per repo.
+
 ### How to verify a certificate
 
 You do not trust a certificate. You re-run it.
