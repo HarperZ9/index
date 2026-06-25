@@ -13,7 +13,8 @@ from .context.pack import closure, focus_subgraph, render_text, to_json
 from .graph.build import build_graph
 from .scan import build_map, discover_repos, write_map
 
-_SUBCOMMANDS = {"map", "graph", "context", "viz", "atlas"}
+_SUBCOMMANDS = {"map", "graph", "context", "viz", "atlas",
+                "internals", "check", "snapshot", "drift"}
 
 
 def _add_map_args(p: argparse.ArgumentParser) -> None:
@@ -59,6 +60,26 @@ def build_parser() -> argparse.ArgumentParser:
     a.add_argument("--format", choices=["html"], default=None)
     a.add_argument("--out", default=None)
     a.add_argument("--no-external", action="store_true")
+
+    i = sub.add_parser("internals", help="Intra-repo module dependency graph.")
+    i.add_argument("--root", type=Path, default=Path.cwd())
+    i.add_argument("--json", action="store_true")
+    i.add_argument("--cycles", action="store_true")
+
+    ck = sub.add_parser("check", help="Check structure against the declared [architecture] criterion.")
+    ck.add_argument("--root", type=Path, default=Path.cwd())
+    ck.add_argument("--internals", action="store_true", help="Include intra-repo module checks.")
+    ck.add_argument("--json", action="store_true")
+    ck.add_argument("--config", type=Path, default=None)
+
+    sn = sub.add_parser("snapshot", help="Write a canonical graph snapshot for drift diffing.")
+    sn.add_argument("--root", type=Path, default=Path.cwd())
+    sn.add_argument("--out", type=Path, required=True)
+
+    dr = sub.add_parser("drift", help="Diff two snapshots into a drift report.")
+    dr.add_argument("--from", dest="from_snap", type=Path, required=True)
+    dr.add_argument("--to", dest="to_snap", type=Path, required=True)
+    dr.add_argument("--json", action="store_true")
     return parser
 
 
@@ -231,6 +252,117 @@ def _cmd_viz(args) -> int:
     return 0
 
 
+def _cmd_internals(args) -> int:
+    from .internals import build_internals
+    root = args.root.resolve()
+    if not root.is_dir():
+        raise SystemExit(f"root not found: {root}")
+    g = build_internals(root)
+    if getattr(args, "cycles", False):
+        if args.json:
+            print(json.dumps({"cycles": [list(c) for c in g.cycles]}, indent=2))
+        elif not g.cycles:
+            print("no internal cycles - clean DAG")
+        else:
+            print(f"{len(g.cycles)} internal cycle(s):")
+            for c in g.cycles:
+                print(f"  - {' -> '.join(c)}")
+        return 0
+    payload = {
+        "repo": g.repo,
+        "modules": [{"id": m.id, "path": m.path, "language": m.language} for m in g.modules],
+        "edges": [{"from": e.from_id, "to": e.to_id, "file": e.evidence_file,
+                   "line": e.evidence_line, "raw": e.raw} for e in g.edges],
+        "cycles": [list(c) for c in g.cycles],
+        "fan_in": g.fan_in, "fan_out": g.fan_out,
+    }
+    if args.json:
+        print(json.dumps(payload, indent=2))
+    else:
+        print(f"modules={len(g.modules)} edges={len(g.edges)} cycles={len(g.cycles)}")
+    return 0
+
+
+def _cmd_check(args) -> int:
+    from .arch.check import check_graph
+    from .certify import build_certificate
+    from .context.pack import to_json
+    root = args.root.resolve()
+    if not root.is_dir():
+        raise SystemExit(f"root not found: {root}")
+    config = load_config(args.config, root)
+    crit = config.architecture
+    graph = build_graph(_repo_paths(root))
+    pack = to_json(graph)
+    names = set(pack.get("roles", {}).keys())
+
+    findings: list = []
+    if not crit.declared:
+        verdict = "UNVERIFIABLE"
+        findings.append({"rule": "criterion", "detail": "no [architecture] criterion declared",
+                         "edge": None, "evidence": None})
+    else:
+        unmatched = [layer for layer in crit.layers
+                     if not any(n == layer or n.startswith(layer + "/") or n.endswith("/" + layer)
+                                for n in names)]
+        findings = [{"rule": f.rule, "detail": f.detail, "edge": f.edge, "evidence": f.evidence}
+                    for f in check_graph(pack, crit)]
+        if unmatched:
+            verdict = "UNVERIFIABLE"
+            for layer in unmatched:
+                findings.append({"rule": "layer", "detail": f"layer '{layer}' matches no repo",
+                                 "edge": None, "evidence": None})
+        else:
+            verdict = "DRIFT" if findings else "MATCH"
+
+    criterion_doc = None
+    if crit.declared:
+        criterion_doc = {"layers": list(crit.layers),
+                         "forbid": [{"from": f.from_glob, "to": f.to_glob} for f in crit.forbid],
+                         "max_cycles": crit.max_cycles, "owns": [list(o) for o in crit.owns]}
+    recheck = f"index check --root {args.root}" + (" --internals" if args.internals else "")
+    cert = build_certificate("check", content=pack, criterion=criterion_doc,
+                             verdict=verdict, findings=findings, recheck=recheck,
+                             tool_version=__version__)
+    if args.json:
+        print(json.dumps(cert, indent=2))
+    else:
+        print(f"verdict={cert['verdict']} findings={len(findings)}")
+        for f in findings:
+            loc = f" ({f['evidence']})" if f.get("evidence") else ""
+            print(f"  [{f['rule']}] {f['detail']}{loc}")
+    return 0 if verdict == "MATCH" else 1
+
+
+def _cmd_snapshot(args) -> int:
+    from .context.pack import to_json
+    from .drift import snapshot_pack, dumps_canonical
+    root = args.root.resolve()
+    if not root.is_dir():
+        raise SystemExit(f"root not found: {root}")
+    graph = build_graph(_repo_paths(root))
+    snap = snapshot_pack(to_json(graph))
+    args.out.write_text(dumps_canonical(snap), encoding="utf-8")
+    print(f"wrote {args.out} repos={len(snap['repos'])} edges={len(snap['edges'])}")
+    return 0
+
+
+def _cmd_drift(args) -> int:
+    from .drift import load_snapshot, diff_snapshots
+    old = load_snapshot(args.from_snap.read_text(encoding="utf-8"))
+    new = load_snapshot(args.to_snap.read_text(encoding="utf-8"))
+    report = diff_snapshots(old, new)
+    if args.json:
+        print(json.dumps(report.to_json(), indent=2))
+    else:
+        print(f"verdict={report.verdict}")
+        for e in report.edges_added:
+            print(f"  edge added: {e}")
+        for e in report.edges_removed:
+            print(f"  edge removed: {e}")
+    return 0 if report.verdict == "MATCH" else 1
+
+
 def main(argv: list[str] | None = None) -> int:
     raw = list(sys.argv[1:] if argv is None else argv)
     # No leading subcommand: route top-level --version/--help to the root
@@ -249,4 +381,12 @@ def main(argv: list[str] | None = None) -> int:
         return _cmd_context(args)
     if args.cmd == "viz":
         return _cmd_viz(args)
+    if args.cmd == "internals":
+        return _cmd_internals(args)
+    if args.cmd == "check":
+        return _cmd_check(args)
+    if args.cmd == "snapshot":
+        return _cmd_snapshot(args)
+    if args.cmd == "drift":
+        return _cmd_drift(args)
     return _cmd_map(args)
