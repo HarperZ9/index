@@ -1,4 +1,4 @@
-from index_graph.arch.criteria import ArchitectureCriteria, ForbidRule
+from index_graph.arch.criteria import ArchitectureCriteria, ForbidRule, RequireRule
 from index_graph.arch.check import check_graph, Finding
 
 
@@ -46,3 +46,16 @@ def test_clean_graph_no_findings():
                  cycles=[])
     crit = ArchitectureCriteria(layers=("core", "web"), max_cycles=0)
     assert check_graph(pack, crit) == []
+
+
+def test_absence_when_required_edge_missing():
+    pack = _pack([{"from": "web", "to": "api", "external": False, "confidence": "high", "signals": []}])
+    crit = ArchitectureCriteria(require=(RequireRule("web", "core"),))
+    findings = check_graph(pack, crit)
+    assert any(f.rule == "absence" for f in findings)
+
+
+def test_convergence_when_required_edge_present():
+    pack = _pack([{"from": "web", "to": "core", "external": False, "confidence": "high", "signals": []}])
+    crit = ArchitectureCriteria(require=(RequireRule("web", "core"),))
+    assert [f for f in check_graph(pack, crit) if f.rule == "absence"] == []

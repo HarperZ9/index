@@ -378,6 +378,7 @@ def _cmd_check(args) -> int:
 
     criterion_doc = {"layers": list(crit.layers),
                      "forbid": [{"from": f.from_glob, "to": f.to_glob} for f in crit.forbid],
+                     "require": [{"from": r.from_glob, "to": r.to_glob} for r in crit.require],
                      "max_cycles": crit.max_cycles, "owns": [list(o) for o in crit.owns]}
     content = pack if internal_content is None else {"pack": pack, "internals": internal_content}
     coverage_doc = None
