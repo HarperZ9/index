@@ -105,7 +105,7 @@ what the module scan could and could not verify:
   "unverifiable_repos": {
     "myrepo": {
       "parse_errors": ["pkg/broken.py"],
-      "dynamic_imports": [["pkg/loader.py", 12]]
+      "dynamic_imports": [{"file": "pkg/loader.py", "line": 12}]
     }
   }
 }
