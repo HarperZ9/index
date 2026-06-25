@@ -9,7 +9,7 @@ from ..graph.walk import walk_files
 
 _MD_SUFFIXES = (".md", ".markdown")
 _H1 = re.compile(r"^#\s+(.+?)\s*$", re.MULTILINE)
-# [[target]] or [[target|alias]] — capture target only
+# [[target]] or [[target|alias]]: capture target only
 _WIKILINK = re.compile(r"\[\[\s*([^\]|]+?)\s*(?:\|[^\]]*)?\]\]")
 
 

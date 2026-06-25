@@ -21,12 +21,12 @@ def _marker_list(node: RepoNode) -> list[str]:
 
 def render_text(graph: DependencyGraph, title: str) -> str:
     L = [f"# Context pack: {title}", ""]
-    L.append("## Roles (project: roles — in/out degree)")
+    L.append("## Roles (project: roles, in/out degree)")
     sal = structural_salience(list(graph.edges))
     for node in sorted(graph.repos, key=lambda n: n.name):
         rs = ", ".join(graph.roles.get(node.name, ())) or "(none)"
         s = sal.get(node.name, {"in_degree": 0, "out_degree": 0})
-        L.append(f"- {node.name}: {rs} — in={s['in_degree']} out={s['out_degree']}")
+        L.append(f"- {node.name}: {rs} (in={s['in_degree']} out={s['out_degree']})")
     L.append("")
     L.append("## Relations (A -> B: signals [confidence])")
     for e in graph.edges:
@@ -40,7 +40,7 @@ def render_text(graph: DependencyGraph, title: str) -> str:
         if e.external:
             L.append(f"- {e.from_repo} -> {e.target_name}")
     L.append("")
-    L.append("## Inventory (all projects — extracted description)")
+    L.append("## Inventory (all projects, extracted description)")
     for node in sorted(graph.repos, key=lambda n: n.name):
         eco = "/".join(node.ecosystems) or "none"
         L.append(f"- {node.name} [{eco}]: {node.description}")

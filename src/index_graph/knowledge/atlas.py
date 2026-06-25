@@ -14,8 +14,8 @@ _EDGE_SORT = lambda e: (e["from"], e["type"], e["to_kind"], e["to"])
 def _target_index(repo_names, docs):
     """normalized name -> (to_kind, id); repos win over docs on collision; first doc wins.
 
-    Uses `_norm` (space/underscore -> dash, lowercased) — the SAME normalization
-    docs.py applied to `[[link]]` targets — so multi-word links like [[Auth Design]]
+    Uses `_norm` (space/underscore -> dash, lowercased), the SAME normalization
+    docs.py applied to `[[link]]` targets, so multi-word links like [[Auth Design]]
     resolve to a doc titled "Auth Design"."""
     idx: dict[str, tuple[str, str]] = {}
     for r in sorted(repo_names):
@@ -55,7 +55,7 @@ def build_atlas_pack(graph: DependencyGraph, docs: list[Doc],
     pack["docs"] = [{"id": d.rel_path, "title": d.title, "dir": d.dir_rel} for d in docs]
     edges: list[dict] = []
     warnings: list[str] = []
-    seen: set[tuple[str, str, str]] = set()      # (from, to_kind, to) — strongest wins
+    seen: set[tuple[str, str, str]] = set()      # (from, to_kind, to), strongest wins
 
     def add(etype: str, frm: str, to_kind: str, to: str) -> None:
         key = (frm, to_kind, to)
@@ -64,7 +64,7 @@ def build_atlas_pack(graph: DependencyGraph, docs: list[Doc],
         seen.add(key)
         edges.append({"type": etype, "from": frm, "to": to, "to_kind": to_kind})
 
-    # describes (by location) — strongest
+    # describes (by location): strongest
     for d in docs:
         repo = _describes(d, repo_dirs)
         if repo is not None:
@@ -81,7 +81,7 @@ def build_atlas_pack(graph: DependencyGraph, docs: list[Doc],
                 continue                         # self-link
             add("links-to", d.rel_path, to_kind, to)
 
-    # mentions (prose name-drops) — weakest; deduped via `seen` against describes/links-to
+    # mentions (prose name-drops): weakest; deduped via `seen` against describes/links-to
     name_of = {("repo", r): r for r in repo_names}
     name_of.update({("doc", d.rel_path): d.title for d in docs})
     for d in docs:

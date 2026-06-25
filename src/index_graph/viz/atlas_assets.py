@@ -38,17 +38,17 @@ function detailRepo(name){selectClear();
  const outs=(DATA.relations||[]).filter(e=>e.from===name&&!e.external);
  const descBy=(DATA.knowledge_edges||[]).filter(e=>e.type==='describes'&&e.to===name);
  $('#detail').innerHTML=`<h3>${esc(name)} <small>repo</small></h3>`+
-  `<div>roles: ${esc((DATA.roles[name]||[]).join(', '))||'—'}</div>`+
-  `<h4>depends on</h4>`+(outs.map(e=>`<div>${esc(e.to)} [${esc(e.confidence)}]</div>`).join('')||'—')+
-  `<h4>documented by</h4>`+(descBy.map(e=>linkNode(e.from,'doc')).join('')||'—');
+  `<div>roles: ${esc((DATA.roles[name]||[]).join(', '))||'none'}</div>`+
+  `<h4>depends on</h4>`+(outs.map(e=>`<div>${esc(e.to)} [${esc(e.confidence)}]</div>`).join('')||'none')+
+  `<h4>documented by</h4>`+(descBy.map(e=>linkNode(e.from,'doc')).join('')||'none');
  pushTrail({kind:'repo',id:name});}
 function detailDoc(id){selectClear();
  const g=$(`.docnode[data-doc="${cssEsc(id)}"]`);if(g)g.classList.add('sel');
  const d=docs[id]||{title:id};
  const out=kedgesFrom(id);
  const desc=out.filter(e=>e.type==='describes').map(e=>esc(e.to)).join(', ');
- const links=out.filter(e=>e.type!=='describes').map(e=>linkNode(e.to,e.to_kind)).join('')||'—';
- const back=(DATA.backlinks&&DATA.backlinks[id]||[]).map(b=>linkNode(b.from,'doc')).join('')||'—';
+ const links=out.filter(e=>e.type!=='describes').map(e=>linkNode(e.to,e.to_kind)).join('')||'none';
+ const back=(DATA.backlinks&&DATA.backlinks[id]||[]).map(b=>linkNode(b.from,'doc')).join('')||'none';
  $('#detail').innerHTML=`<h3>${esc(d.title)} <small>doc</small></h3>`+
   (desc?`<div>describes <b>${desc}</b></div>`:'')+
   `<h4>links</h4>${links}<h4>linked from</h4>${back}`+

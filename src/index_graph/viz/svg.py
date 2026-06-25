@@ -50,7 +50,7 @@ def _node_svg(node) -> str:
         f'height="{node.h:.2f}" rx="6"/>'
         f'<text x="{node.x + node.w / 2:.2f}" y="{node.y + node.h / 2 + 4:.2f}" '
         f'text-anchor="middle">{label}</text>'
-        f"<title>{label} — {escape(node.role)}</title>"
+        f"<title>{label}: {escape(node.role)}</title>"
         f"</g>"
     )
 

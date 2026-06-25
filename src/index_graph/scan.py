@@ -88,7 +88,7 @@ def build_map(root: Path, config: Config, tool_version: str) -> Map:
     root = root.resolve()
     repo_paths = discover_repos(root, config)
     # Executor.map preserves submission order, so rows stay in discovery (sorted) order
-    # regardless of thread completion order — output is deterministic.
+    # regardless of thread completion order; output is deterministic.
     with ThreadPoolExecutor(max_workers=config.jobs) as pool:
         rows = list(pool.map(lambda p: _safe_repo_row(p, root, config), repo_paths))
     class_counts: dict[str, int] = {}
