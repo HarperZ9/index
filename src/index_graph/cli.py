@@ -14,7 +14,7 @@ from .graph.build import build_graph
 from .scan import build_map, discover_repos, write_map
 
 _SUBCOMMANDS = {"map", "graph", "context", "viz", "atlas",
-                "internals", "check", "snapshot", "drift", "router"}
+                "internals", "check", "snapshot", "drift", "router", "verify"}
 
 
 def _add_map_args(p: argparse.ArgumentParser) -> None:
@@ -85,6 +85,12 @@ def build_parser() -> argparse.ArgumentParser:
     rt = sub.add_parser("router", help="Emit a workspace map (CLAUDE.md/AGENTS.md) from the graph and docs.")
     rt.add_argument("--root", type=Path, default=Path.cwd())
     rt.add_argument("--out", default=None)
+
+    vf = sub.add_parser("verify", help="Ground a structural claim against the graph (MATCH/REFUTED/UNVERIFIABLE).")
+    vf.add_argument("--root", type=Path, default=Path.cwd())
+    vf.add_argument("--depends", default=None, help="claim 'A -> B' (A depends on B)")
+    vf.add_argument("--exists", default=None, help="claim that repo NAME exists")
+    vf.add_argument("--json", action="store_true")
     return parser
 
 
@@ -474,6 +480,33 @@ def _cmd_router(args) -> int:
     return 0
 
 
+def _cmd_verify(args) -> int:
+    from .context.pack import to_json
+    from .verify import build_verification
+    root = args.root.resolve()
+    if not root.is_dir():
+        raise SystemExit(f"root not found: {root}")
+    if bool(args.depends) == bool(args.exists):
+        raise SystemExit("verify: pass exactly one of --depends 'A -> B' or --exists NAME")
+    if args.depends:
+        if "->" not in args.depends:
+            raise SystemExit("verify: --depends must be 'A -> B'")
+        frm, to = (s.strip() for s in args.depends.split("->", 1))
+        claim = {"kind": "depends", "from": frm, "to": to}
+        recheck = f'index verify --root {args.root} --depends "{args.depends}"'
+    else:
+        claim = {"kind": "exists", "name": args.exists.strip()}
+        recheck = f"index verify --root {args.root} --exists {args.exists}"
+    pack = to_json(build_graph(_repo_paths(root)))
+    rec = build_verification(pack, claim, tool_version=__version__, recheck=recheck)
+    if args.json:
+        print(json.dumps(rec, indent=2, sort_keys=True))
+    else:
+        loc = f" ({rec['evidence']})" if rec["evidence"] else ""
+        print(f"verdict={rec['verdict']}: {rec['detail']}{loc}")
+    return {"MATCH": 0, "REFUTED": 1, "UNVERIFIABLE": 2}[rec["verdict"]]
+
+
 def main(argv: list[str] | None = None) -> int:
     raw = list(sys.argv[1:] if argv is None else argv)
     # No leading subcommand: route top-level --version/--help to the root
@@ -502,4 +535,6 @@ def main(argv: list[str] | None = None) -> int:
         return _cmd_drift(args)
     if args.cmd == "router":
         return _cmd_router(args)
+    if args.cmd == "verify":
+        return _cmd_verify(args)
     return _cmd_map(args)
