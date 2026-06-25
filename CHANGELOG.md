@@ -1,5 +1,20 @@
 # Changelog
 
+## 2.3.0
+
+### Added
+- `index router`: a deterministic, evidence-carrying workspace map for CLAUDE.md / AGENTS.md.
+  Renders entry points, the depended-on core, where each repo lives with its role and
+  dependencies, and which docs describe what, from the dependency graph and the docs atlas.
+  Re-runnable; replaces the hand-maintained index/read-first/brief.
+- `index context --focus` gains `--hops N` (a k-hop-bounded neighborhood) and emits a
+  preservation manifest: the focus, the hop bound, the kept node count, and the boundary
+  edges and nodes it dropped. A compact pack now declares its losses instead of reading as
+  complete (the information-bottleneck discipline).
+
+### Notes
+- Additive and backward compatible. Zero new dependencies.
+
 ## 2.2.0
 
 ### Added

@@ -245,6 +245,7 @@ index context --root ROOT [--json] [--focus REPO] [--audit]
 | `--root`       | current directory | Workspace root to scan.                                         |
 | `--json`       | off               | Emit the context pack as JSON instead of Markdown.              |
 | `--focus REPO` | none              | Emit only the named repo's dependency neighborhood (bidirectional closure). |
+| `--hops N`     | none (full)       | Bound `--focus` to an N-hop neighborhood; the pack then carries a `preserved` manifest naming what it kept and the boundary edges and nodes it dropped, so a compact pack declares its losses. |
 | `--audit`      | off               | Print only the salience-faithfulness audit (hubs and mismatches), not the pack. |
 
 Exit codes:
@@ -459,6 +460,16 @@ index drift --from baseline.json --to now.json
 ### The certificate and the protocol
 
 Both `check` and `drift` return a certificate whose verdict is one of three words, MATCH, DRIFT, or UNVERIFIABLE, never a fourth. You confirm it by re-running its `recheck` command and recomputing its hashes, not by trusting it. The snapshot and certificate shapes, the hashing rule, and the resolution bounds are specified in [`docs/PROTOCOL.md`](docs/PROTOCOL.md), so any consumer, whether a CI job, a reviewer, or another tool, can read them without depending on `index`.
+
+## Workspace map (`router`)
+
+`index router` renders a deterministic, evidence-carrying map of the workspace, shaped for a model's `CLAUDE.md` or `AGENTS.md`: where each repo lives with its role and dependencies, the entry points, the depended-on core, and which docs describe what. It is derived from the dependency graph and the docs atlas and re-runs identically, so it replaces the `index.md` plus read-first plus brief that teams maintain by hand.
+
+```text
+index router --root ROOT [--out FILE]
+```
+
+With `--out` it writes the map to a file; otherwise it prints to stdout. Every line is a graph fact (roles, edges, doc-describes), nothing invented.
 
 ## Notes
 
