@@ -475,6 +475,8 @@ index drift --from baseline.json --to now.json
 
 Both `check` and `drift` return a certificate whose verdict is one of three words, MATCH, DRIFT, or UNVERIFIABLE, never a fourth. You confirm it by re-running its `recheck` command and recomputing its hashes, not by trusting it. The snapshot and certificate shapes, the hashing rule, and the resolution bounds are specified in [`docs/PROTOCOL.md`](docs/PROTOCOL.md), so any consumer, whether a CI job, a reviewer, or another tool, can read them without depending on `index`.
 
+Pass `--freshness` to `index check` to stamp the certificate with a content fingerprint of the workspace (see the next section). A certificate minted without it is byte-identical to one from before this option existed.
+
 ## Workspace map (`router`)
 
 `index router` renders a deterministic, evidence-carrying map of the workspace, shaped for a model's `CLAUDE.md` or `AGENTS.md`: where each repo lives with its role and dependencies, the entry points, the depended-on core, and which docs describe what. It is derived from the dependency graph and the docs atlas and re-runs identically, so it replaces the `index.md` plus read-first plus brief that teams maintain by hand.
@@ -494,6 +496,26 @@ index verify --root ROOT [--depends "A -> B" | --exists NAME] [--json]
 ```
 
 It exits 0 on MATCH, 1 on REFUTED, 2 on UNVERIFIABLE, and `--json` emits a re-checkable record (`index.verification/1`) carrying the content hash and the exact command to re-run.
+
+## Has the ground truth moved? (`freshness`)
+
+A certificate proves a verdict about the workspace as it was when the certificate was minted. `index freshness` answers the next question: has anything changed since? It is the mid-loop re-grounding check, so a verdict an agent keeps relying on cannot quietly go stale.
+
+First, stamp a certificate with a content fingerprint:
+
+```text
+index check --root ROOT --freshness --json > cert.json
+```
+
+The fingerprint is a deterministic SHA-256 over the graph-relevant files of every ecosystem in each repo (manifests and sources), folded per repo. Then, at any later point, re-check it:
+
+```text
+index freshness --cert cert.json --root ROOT [--json]
+```
+
+The verdict is FRESH (nothing graph-relevant changed), STALE (it lists the repos added, removed, or changed), or UNVERIFIABLE (the certificate carries no freshness stamp). It exits 0, 1, or 2 to match, and `--json` emits a re-checkable report (`index.freshness-report/1`) with both fingerprints and the command to re-run.
+
+The fingerprint is conservative on purpose. It may report STALE for a content change that does not alter the resolved graph, but it never reports FRESH when a graph-relevant file changed, so FRESH is never a false assurance. The set of relevant files is declared by the resolvers, so a new ecosystem is covered without any change here.
 
 ## Agent protocol face (`mcp`)
 

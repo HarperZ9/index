@@ -4,7 +4,7 @@
 
 [![license: fair source](https://img.shields.io/badge/license-fair%20source-blue.svg)](LICENSE)
 ![python](https://img.shields.io/badge/python-3.11%2B-blue.svg)
-![version](https://img.shields.io/badge/version-2.6-informational.svg)
+![version](https://img.shields.io/badge/version-2.7-informational.svg)
 [![CI](https://github.com/HarperZ9/index-graph/actions/workflows/ci.yml/badge.svg)](https://github.com/HarperZ9/index-graph/actions/workflows/ci.yml)
 ![deps: none](https://img.shields.io/badge/deps-none-success.svg)
 
@@ -120,6 +120,7 @@ A rendered sample ships with the repo at [`examples/atlas-demo.html`](examples/a
 | **Architecture check (certificate)** | `index check` | Measure structure against your `[architecture]` rule; emits a re-checkable verdict |
 | **Drift (certificate)** | `index snapshot` then `index drift` | Snapshot the shape, then see exactly what changed |
 | **Claim grounding** | `index verify` | Confirm or refute a dependency or existence claim against the graph, with evidence |
+| **Freshness** | `index check --freshness`, then `index freshness` | Stamp the certificate with a content fingerprint; later, ask whether the ground truth moved |
 | **Agent protocol** | `index mcp` | An MCP-shaped stdio server exposing index's tools to an agent host |
 
 ---
@@ -144,6 +145,8 @@ max_cycles = 0
 
 Every check and drift returns a certificate. The verdict is one of three words, MATCH, DRIFT, or UNVERIFIABLE, and never a fourth. There is no TRUSTED. When the tool cannot evaluate a rule, it says UNVERIFIABLE and stops, rather than return a guess dressed as an answer. You believe a certificate by running its `recheck` command and confirming the verdict from the same evidence, not because it told you to. It also states its own coverage, the files it could not parse and the dynamic imports it could not follow, so a MATCH never claims more than it proved. Its shape is written down in [`docs/PROTOCOL.md`](docs/PROTOCOL.md), so a CI job, a reviewer, or another tool can consume it without knowing anything about `index` itself.
 
+A certificate can also know when it went stale. `index check --freshness` records a content fingerprint of the workspace at mint time, and later `index freshness --cert CERT --root ROOT` recomputes it and answers FRESH or STALE, naming exactly which repos moved. It is the mid-loop "has anything changed since I last verified?" check, so a verdict cannot quietly rot while an agent keeps trusting it. The fingerprint is conservative: it may flag a change that does not alter the graph, but it never misses one that could.
+
 All of it runs offline. No API, no account, no model, no network. The tool reads code and writes JSON, and it does not care what wrote the code or what reads the verdict.
 
 ---
@@ -163,6 +166,7 @@ index snapshot  [--root ROOT] --out FILE
 index drift     --from OLD --to NEW [--json]
 index router    [--root ROOT] [--out FILE]
 index verify    [--root ROOT] [--depends "A -> B" | --exists NAME] [--json]
+index freshness --cert CERT [--root ROOT] [--json]
 index mcp       (stdio JSON-RPC; an agent host connects and calls index's tools)
 ```
 

@@ -1,5 +1,25 @@
 # Changelog
 
+## 2.7.0
+
+### Added
+- Content freshness: a certificate can now know when the ground truth moved under it.
+  `index check --freshness` stamps the certificate with a deterministic per-repo
+  content fingerprint (a SHA-256 over the graph-relevant files of all nine ecosystems).
+  `index freshness --cert CERT --root ROOT` recomputes the workspace fingerprint and
+  returns FRESH, STALE (naming the repos added, removed, or changed), or UNVERIFIABLE
+  (the certificate carries no stamp), with exit codes 0/1/2. This is the mid-loop "has
+  anything changed since I verified?" check, re-checkable like every index verdict.
+- The fingerprint is conservative by construction: it may report STALE for a content
+  change that does not alter the resolved graph, but it never reports FRESH when a
+  graph-relevant file changed. The relevant-file set is declared by the resolvers
+  themselves, so a new ecosystem is covered automatically.
+
+### Notes
+- Additive and backward compatible. Zero new dependencies. A certificate minted without
+  `--freshness` is byte-identical to one from 2.6.0 (the `freshness` key is present only
+  when asked).
+
 ## 2.6.0
 
 ### Added
