@@ -92,11 +92,13 @@ def load_config(path: Path | None, root: Path) -> Config:
         path = candidate
     elif not path.exists():
         raise SystemExit(f"config not found: {path}")
-    with path.open("rb") as handle:
-        try:
-            data = tomllib.load(handle)
-        except tomllib.TOMLDecodeError as exc:
-            raise SystemExit(f"{path}: invalid TOML: {exc}") from exc
+    try:
+        text = path.read_text(encoding="utf-8-sig")  # tolerate a UTF-8 BOM
+        data = tomllib.loads(text)
+    except tomllib.TOMLDecodeError as exc:
+        raise SystemExit(f"{path}: invalid TOML: {exc}") from exc
+    except OSError as exc:
+        raise SystemExit(f"{path}: cannot read: {exc}") from exc
     return _build_config(data, path)
 
 
