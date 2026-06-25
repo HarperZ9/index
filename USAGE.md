@@ -517,6 +517,24 @@ The verdict is FRESH (nothing graph-relevant changed), STALE (it lists the repos
 
 The fingerprint is conservative on purpose. It may report STALE for a content change that does not alter the resolved graph, but it never reports FRESH when a graph-relevant file changed, so FRESH is never a false assurance. The set of relevant files is declared by the resolvers, so a new ecosystem is covered without any change here.
 
+## Token economy (`bench`)
+
+A recurring claim is that a structural map is cheaper for an agent than reading the code. `index bench` lets you check that on your own workspace instead of taking it on faith.
+
+```text
+index bench --root ROOT [--json]
+```
+
+It measures the bytes index reads, the manifests and source files of every ecosystem it walks to build the graph, against the bytes of the single structural pack it emits, and reports the reduction:
+
+```text
+token economy: index's structural pack vs the source it reads
+  source read    49,880,045 bytes  (~12,470,011 tokens)  3267 files in 47 repos
+  index pack        716,288 bytes  (~179,072 tokens)  69.6x smaller
+```
+
+Bytes are exact and model-agnostic. The token figures use the common ~4 bytes/token approximation, and the reduction ratio divides out that constant, so the headline number does not depend on any tokenizer. `--json` emits a re-checkable `index.bench/1` report with the byte counts, the ratio, and the command to re-run. The pack answers structural questions, who depends on whom, the roles, the cycles; reading the code is still what you do for behavior, so this is the cost of the structural answer, not a claim that the pack replaces the source.
+
 ## Agent protocol face (`mcp`)
 
 `index mcp` serves a zero-dependency, MCP-shaped protocol over stdin and stdout: newline-delimited JSON-RPC 2.0 (`initialize`, `tools/list`, `tools/call`), no SDK and no model. An agent host or orchestrator connects and calls index's deterministic tools by name.

@@ -1,5 +1,22 @@
 # Changelog
 
+## 2.8.0
+
+### Added
+- `index bench`: a token-economics benchmark you can reproduce on your own workspace.
+  It measures the bytes index reads (the manifests and sources of every ecosystem) against
+  the bytes of the one structural pack it emits, and reports the reduction. Bytes are exact
+  and model-agnostic; the token figures use the common ~4 bytes/token approximation, and
+  the reduction ratio is independent of that constant, so the headline number does not
+  depend on any tokenizer. `--json` emits a re-checkable `index.bench/1` report. This turns
+  the "a structural map is cheaper than reading the code" thesis into a number you verify
+  rather than trust. On a 47-repo, ~50 MB reference workspace the structural pack came back
+  roughly 70x smaller than the source it distills.
+
+### Notes
+- Additive and backward compatible. Zero new dependencies. The benchmark reuses the same
+  relevant-file walk as the freshness fingerprint, so it counts exactly what the graph reads.
+
 ## 2.7.0
 
 ### Added

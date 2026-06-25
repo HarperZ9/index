@@ -4,7 +4,7 @@
 
 [![license: fair source](https://img.shields.io/badge/license-fair%20source-blue.svg)](LICENSE)
 ![python](https://img.shields.io/badge/python-3.11%2B-blue.svg)
-![version](https://img.shields.io/badge/version-2.7-informational.svg)
+![version](https://img.shields.io/badge/version-2.8-informational.svg)
 [![CI](https://github.com/HarperZ9/index-graph/actions/workflows/ci.yml/badge.svg)](https://github.com/HarperZ9/index-graph/actions/workflows/ci.yml)
 ![deps: none](https://img.shields.io/badge/deps-none-success.svg)
 
@@ -121,6 +121,7 @@ A rendered sample ships with the repo at [`examples/atlas-demo.html`](examples/a
 | **Drift (certificate)** | `index snapshot` then `index drift` | Snapshot the shape, then see exactly what changed |
 | **Claim grounding** | `index verify` | Confirm or refute a dependency or existence claim against the graph, with evidence |
 | **Freshness** | `index check --freshness`, then `index freshness` | Stamp the certificate with a content fingerprint; later, ask whether the ground truth moved |
+| **Token economy** | `index bench` | Measure how much smaller the structural pack is than the source it distills, on your own workspace |
 | **Agent protocol** | `index mcp` | An MCP-shaped stdio server exposing index's tools to an agent host |
 
 ---
@@ -167,6 +168,7 @@ index drift     --from OLD --to NEW [--json]
 index router    [--root ROOT] [--out FILE]
 index verify    [--root ROOT] [--depends "A -> B" | --exists NAME] [--json]
 index freshness --cert CERT [--root ROOT] [--json]
+index bench     [--root ROOT] [--json]
 index mcp       (stdio JSON-RPC; an agent host connects and calls index's tools)
 ```
 
