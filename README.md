@@ -4,7 +4,7 @@
 
 [![license: fair source](https://img.shields.io/badge/license-fair%20source-blue.svg)](LICENSE)
 ![python](https://img.shields.io/badge/python-3.11%2B-blue.svg)
-![version](https://img.shields.io/badge/version-1.1-informational.svg)
+![version](https://img.shields.io/badge/version-2.0-informational.svg)
 [![CI](https://github.com/HarperZ9/index-graph/actions/workflows/ci.yml/badge.svg)](https://github.com/HarperZ9/index-graph/actions/workflows/ci.yml)
 ![deps: none](https://img.shields.io/badge/deps-none-success.svg)
 
@@ -116,18 +116,48 @@ A rendered sample ships with the repo at [`examples/atlas-demo.html`](examples/a
 | **JSON context manifest** | `index map` | Machine-readable inventory: remotes, branches, dirty counts, classification |
 | **Dependency graph (text/JSON)** | `index graph [--cycles]` | Repo to repo edges with evidence, and a report of dependency cycles |
 | **Context pack (prose + relations)** | `index context` | Synthesis pack: roles, relations, narrative summary |
+| **Module graph (internals)** | `index internals` | The dependency graph inside one repo, with internal cycles and fan-in/out |
+| **Architecture check (certificate)** | `index check` | Measure structure against your `[architecture]` rule; emits a re-checkable verdict |
+| **Drift (certificate)** | `index snapshot` then `index drift` | Snapshot the shape, then see exactly what changed |
+
+---
+
+## Verified architecture intelligence
+
+A map tells you what the shape is. The next questions are whether it is the shape you meant, and whether it is still that shape today. `index` answers both, and hands back an answer you can re-run instead of trust.
+
+It starts by looking inside. `index internals` builds the dependency graph *within* a repo, module by module, where architecture actually erodes. Python is exact, read from the syntax tree. JavaScript, TypeScript, Rust, and Go are read best-effort from their imports. You see internal cycles and which modules everything leans on.
+
+Then you write down what you meant. A small `[architecture]` block in `.index.toml` states the rules a healthy codebase keeps: which layers may depend on which, edges that must never exist, a ceiling on cycles.
+
+```toml
+[architecture]
+layers = ["core", "domain", "service", "web"]   # a lower layer may not import a higher one
+forbid = [{ from = "core/**", to = "web/**" }]
+max_cycles = 0
+```
+
+`index check` measures the real graph against that rule and reports every breach with the file and line that proves it, and it exits non-zero when something is wrong, so it sits in CI as a gate. `index snapshot` and `index drift` do the same across time: record the shape today, diff it tomorrow, and see exactly what moved.
+
+Every check and drift returns a certificate. The verdict is one of three words, MATCH, DRIFT, or UNVERIFIABLE, and never a fourth. There is no TRUSTED. When the tool cannot evaluate a rule, it says UNVERIFIABLE and stops, rather than return a guess dressed as an answer. You believe a certificate by running its `recheck` command and confirming the verdict from the same evidence, not because it told you to. Its shape is written down in [`docs/PROTOCOL.md`](docs/PROTOCOL.md), so a CI job, a reviewer, or another tool can consume it without knowing anything about `index` itself.
+
+All of it runs offline. No API, no account, no model, no network. The tool reads code and writes JSON, and it does not care what wrote the code or what reads the verdict.
 
 ---
 
 ## CLI reference
 
 ```
-index atlas   [--root ROOT] [--format html] [--json] [--out FILE] [--no-external]
-index map     [--root ROOT] [--output FILE] [--json] [--config CFG]
-index graph   [--root ROOT] [--json] [--cycles]
-index context [--root ROOT] [--focus REPO]
-index viz     [--root ROOT] [--format {html,svg,mermaid,all}]
-              [--focus REPO] [--no-external] [--out FILE] [--out-dir DIR]
+index atlas     [--root ROOT] [--format html] [--json] [--out FILE] [--no-external]
+index map       [--root ROOT] [--output FILE] [--json] [--config CFG]
+index graph     [--root ROOT] [--json] [--cycles]
+index context   [--root ROOT] [--focus REPO]
+index viz       [--root ROOT] [--format {html,svg,mermaid,all}]
+                [--focus REPO] [--no-external] [--out FILE] [--out-dir DIR]
+index internals [--root REPO] [--json] [--cycles]
+index check     [--root ROOT] [--internals] [--json] [--config CFG]
+index snapshot  [--root ROOT] --out FILE
+index drift     --from OLD --to NEW [--json]
 ```
 
 `--focus REPO` narrows a `viz` or `context` render to one repo's dependency neighborhood.

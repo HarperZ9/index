@@ -1,5 +1,33 @@
 # Changelog
 
+## 2.0.0
+
+### Added
+- `index internals`: an intra-repo module dependency graph, so the map sees inside a
+  repo and not only repo as atom. Python is AST-exact; JavaScript/TypeScript, Rust, and
+  Go are best-effort and file-level. Reports internal cycles and per-module fan-in and
+  fan-out.
+- `[architecture]` config block in `.index.toml`: declare ordered layers, forbidden
+  edges, a cycle ceiling (`max_cycles`), and ownership globs. A criterion the tool can
+  measure real structure against.
+- `index check`: evaluate the graph against the declared criterion. Every violation
+  carries evidence to the file and line. Exits non-zero when findings exist, so it gates
+  CI.
+- `index snapshot` and `index drift`: write a canonical, byte-stable snapshot, then diff
+  two snapshots into added and removed repos and edges, introduced and cleared cycles,
+  and role changes.
+- A re-checkable certificate for `check` and `drift`: a content hash, a criterion hash,
+  and one of three verdicts, MATCH, DRIFT, or UNVERIFIABLE, never a fourth. A consumer
+  re-runs the `recheck` command and confirms the verdict from the evidence, rather than
+  trusting it. The seam is specified in `docs/PROTOCOL.md`.
+
+### Notes
+- Additive and backward compatible: `map`, `graph`, `context`, `viz`, and `atlas` and
+  their JSON are unchanged. Zero new runtime dependencies. The tool runs fully offline,
+  with no API, no account, and no model required, and is agnostic to whatever produced
+  the code it reads.
+- `.index.toml` is now read tolerantly of a UTF-8 byte-order mark.
+
 ## 1.2.0
 
 ### Added
