@@ -46,6 +46,29 @@ def test_tools_call_error_is_flagged(tmp_path):
     assert r["result"]["isError"] is True
 
 
+def test_unknown_tool_is_invalid_params(tmp_path):
+    r = handle_request({"jsonrpc": "2.0", "id": 5, "method": "tools/call",
+                        "params": {"name": "nope", "arguments": {"root": str(tmp_path)}}})
+    assert r["error"]["code"] == -32602
+
+
+def test_missing_root_is_clear_error():
+    r = handle_request({"jsonrpc": "2.0", "id": 6, "method": "tools/call",
+                        "params": {"name": "index_graph", "arguments": {}}})
+    assert r["result"]["isError"] is True
+    assert "root" in r["result"]["content"][0]["text"]
+
+
+def test_depends_without_arrow_is_error(tmp_path):
+    (tmp_path / "solo" / ".git").mkdir(parents=True)
+    (tmp_path / "solo" / "pyproject.toml").write_text(
+        "[project]\nname='solo'\nversion='0'\n", encoding="utf-8")
+    r = handle_request({"jsonrpc": "2.0", "id": 7, "method": "tools/call",
+                        "params": {"name": "index_verify",
+                                   "arguments": {"root": str(tmp_path), "depends": "noarrow"}}})
+    assert r["result"]["isError"] is True
+
+
 def test_serve_roundtrip():
     inp = io.StringIO('{"jsonrpc":"2.0","id":1,"method":"initialize"}\n'
                       '{"jsonrpc":"2.0","method":"notifications/initialized"}\n'
