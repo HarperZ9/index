@@ -1,0 +1,6 @@
+[package]
+name = "rust-app"
+version = "0.1.0"
+
+[dependencies]
+rust-lib = "0.1"
