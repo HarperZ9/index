@@ -47,3 +47,35 @@ def test_external_import_is_not_internal_edge(tmp_path):
     mods = discover_modules(tmp_path)
     edges = extract_internal_edges(tmp_path, mods)
     assert edges == []
+
+
+def test_illegal_relative_import_makes_no_edge(tmp_path):
+    # `from ..config import C` from a 1-deep module walks above the top-level
+    # package; Python rejects it at import time, so it must not yield an edge.
+    _write(tmp_path, "app/__init__.py", "")
+    _write(tmp_path, "app/main.py", "from ..config import C\n")
+    _write(tmp_path, "config.py", "C = 1\n")
+    mods = discover_modules(tmp_path)
+    edges = extract_internal_edges(tmp_path, mods)
+    assert edges == []
+
+
+def test_legal_parent_relative_import_resolves(tmp_path):
+    # a 2-deep module CAN do `from ..helper import h` (stays within the package)
+    _write(tmp_path, "app/__init__.py", "")
+    _write(tmp_path, "app/sub/__init__.py", "")
+    _write(tmp_path, "app/sub/leaf.py", "from ..helper import h\n")
+    _write(tmp_path, "app/helper.py", "def h(): pass\n")
+    mods = discover_modules(tmp_path)
+    edges = extract_internal_edges(tmp_path, mods)
+    assert ("app/sub/leaf", "app/helper") in {(e.from_id, e.to_id) for e in edges}
+
+
+def test_illegal_bare_parent_import_makes_no_edge(tmp_path):
+    # `from .. import sibling` from a 1-deep module also escapes the top package
+    _write(tmp_path, "app/__init__.py", "")
+    _write(tmp_path, "app/main.py", "from .. import sibling\n")
+    _write(tmp_path, "sibling.py", "x = 1\n")
+    mods = discover_modules(tmp_path)
+    edges = extract_internal_edges(tmp_path, mods)
+    assert edges == []

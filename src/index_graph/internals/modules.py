@@ -33,7 +33,7 @@ class InternalEdge:
 _LANG_BY_SUFFIX = {
     ".py": "python",
     ".js": "javascript", ".jsx": "javascript", ".mjs": "javascript",
-    ".cjs": "javascript", ".ts": "javascript", ".tsx": "javascript",
+    ".cjs": "javascript", ".ts": "typescript", ".tsx": "typescript",
     ".rs": "rust", ".go": "go",
 }
 _SUFFIXES = tuple(_LANG_BY_SUFFIX)
@@ -70,15 +70,34 @@ def _dotted_to_id(dotted: str, ids: set[str]) -> str | None:
     return _id_for(dotted.replace(".", "/"), ids)
 
 
+def _pkg_depth(repo_root: Path, importer_id: str) -> int:
+    """How many package levels a relative import may legally walk up from this
+    module: the run of __init__.py-bearing directories from the module's own
+    directory up to and including the repo root. A `from .x` needs depth >= 1,
+    `from ..x` needs depth >= 2, and so on. This makes resolution correct for
+    both a src-layout single package (the root is itself a package) and a
+    workspace of separate packages (the root is not)."""
+    parts = importer_id.split("/")[:-1]
+    depth = 0
+    while True:
+        d = repo_root.joinpath(*parts) if parts else repo_root
+        if (d / "__init__.py").is_file():
+            depth += 1
+            if not parts:
+                break
+            parts = parts[:-1]
+        else:
+            break
+    return depth
+
+
 def _resolve_relative(importer_id: str, level: int, module: str | None,
-                      ids: set[str]) -> str | None:
+                      ids: set[str], depth: int) -> str | None:
+    if level > depth:
+        return None  # walks above the top-level package: not an internal import
     pkg_parts = importer_id.split("/")[:-1]
-    up = level - 1
-    if up > len(pkg_parts):
-        return None
-    if up:
-        pkg_parts = pkg_parts[:len(pkg_parts) - up]
-    target = pkg_parts + (module.split(".") if module else [])
+    base = pkg_parts[:len(pkg_parts) - (level - 1)]
+    target = base + (module.split(".") if module else [])
     if not target:
         return None
     return _id_for("/".join(target), ids)
@@ -90,9 +109,10 @@ def _python_edges(repo_root: Path, ids: set[str]) -> list[InternalEdge]:
         rel = py.relative_to(repo_root).as_posix()
         from_id = _strip_suffix(rel)
         try:
-            tree = ast.parse(py.read_text(encoding="utf-8"))
+            tree = ast.parse(py.read_text(encoding="utf-8-sig"))
         except (OSError, SyntaxError, ValueError):
             continue
+        depth = _pkg_depth(repo_root, from_id)
         for node in ast.walk(tree):
             if isinstance(node, ast.Import):
                 for a in node.names:
@@ -101,10 +121,9 @@ def _python_edges(repo_root: Path, ids: set[str]) -> list[InternalEdge]:
                         out.append(InternalEdge(from_id, tid, rel, node.lineno, f"import {a.name}"))
             elif isinstance(node, ast.ImportFrom):
                 if node.level and node.module is None:
-                    pkg_parts = from_id.split("/")[:-1]
-                    up = node.level - 1
-                    base = pkg_parts[:len(pkg_parts) - up] if up <= len(pkg_parts) else None
-                    if base is not None:
+                    if node.level <= depth:
+                        pkg_parts = from_id.split("/")[:-1]
+                        base = pkg_parts[:len(pkg_parts) - (node.level - 1)]
                         for a in node.names:
                             tid = _id_for("/".join([*base, a.name]), ids)
                             if tid and tid != from_id:
@@ -113,7 +132,7 @@ def _python_edges(repo_root: Path, ids: set[str]) -> list[InternalEdge]:
                                     f"from {'.' * node.level} import {a.name}"))
                     continue
                 if node.level and node.level > 0:
-                    tid = _resolve_relative(from_id, node.level, node.module, ids)
+                    tid = _resolve_relative(from_id, node.level, node.module, ids, depth)
                     raw = f"from {'.' * node.level}{node.module or ''} import ..."
                 elif node.module:
                     tid = _dotted_to_id(node.module, ids)
@@ -144,8 +163,9 @@ def _js_resolve(importer_rel: str, spec: str, ids: set[str]) -> str | None:
         if seg in ("", "."):
             continue
         if seg == "..":
-            if parts:
-                parts.pop()
+            if not parts:
+                return None  # the specifier escapes above the repo root
+            parts.pop()
             continue
         parts.append(seg)
     cand = "/".join(parts)
@@ -163,7 +183,7 @@ def _js_edges(repo_root: Path, ids: set[str]) -> list[InternalEdge]:
         rel = f.relative_to(repo_root).as_posix()
         from_id = _strip_suffix(rel)
         try:
-            text = f.read_text(encoding="utf-8")
+            text = f.read_text(encoding="utf-8-sig")
         except OSError:
             continue
         for i, line in enumerate(text.splitlines(), 1):
@@ -190,7 +210,7 @@ def _rust_edges(repo_root: Path, ids: set[str]) -> list[InternalEdge]:
         parent = Path(rel).parent.as_posix()
         parent = "" if parent == "." else parent + "/"
         try:
-            text = f.read_text(encoding="utf-8")
+            text = f.read_text(encoding="utf-8-sig")
         except OSError:
             continue
         for i, line in enumerate(text.splitlines(), 1):
@@ -217,7 +237,7 @@ def _go_module_path(repo_root: Path) -> str | None:
     if not gomod.is_file():
         return None
     try:
-        for line in gomod.read_text(encoding="utf-8").splitlines():
+        for line in gomod.read_text(encoding="utf-8-sig").splitlines():
             m = _GO_MODULE.match(line)
             if m:
                 return m.group(1)
@@ -236,7 +256,7 @@ def _go_edges(repo_root: Path, ids: set[str]) -> list[InternalEdge]:
         rel = f.relative_to(repo_root).as_posix()
         from_id = _strip_suffix(rel)
         try:
-            lines = f.read_text(encoding="utf-8").splitlines()
+            lines = f.read_text(encoding="utf-8-sig").splitlines()
         except OSError:
             continue
         in_block = False
@@ -273,7 +293,7 @@ def extract_internal_edges(repo_root: Path, modules: list[ModuleNode]) -> list[I
         by_lang.setdefault(m.language, set()).add(m.id)
     edges: list[InternalEdge] = []
     edges += _python_edges(repo_root, by_lang.get("python", set()))
-    edges += _js_edges(repo_root, by_lang.get("javascript", set()))
+    edges += _js_edges(repo_root, by_lang.get("javascript", set()) | by_lang.get("typescript", set()))
     edges += _rust_edges(repo_root, by_lang.get("rust", set()))
     edges += _go_edges(repo_root, by_lang.get("go", set()))
     return sorted(edges, key=lambda e: (e.from_id, e.to_id, e.evidence_file, e.evidence_line or 0))

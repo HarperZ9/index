@@ -277,61 +277,91 @@ def _cmd_internals(args) -> int:
         "fan_in": g.fan_in, "fan_out": g.fan_out,
     }
     if args.json:
-        print(json.dumps(payload, indent=2))
+        print(json.dumps(payload, indent=2, sort_keys=True))
     else:
         print(f"modules={len(g.modules)} edges={len(g.edges)} cycles={len(g.cycles)}")
     return 0
+
+
+def _emit_cert(cert: dict, as_json: bool) -> int:
+    if as_json:
+        print(json.dumps(cert, indent=2, sort_keys=True))
+    else:
+        print(f"verdict={cert['verdict']} findings={len(cert['findings'])}")
+        for f in cert["findings"]:
+            loc = f" ({f['evidence']})" if f.get("evidence") else ""
+            print(f"  [{f['rule']}] {f['detail']}{loc}")
+    return 0 if cert["verdict"] == "MATCH" else 1
 
 
 def _cmd_check(args) -> int:
     from .arch.check import check_graph
     from .certify import build_certificate
     from .context.pack import to_json
+    from .internals import build_internals
     root = args.root.resolve()
     if not root.is_dir():
         raise SystemExit(f"root not found: {root}")
     config = load_config(args.config, root)
     crit = config.architecture
-    graph = build_graph(_repo_paths(root))
+    repo_paths = _repo_paths(root)
+    graph = build_graph(repo_paths)
     pack = to_json(graph)
     names = set(pack.get("roles", {}).keys())
 
-    findings: list = []
     if not crit.declared:
-        verdict = "UNVERIFIABLE"
-        findings.append({"rule": "criterion", "detail": "no [architecture] criterion declared",
-                         "edge": None, "evidence": None})
-    else:
-        unmatched = [layer for layer in crit.layers
-                     if not any(n == layer or n.startswith(layer + "/") or n.endswith("/" + layer)
-                                for n in names)]
-        findings = [{"rule": f.rule, "detail": f.detail, "edge": f.edge, "evidence": f.evidence}
-                    for f in check_graph(pack, crit)]
-        if unmatched:
-            verdict = "UNVERIFIABLE"
-            for layer in unmatched:
-                findings.append({"rule": "layer", "detail": f"layer '{layer}' matches no repo",
-                                 "edge": None, "evidence": None})
-        else:
-            verdict = "DRIFT" if findings else "MATCH"
+        cert = build_certificate(
+            "check", content=pack, criterion=None, verdict="UNVERIFIABLE",
+            findings=[{"rule": "criterion", "detail": "no [architecture] criterion declared",
+                       "edge": None, "evidence": None}],
+            recheck=f"index check --root {args.root}", tool_version=__version__)
+        return _emit_cert(cert, args.json)
 
-    criterion_doc = None
-    if crit.declared:
-        criterion_doc = {"layers": list(crit.layers),
-                         "forbid": [{"from": f.from_glob, "to": f.to_glob} for f in crit.forbid],
-                         "max_cycles": crit.max_cycles, "owns": [list(o) for o in crit.owns]}
+    # repo-level findings
+    findings = [{"rule": f.rule, "detail": f.detail, "edge": f.edge, "evidence": f.evidence}
+                for f in check_graph(pack, crit)]
+
+    # optional intra-repo module checks: internal cycles against the ceiling
+    internal_content = None
+    if args.internals:
+        internal_content = {}
+        for name, p in sorted(repo_paths.items()):
+            g = build_internals(p, name)
+            internal_content[name] = {"cycles": [list(c) for c in g.cycles]}
+            if crit.max_cycles is not None and len(g.cycles) > crit.max_cycles:
+                findings.append({
+                    "rule": "max_cycles",
+                    "detail": f"{name}: {len(g.cycles)} internal module cycle(s) "
+                              f"exceed the ceiling of {crit.max_cycles}",
+                    "edge": None, "evidence": None})
+
+    real_violations = len(findings) > 0
+
+    # criterion-quality warnings: layers that name no repo
+    unmatched = [layer for layer in crit.layers
+                 if not any(n == layer or n.startswith(layer + "/") or n.endswith("/" + layer)
+                            for n in names)]
+    for layer in unmatched:
+        findings.append({"rule": "layer", "detail": f"layer '{layer}' matches no repo",
+                         "edge": None, "evidence": None})
+
+    # a confirmed breach outranks an unverifiable criterion
+    if real_violations:
+        verdict = "DRIFT"
+    elif unmatched:
+        verdict = "UNVERIFIABLE"
+    else:
+        verdict = "MATCH"
+
+    criterion_doc = {"layers": list(crit.layers),
+                     "forbid": [{"from": f.from_glob, "to": f.to_glob} for f in crit.forbid],
+                     "max_cycles": crit.max_cycles, "owns": [list(o) for o in crit.owns]}
+    content = pack if internal_content is None else {"pack": pack, "internals": internal_content}
     recheck = f"index check --root {args.root}" + (" --internals" if args.internals else "")
-    cert = build_certificate("check", content=pack, criterion=criterion_doc,
+    cert = build_certificate("check", content=content, criterion=criterion_doc,
                              verdict=verdict, findings=findings, recheck=recheck,
                              tool_version=__version__)
-    if args.json:
-        print(json.dumps(cert, indent=2))
-    else:
-        print(f"verdict={cert['verdict']} findings={len(findings)}")
-        for f in findings:
-            loc = f" ({f['evidence']})" if f.get("evidence") else ""
-            print(f"  [{f['rule']}] {f['detail']}{loc}")
-    return 0 if verdict == "MATCH" else 1
+    return _emit_cert(cert, args.json)
 
 
 def _cmd_snapshot(args) -> int:
@@ -351,7 +381,10 @@ def _cmd_drift(args) -> int:
     from .drift import load_snapshot, diff_snapshots
     old = load_snapshot(args.from_snap.read_text(encoding="utf-8"))
     new = load_snapshot(args.to_snap.read_text(encoding="utf-8"))
-    report = diff_snapshots(old, new)
+    try:
+        report = diff_snapshots(old, new)
+    except ValueError as exc:
+        raise SystemExit(f"drift: {exc}")
     if args.json:
         print(json.dumps(report.to_json(), indent=2))
     else:

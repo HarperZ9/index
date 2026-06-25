@@ -38,3 +38,20 @@ def test_cycles_introduced_and_roles_changed():
     report = diff_snapshots(old, new)
     assert report.cycles_introduced == (("a", "b"),)
     assert ("a", "leaf", "hub") in report.roles_changed
+
+
+def test_diff_rejects_non_snapshot():
+    import pytest
+    good = snapshot_pack(_pack([], {"a": []}))
+    with pytest.raises(ValueError):
+        diff_snapshots({"not": "a snapshot"}, good)
+    with pytest.raises(ValueError):
+        diff_snapshots(good, {"schema": "something/else"})
+
+
+def test_cycle_member_order_does_not_drift():
+    # a snapshot whose cycle members are written in a different order is not drift
+    base = snapshot_pack(_pack([], {"a": [], "b": []}, cycles=[["a", "b"]]))
+    reordered = dict(base)
+    reordered["cycles"] = [["b", "a"]]
+    assert diff_snapshots(base, reordered).verdict == "MATCH"

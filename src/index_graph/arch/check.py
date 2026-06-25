@@ -44,7 +44,7 @@ def _layer_of(name: str, layers: tuple[str, ...]) -> int | None:
     return None
 
 
-def check_graph(pack: dict, criteria: ArchitectureCriteria, *, internal=None) -> list[Finding]:
+def check_graph(pack: dict, criteria: ArchitectureCriteria) -> list[Finding]:
     findings: list[Finding] = []
     relations = [r for r in pack.get("relations", []) if not r.get("external")]
 
