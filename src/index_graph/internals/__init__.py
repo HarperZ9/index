@@ -1,10 +1,10 @@
 """Intra-repo module graph: see inside a repo, not only repo as atom."""
 from __future__ import annotations
 
-from .modules import ModuleNode, InternalEdge, discover_modules, extract_internal_edges
-from .build import InternalGraph, build_internals
+from .modules import ModuleNode, InternalEdge, Unresolved, discover_modules, extract_internal_edges
+from .build import InternalGraph, Coverage, build_internals
 
 __all__ = [
-    "ModuleNode", "InternalEdge", "InternalGraph",
+    "ModuleNode", "InternalEdge", "Unresolved", "InternalGraph", "Coverage",
     "discover_modules", "extract_internal_edges", "build_internals",
 ]

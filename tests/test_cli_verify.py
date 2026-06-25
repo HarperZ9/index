@@ -83,3 +83,26 @@ def test_check_internals_finds_internal_cycle_and_outranks_unverifiable(tmp_path
     assert any(f["rule"] == "max_cycles" for f in deep["findings"])
     # the certificate's content hash must cover the internals it checked
     assert deep["content_sha256"] != bare["content_sha256"]
+
+
+def test_internals_json_reports_coverage(tmp_path):
+    (tmp_path / "pkg").mkdir()
+    (tmp_path / "pkg" / "__init__.py").write_text("", encoding="utf-8")
+    (tmp_path / "pkg" / "broken.py").write_text("def (:\n", encoding="utf-8")
+    data = json.loads(_run(["internals", "--root", str(tmp_path), "--json"]).stdout)
+    assert data["coverage"]["complete"] is False
+    assert "pkg/broken.py" in data["coverage"]["parse_errors"]
+
+
+def test_check_internals_certificate_carries_coverage(tmp_path):
+    # a MATCH that is honest about what it could not verify (soundness-typed)
+    repo = tmp_path / "myrepo"
+    (repo / "pkg").mkdir(parents=True)
+    (repo / ".git").mkdir()
+    (repo / "pkg" / "__init__.py").write_text("", encoding="utf-8")
+    (repo / "pkg" / "broken.py").write_text("def (:\n", encoding="utf-8")
+    (tmp_path / ".index.toml").write_text("[architecture]\nmax_cycles = 0\n", encoding="utf-8")
+    cert = json.loads(_run(["check", "--root", str(tmp_path), "--internals", "--json"]).stdout)
+    assert "coverage" in cert
+    assert cert["coverage"]["complete"] is False
+    assert "myrepo" in cert["coverage"]["unverifiable_repos"]
