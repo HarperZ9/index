@@ -1,5 +1,17 @@
 # Changelog
 
+## 2.5.0
+
+### Added
+- `index mcp`: a zero-dependency, MCP-shaped stdio protocol face. Newline-delimited
+  JSON-RPC 2.0 over stdin/stdout (no SDK, no model) speaking `initialize`, `tools/list`,
+  and `tools/call`, with five deterministic tools (`index_graph`, `index_focus`,
+  `index_verify`, `index_router`, `index_internals`). An agent host or orchestrator
+  connects and consumes index's verified map natively. The protocol pillar, not embeddings.
+
+### Notes
+- Additive and backward compatible. Zero new dependencies.
+
 ## 2.4.0
 
 ### Added

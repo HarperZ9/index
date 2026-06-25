@@ -77,9 +77,9 @@ def test_existing_commands_unaffected(workspace, tmp_path, capsys):
     assert json.loads(capsys.readouterr().out)  # still valid JSON
 
 
-def test_version_is_2_4_0():
+def test_version_is_2_5_0():
     from index_graph import __version__
-    assert __version__ == "2.4.0"
+    assert __version__ == "2.5.0"
 
 
 def test_all_format_no_external_is_consistent(workspace_with_external, tmp_path):

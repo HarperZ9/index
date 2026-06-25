@@ -120,6 +120,7 @@ A rendered sample ships with the repo at [`examples/atlas-demo.html`](examples/a
 | **Architecture check (certificate)** | `index check` | Measure structure against your `[architecture]` rule; emits a re-checkable verdict |
 | **Drift (certificate)** | `index snapshot` then `index drift` | Snapshot the shape, then see exactly what changed |
 | **Claim grounding** | `index verify` | Confirm or refute a dependency or existence claim against the graph, with evidence |
+| **Agent protocol** | `index mcp` | An MCP-shaped stdio server exposing index's tools to an agent host |
 
 ---
 
@@ -162,6 +163,7 @@ index snapshot  [--root ROOT] --out FILE
 index drift     --from OLD --to NEW [--json]
 index router    [--root ROOT] [--out FILE]
 index verify    [--root ROOT] [--depends "A -> B" | --exists NAME] [--json]
+index mcp       (stdio JSON-RPC; an agent host connects and calls index's tools)
 ```
 
 `--focus REPO` narrows a `viz` or `context` render to one repo's dependency neighborhood.

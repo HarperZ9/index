@@ -481,6 +481,16 @@ index verify --root ROOT [--depends "A -> B" | --exists NAME] [--json]
 
 It exits 0 on MATCH, 1 on REFUTED, 2 on UNVERIFIABLE, and `--json` emits a re-checkable record (`index.verification/1`) carrying the content hash and the exact command to re-run.
 
+## Agent protocol face (`mcp`)
+
+`index mcp` serves a zero-dependency, MCP-shaped protocol over stdin and stdout: newline-delimited JSON-RPC 2.0 (`initialize`, `tools/list`, `tools/call`), no SDK and no model. An agent host or orchestrator connects and calls index's deterministic tools by name.
+
+```text
+index mcp
+```
+
+The tools are `index_graph`, `index_focus` (a repo's neighborhood plus the preservation manifest), `index_verify` (ground a depends or exists claim), `index_router` (the workspace map), and `index_internals` (a repo's module graph). Each reuses the same function its matching subcommand does, so the protocol face never disagrees with the CLI.
+
 ## Notes
 
 - This CLI is agent assisted. Review the output before sharing it in public.
