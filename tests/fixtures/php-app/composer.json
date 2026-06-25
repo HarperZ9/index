@@ -1,0 +1,1 @@
+{"name": "org/app", "require": {"org/lib": "^1.0", "monolog/monolog": "^2.0"}}
