@@ -1,5 +1,18 @@
 # Changelog
 
+## 2.4.0
+
+### Added
+- `index verify`: a deterministic claim-grounding oracle. `--depends "A -> B"` or
+  `--exists NAME` grounds the claim against the real graph and returns MATCH (with the
+  file:line evidence), REFUTED, or UNVERIFIABLE, its own honest triad. Re-checkable
+  (schema `index.verification/1`, a content hash plus a recheck command), with distinct
+  exit codes 0/1/2. The anti-hallucination check: a model confirms a dependency against
+  the graph instead of trusting its memory.
+
+### Notes
+- Additive and backward compatible. Zero new dependencies.
+
 ## 2.3.0
 
 ### Added
