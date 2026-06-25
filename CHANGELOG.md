@@ -1,5 +1,32 @@
 # Changelog
 
+## 1.2.0
+
+### Added
+- Rust (`Cargo.toml`), Go (`go.mod`), and Java (Maven `pom.xml`, best-effort Gradle)
+  dependency resolvers. Workspaces in these ecosystems now show inter-repo edges, each
+  with evidence and a confidence grade. Rust and Go reach `high` confidence when a
+  manifest and an import agree; Java is manifest-only (`moderate`).
+
+### Changed
+- `resolve_edges` gains a longest-prefix fallback for path-like dependency names, so a
+  Go import of a module's sub-package resolves to that module. Python and JavaScript
+  resolution is unchanged.
+
+## 1.1.0
+
+### Added
+- `index atlas`: a two-layer code-and-knowledge map. Markdown docs become first-class
+  nodes joined to the code they describe, rendered as one self-contained, navigable HTML
+  dashboard (pan and zoom, unified repo and doc search, in-place rendered markdown with
+  clickable `[[wiki-links]]`, focus, and a navigation trail).
+- Dependency dashboard: cycle detection and highlighting, edge-evidence tooltips, a
+  legend, and neighborhood highlighting. `index graph --cycles` reports dependency cycles.
+
+### Changed
+- License moved to fair source (FSL-1.1-MIT): source-available with a competing-use
+  restriction, converting to MIT two years after each release. 1.0.0 remains MIT.
+
 ## 1.0.0
 
 Renamed to **index** (`pip install index-graph`, command `index`); flagship release. (Was `workspace-repo-map`.)
