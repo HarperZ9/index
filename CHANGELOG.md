@@ -1,5 +1,18 @@
 # Changelog
 
+## 2.6.0
+
+### Added
+- Four new ecosystem resolvers, widening dependency reach from five languages to nine with
+  no new runtime dependency: C# (`.csproj` PackageReference and ProjectReference, plus
+  `using`), Ruby (Gemfile gems and `require`/`require_relative`, gemspec name), PHP
+  (`composer.json` require and `use` namespaces), and C/C++ (CMake `project`,
+  `add_library`, `target_link_libraries`, and `#include`, best-effort). Each follows the
+  existing manifest-plus-import evidence pattern.
+
+### Notes
+- Additive and backward compatible. Zero new dependencies, standard library only.
+
 ## 2.5.0
 
 ### Added
