@@ -14,7 +14,7 @@ from .graph.build import build_graph
 from .scan import build_map, discover_repos, write_map
 
 _SUBCOMMANDS = {"map", "graph", "context", "viz", "atlas",
-                "internals", "check", "snapshot", "drift", "router", "verify"}
+                "internals", "check", "snapshot", "drift", "router", "verify", "mcp"}
 
 
 def _add_map_args(p: argparse.ArgumentParser) -> None:
@@ -91,6 +91,8 @@ def build_parser() -> argparse.ArgumentParser:
     vf.add_argument("--depends", default=None, help="claim 'A -> B' (A depends on B)")
     vf.add_argument("--exists", default=None, help="claim that repo NAME exists")
     vf.add_argument("--json", action="store_true")
+
+    sub.add_parser("mcp", help="Serve the MCP-shaped stdio protocol face (JSON-RPC over stdin/stdout).")
     return parser
 
 
@@ -509,6 +511,11 @@ def _cmd_verify(args) -> int:
     return {"MATCH": 0, "REFUTED": 1, "UNVERIFIABLE": 2}[rec["verdict"]]
 
 
+def _cmd_mcp(args) -> int:
+    from .mcp import serve
+    return serve()
+
+
 def main(argv: list[str] | None = None) -> int:
     raw = list(sys.argv[1:] if argv is None else argv)
     # No leading subcommand: route top-level --version/--help to the root
@@ -539,4 +546,6 @@ def main(argv: list[str] | None = None) -> int:
         return _cmd_router(args)
     if args.cmd == "verify":
         return _cmd_verify(args)
+    if args.cmd == "mcp":
+        return _cmd_mcp(args)
     return _cmd_map(args)
