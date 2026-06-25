@@ -18,10 +18,10 @@ def canonical_sha(obj) -> str:
 
 def build_certificate(kind: str, *, content: dict, criterion: dict | None,
                       verdict: str, findings: list[dict], recheck: str,
-                      tool_version: str) -> dict:
+                      tool_version: str, coverage: dict | None = None) -> dict:
     if verdict not in _VERDICTS:
         raise ValueError(f"verdict must be one of {sorted(_VERDICTS)}, got {verdict!r}")
-    return {
+    cert = {
         "schema": "index.certificate/1",
         "tool_version": tool_version,
         "kind": kind,
@@ -31,3 +31,7 @@ def build_certificate(kind: str, *, content: dict, criterion: dict | None,
         "findings": findings,
         "recheck": recheck,
     }
+    if coverage is not None:
+        # soundness scope: what the verdict could and could not structurally verify
+        cert["coverage"] = coverage
+    return cert

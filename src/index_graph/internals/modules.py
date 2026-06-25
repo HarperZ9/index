@@ -30,6 +30,17 @@ class InternalEdge:
     raw: str
 
 
+@dataclass(frozen=True)
+class Unresolved:
+    """An import the static scan could not turn into a definite internal edge.
+    The soundness gap a verdict must be honest about (call-graph soundness:
+    static analysis cannot see dynamic dispatch or unparseable files)."""
+    file: str
+    line: int | None
+    reason: str   # "parse_error" | "dynamic"
+    raw: str
+
+
 _LANG_BY_SUFFIX = {
     ".py": "python",
     ".js": "javascript", ".jsx": "javascript", ".mjs": "javascript",
@@ -103,14 +114,18 @@ def _resolve_relative(importer_id: str, level: int, module: str | None,
     return _id_for("/".join(target), ids)
 
 
-def _python_edges(repo_root: Path, ids: set[str]) -> list[InternalEdge]:
+def _python_edges(repo_root: Path, ids: set[str]) -> tuple[list[InternalEdge], list[Unresolved]]:
     out: list[InternalEdge] = []
+    unresolved: list[Unresolved] = []
     for py in walk_files(repo_root, suffixes=(".py",)):
         rel = py.relative_to(repo_root).as_posix()
         from_id = _strip_suffix(rel)
         try:
             tree = ast.parse(py.read_text(encoding="utf-8-sig"))
-        except (OSError, SyntaxError, ValueError):
+        except OSError:
+            continue
+        except (SyntaxError, ValueError):
+            unresolved.append(Unresolved(rel, None, "parse_error", ""))
             continue
         depth = _pkg_depth(repo_root, from_id)
         for node in ast.walk(tree):
@@ -142,7 +157,12 @@ def _python_edges(repo_root: Path, ids: set[str]) -> list[InternalEdge]:
                     raw = ""
                 if tid and tid != from_id:
                     out.append(InternalEdge(from_id, tid, rel, node.lineno, raw))
-    return out
+            elif isinstance(node, ast.Call):
+                fn = node.func
+                if (isinstance(fn, ast.Name) and fn.id == "__import__") or \
+                   (isinstance(fn, ast.Attribute) and fn.attr == "import_module"):
+                    unresolved.append(Unresolved(rel, node.lineno, "dynamic", "dynamic import"))
+    return out, unresolved
 
 
 # --- JavaScript / TypeScript (best-effort, relative specifiers) ------------
@@ -151,6 +171,7 @@ _JS_IMPORT = re.compile(
     r"""(?:import|export)[^'"]*?from\s*['"]([^'"]+)['"]"""
     r"""|require\(\s*['"]([^'"]+)['"]\s*\)"""
     r"""|import\(\s*['"]([^'"]+)['"]\s*\)""")
+_JS_DYNAMIC = re.compile(r"""\b(?:require|import)\(\s*[A-Za-z_$]""")
 _JS_SUFFIXES = (".js", ".jsx", ".mjs", ".cjs", ".ts", ".tsx")
 
 
@@ -177,8 +198,9 @@ def _js_resolve(importer_rel: str, spec: str, ids: set[str]) -> str | None:
     return idx if idx in ids else None
 
 
-def _js_edges(repo_root: Path, ids: set[str]) -> list[InternalEdge]:
+def _js_edges(repo_root: Path, ids: set[str]) -> tuple[list[InternalEdge], list[Unresolved]]:
     out: list[InternalEdge] = []
+    unresolved: list[Unresolved] = []
     for f in walk_files(repo_root, suffixes=_JS_SUFFIXES):
         rel = f.relative_to(repo_root).as_posix()
         from_id = _strip_suffix(rel)
@@ -194,7 +216,9 @@ def _js_edges(repo_root: Path, ids: set[str]) -> list[InternalEdge]:
                 tid = _js_resolve(rel, spec, ids)
                 if tid and tid != from_id:
                     out.append(InternalEdge(from_id, tid, rel, i, line.strip()))
-    return out
+            if _JS_DYNAMIC.search(line):
+                unresolved.append(Unresolved(rel, i, "dynamic", line.strip()))
+    return out, unresolved
 
 
 # --- Rust (best-effort, mod declarations) ----------------------------------
@@ -202,7 +226,7 @@ def _js_edges(repo_root: Path, ids: set[str]) -> list[InternalEdge]:
 _RUST_MOD = re.compile(r"^\s*(?:pub\s+)?mod\s+([A-Za-z_][A-Za-z0-9_]*)\s*;")
 
 
-def _rust_edges(repo_root: Path, ids: set[str]) -> list[InternalEdge]:
+def _rust_edges(repo_root: Path, ids: set[str]) -> tuple[list[InternalEdge], list[Unresolved]]:
     out: list[InternalEdge] = []
     for f in walk_files(repo_root, suffixes=(".rs",)):
         rel = f.relative_to(repo_root).as_posix()
@@ -222,7 +246,7 @@ def _rust_edges(repo_root: Path, ids: set[str]) -> list[InternalEdge]:
                 if cand in ids and cand != from_id:
                     out.append(InternalEdge(from_id, cand, rel, i, line.strip()))
                     break
-    return out
+    return out, []
 
 
 # --- Go (best-effort, internal package imports) ----------------------------
@@ -246,10 +270,10 @@ def _go_module_path(repo_root: Path) -> str | None:
     return None
 
 
-def _go_edges(repo_root: Path, ids: set[str]) -> list[InternalEdge]:
+def _go_edges(repo_root: Path, ids: set[str]) -> tuple[list[InternalEdge], list[Unresolved]]:
     mod_path = _go_module_path(repo_root)
     if not mod_path:
-        return []
+        return [], []
     pkg_dirs = {Path(m).parent.as_posix() for m in ids}
     out: list[InternalEdge] = []
     for f in walk_files(repo_root, suffixes=(".go",)):
@@ -282,18 +306,29 @@ def _go_edges(repo_root: Path, ids: set[str]) -> list[InternalEdge]:
                                    if Path(m2).parent.as_posix() == sub), None)
                     if target and target != from_id:
                         out.append(InternalEdge(from_id, target, rel, i, line.strip()))
-    return out
+    return out, []
 
 
 # --- Dispatch --------------------------------------------------------------
 
-def extract_internal_edges(repo_root: Path, modules: list[ModuleNode]) -> list[InternalEdge]:
+def _extract(repo_root: Path, modules: list[ModuleNode]) -> tuple[list[InternalEdge], list[Unresolved]]:
     by_lang: dict[str, set[str]] = {}
     for m in modules:
         by_lang.setdefault(m.language, set()).add(m.id)
+    js_ids = by_lang.get("javascript", set()) | by_lang.get("typescript", set())
     edges: list[InternalEdge] = []
-    edges += _python_edges(repo_root, by_lang.get("python", set()))
-    edges += _js_edges(repo_root, by_lang.get("javascript", set()) | by_lang.get("typescript", set()))
-    edges += _rust_edges(repo_root, by_lang.get("rust", set()))
-    edges += _go_edges(repo_root, by_lang.get("go", set()))
-    return sorted(edges, key=lambda e: (e.from_id, e.to_id, e.evidence_file, e.evidence_line or 0))
+    unresolved: list[Unresolved] = []
+    for fn, lang_ids in ((_python_edges, by_lang.get("python", set())),
+                         (_js_edges, js_ids),
+                         (_rust_edges, by_lang.get("rust", set())),
+                         (_go_edges, by_lang.get("go", set()))):
+        e, u = fn(repo_root, lang_ids)
+        edges += e
+        unresolved += u
+    edges.sort(key=lambda x: (x.from_id, x.to_id, x.evidence_file, x.evidence_line or 0))
+    unresolved.sort(key=lambda x: (x.file, x.line or 0, x.reason))
+    return edges, unresolved
+
+
+def extract_internal_edges(repo_root: Path, modules: list[ModuleNode]) -> list[InternalEdge]:
+    return _extract(repo_root, modules)[0]

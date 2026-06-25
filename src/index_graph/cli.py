@@ -275,11 +275,23 @@ def _cmd_internals(args) -> int:
                    "line": e.evidence_line, "raw": e.raw} for e in g.edges],
         "cycles": [list(c) for c in g.cycles],
         "fan_in": g.fan_in, "fan_out": g.fan_out,
+        "coverage": {
+            "complete": g.coverage.complete,
+            "modules": g.coverage.modules,
+            "internal_edges": g.coverage.internal_edges,
+            "parse_errors": list(g.coverage.parse_errors),
+            "dynamic_imports": [{"file": fpath, "line": ln}
+                                for fpath, ln in g.coverage.dynamic_imports],
+        },
     }
     if args.json:
         print(json.dumps(payload, indent=2, sort_keys=True))
     else:
-        print(f"modules={len(g.modules)} edges={len(g.edges)} cycles={len(g.cycles)}")
+        cov = ("complete" if g.coverage.complete
+               else f"{len(g.coverage.parse_errors)} unparsed, "
+                    f"{len(g.coverage.dynamic_imports)} dynamic")
+        print(f"modules={len(g.modules)} edges={len(g.edges)} "
+              f"cycles={len(g.cycles)} coverage={cov}")
     return 0
 
 
@@ -291,6 +303,10 @@ def _emit_cert(cert: dict, as_json: bool) -> int:
         for f in cert["findings"]:
             loc = f" ({f['evidence']})" if f.get("evidence") else ""
             print(f"  [{f['rule']}] {f['detail']}{loc}")
+        cov = cert.get("coverage")
+        if cov is not None and not cov.get("complete", True):
+            n = len(cov.get("unverifiable_repos", {}))
+            print(f"  coverage: incomplete, {n} repo(s) with unverifiable regions")
     return 0 if cert["verdict"] == "MATCH" else 1
 
 
@@ -327,7 +343,14 @@ def _cmd_check(args) -> int:
         internal_content = {}
         for name, p in sorted(repo_paths.items()):
             g = build_internals(p, name)
-            internal_content[name] = {"cycles": [list(c) for c in g.cycles]}
+            internal_content[name] = {
+                "cycles": [list(c) for c in g.cycles],
+                "coverage": {
+                    "complete": g.coverage.complete,
+                    "parse_errors": list(g.coverage.parse_errors),
+                    "dynamic_imports": [[fpath, ln] for fpath, ln in g.coverage.dynamic_imports],
+                },
+            }
             if crit.max_cycles is not None and len(g.cycles) > crit.max_cycles:
                 findings.append({
                     "rule": "max_cycles",
@@ -357,10 +380,15 @@ def _cmd_check(args) -> int:
                      "forbid": [{"from": f.from_glob, "to": f.to_glob} for f in crit.forbid],
                      "max_cycles": crit.max_cycles, "owns": [list(o) for o in crit.owns]}
     content = pack if internal_content is None else {"pack": pack, "internals": internal_content}
+    coverage_doc = None
+    if internal_content is not None:
+        incomplete = {n: internal_content[n]["coverage"] for n in internal_content
+                      if not internal_content[n]["coverage"]["complete"]}
+        coverage_doc = {"complete": not incomplete, "unverifiable_repos": incomplete}
     recheck = f"index check --root {args.root}" + (" --internals" if args.internals else "")
     cert = build_certificate("check", content=content, criterion=criterion_doc,
                              verdict=verdict, findings=findings, recheck=recheck,
-                             tool_version=__version__)
+                             tool_version=__version__, coverage=coverage_doc)
     return _emit_cert(cert, args.json)
 
 
