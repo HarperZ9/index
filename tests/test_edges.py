@@ -119,3 +119,16 @@ def test_prefix_fallback_does_not_touch_slashless_names():
     edges, _ = resolve_edges(raw, index)
     internal = [e for e in edges if not e.external]
     assert len(internal) == 1 and internal[0].to_repo == "b"
+
+
+def test_scoped_js_name_with_no_match_stays_external():
+    # A JS scoped import "@scope/pkg" DOES reach resolution with its slash, so it could
+    # in principle enter the prefix fallback. It must not: no exposed name is a
+    # segment-aligned path-prefix of a two-segment "@scope/pkg" unless a repo exposes the
+    # bare scope. So it stays external. (Locks the real safety invariant.)
+    index = build_index({"a": {"a-pkg"}})
+    raw = {"app": [RawEdge("@scope/pkg", "import", "app/x.js", 1, 'import "@scope/pkg"')]}
+    edges, _ = resolve_edges(raw, index)
+    assert len(edges) == 1
+    assert edges[0].external is True and edges[0].to_repo is None
+    assert edges[0].target_name == "@scope/pkg"
