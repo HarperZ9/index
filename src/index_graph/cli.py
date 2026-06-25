@@ -15,7 +15,7 @@ from .scan import build_map, discover_repos, write_map
 
 _SUBCOMMANDS = {"map", "graph", "context", "viz", "atlas",
                 "internals", "check", "snapshot", "drift", "router", "verify",
-                "freshness", "mcp"}
+                "freshness", "bench", "mcp"}
 
 
 def _add_map_args(p: argparse.ArgumentParser) -> None:
@@ -101,6 +101,11 @@ def build_parser() -> argparse.ArgumentParser:
                     help="A certificate JSON carrying a freshness stamp (index check --freshness).")
     fr.add_argument("--root", type=Path, default=Path.cwd())
     fr.add_argument("--json", action="store_true")
+
+    bn = sub.add_parser("bench",
+                        help="Token economy: index's structural pack vs reading the source it distills.")
+    bn.add_argument("--root", type=Path, default=Path.cwd())
+    bn.add_argument("--json", action="store_true")
 
     sub.add_parser("mcp", help="Serve the MCP-shaped stdio protocol face (JSON-RPC over stdin/stdout).")
     return parser
@@ -563,6 +568,30 @@ def _cmd_freshness(args) -> int:
     return {"FRESH": 0, "STALE": 1, "UNVERIFIABLE": 2}[report["verdict"]]
 
 
+def _cmd_bench(args) -> int:
+    from .bench import bench_workspace
+    root = args.root.resolve()
+    if not root.is_dir():
+        raise SystemExit(f"root not found: {root}")
+    report = bench_workspace(_repo_paths(root))
+    report["recheck"] = f"index bench --root {args.root}"
+    if args.json:
+        print(json.dumps(report, indent=2, sort_keys=True))
+    else:
+        st, pk = report["source_bytes"], report["pack_bytes"]
+        red = report["reduction"]
+        red_txt = f"  {red}x smaller" if red else ""
+        print("token economy: index's structural pack vs the source it reads")
+        print(f"  source read   {st:>11,} bytes  (~{report['approx_tokens_source']:,} tokens)  "
+              f"{report['source_files']} files in {report['repos']} repos")
+        print(f"  index pack    {pk:>11,} bytes  (~{report['approx_tokens_pack']:,} tokens){red_txt}")
+        print(f"  note: ~{report['bytes_per_token']} bytes/token is an approximation; the reduction "
+              "ratio does not depend on it.")
+        print("        the pack answers structural questions (depends-on, roles, cycles); reading the "
+              "code is still needed for behavior.")
+    return 0
+
+
 def _cmd_mcp(args) -> int:
     from .mcp import serve
     return serve()
@@ -600,6 +629,8 @@ def main(argv: list[str] | None = None) -> int:
         return _cmd_verify(args)
     if args.cmd == "freshness":
         return _cmd_freshness(args)
+    if args.cmd == "bench":
+        return _cmd_bench(args)
     if args.cmd == "mcp":
         return _cmd_mcp(args)
     return _cmd_map(args)

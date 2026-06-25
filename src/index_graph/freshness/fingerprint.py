@@ -18,6 +18,7 @@ from __future__ import annotations
 import fnmatch
 import hashlib
 import os
+from collections.abc import Iterator
 from pathlib import Path
 
 from ..graph.resolvers import ALL_RESOLVERS
@@ -47,30 +48,37 @@ def _is_relevant(filename: str, names, suffixes, globs) -> bool:
     return any(fnmatch.fnmatchcase(filename, g) for g in globs)
 
 
+def relevant_files(repo_root: Path, resolvers=ALL_RESOLVERS) -> Iterator[Path]:
+    """Yield every graph-relevant file under repo_root (the manifests and source
+    suffixes the resolvers read, across all ecosystems), pruning EXCLUDE_DIRS.
+    Fail-closed: a missing or unreadable tree yields nothing rather than raising.
+    """
+    names, suffixes, globs = _matchers(resolvers)
+    for dirpath, dirnames, filenames in os.walk(Path(repo_root), onerror=lambda _e: None):
+        dirnames[:] = [d for d in dirnames if d not in EXCLUDE_DIRS]
+        for fn in filenames:
+            if _is_relevant(fn, names, suffixes, globs):
+                yield Path(dirpath) / fn
+
+
 def repo_fingerprint(repo_root: Path, resolvers=ALL_RESOLVERS) -> str:
     """A SHA-256 over the sorted (relpath, file-sha256) of every relevant file.
 
     Fail-closed: an unreadable file contributes a fixed marker rather than
     raising, and a missing or unreadable tree yields the empty-set hash.
     """
-    names, suffixes, globs = _matchers(resolvers)
     root = Path(repo_root)
     entries: list[tuple[str, str]] = []
-    for dirpath, dirnames, filenames in os.walk(root, onerror=lambda _e: None):
-        dirnames[:] = [d for d in dirnames if d not in EXCLUDE_DIRS]
-        for fn in filenames:
-            if not _is_relevant(fn, names, suffixes, globs):
-                continue
-            p = Path(dirpath) / fn
-            try:
-                digest = hashlib.sha256(p.read_bytes()).hexdigest()
-            except OSError:
-                digest = "unreadable"
-            try:
-                rel = p.relative_to(root).as_posix()
-            except ValueError:
-                rel = p.as_posix()
-            entries.append((rel, digest))
+    for p in relevant_files(root, resolvers):
+        try:
+            digest = hashlib.sha256(p.read_bytes()).hexdigest()
+        except OSError:
+            digest = "unreadable"
+        try:
+            rel = p.relative_to(root).as_posix()
+        except ValueError:
+            rel = p.as_posix()
+        entries.append((rel, digest))
     entries.sort()
     h = hashlib.sha256()
     for rel, digest in entries:
