@@ -471,6 +471,16 @@ index router --root ROOT [--out FILE]
 
 With `--out` it writes the map to a file; otherwise it prints to stdout. Every line is a graph fact (roles, edges, doc-describes), nothing invented.
 
+## Grounding a claim (`verify`)
+
+`index verify` is a deterministic oracle for a single structural claim, so a model can confirm what it is about to act on instead of trusting its memory. `--depends "A -> B"` asks whether A depends on B; `--exists NAME` asks whether a repo exists. The answer is one of three: MATCH (true, with the file:line that witnesses it), REFUTED (false), or UNVERIFIABLE (the claim names a repo not in the workspace).
+
+```text
+index verify --root ROOT [--depends "A -> B" | --exists NAME] [--json]
+```
+
+It exits 0 on MATCH, 1 on REFUTED, 2 on UNVERIFIABLE, and `--json` emits a re-checkable record (`index.verification/1`) carrying the content hash and the exact command to re-run.
+
 ## Notes
 
 - This CLI is agent assisted. Review the output before sharing it in public.

@@ -119,6 +119,7 @@ A rendered sample ships with the repo at [`examples/atlas-demo.html`](examples/a
 | **Module graph (internals)** | `index internals` | The dependency graph inside one repo, with internal cycles and fan-in/out |
 | **Architecture check (certificate)** | `index check` | Measure structure against your `[architecture]` rule; emits a re-checkable verdict |
 | **Drift (certificate)** | `index snapshot` then `index drift` | Snapshot the shape, then see exactly what changed |
+| **Claim grounding** | `index verify` | Confirm or refute a dependency or existence claim against the graph, with evidence |
 
 ---
 
@@ -160,6 +161,7 @@ index check     [--root ROOT] [--internals] [--json] [--config CFG]
 index snapshot  [--root ROOT] --out FILE
 index drift     --from OLD --to NEW [--json]
 index router    [--root ROOT] [--out FILE]
+index verify    [--root ROOT] [--depends "A -> B" | --exists NAME] [--json]
 ```
 
 `--focus REPO` narrows a `viz` or `context` render to one repo's dependency neighborhood.
