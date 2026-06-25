@@ -1,6 +1,6 @@
 # Usage
 
-`index` scans a workspace for Git repositories and shows you how they fit together. It began as a compact JSON inventory map, and it has grown into a small family of commands: the inventory map, a repo dependency graph built from real code evidence, a synthesis context pack, an interactive dependency dashboard, and `index atlas`, the two-layer map that brings your markdown docs in alongside the code. It ships a CLI (`index`) and a small importable Python API. There are no runtime dependencies, and it needs Python 3.11 or newer.
+`index` scans a workspace for Git repositories and shows you how they fit together. It began as a compact JSON inventory map, and it has grown into a small family of commands: the inventory map, a repo dependency graph built from real code evidence, a synthesis context pack, an interactive dependency dashboard, and `index atlas`, the two-layer map that brings your markdown docs in alongside the code. Version 2.0 adds a verified architecture layer: a module-level graph, a declarative `[architecture]` check, and drift detection, each backed by a re-checkable certificate. It ships a CLI (`index`) and a small importable Python API. There are no runtime dependencies, and it needs Python 3.11 or newer.
 
 ## Install
 
@@ -349,6 +349,112 @@ index atlas --root ./my-workspace --format html --out atlas.html
 ```
 
 Open `atlas.html` in any browser, offline. Pan and zoom the graph, search repos and doc titles together, click a doc to read its rendered markdown with clickable `[[links]]`, and double-click a node to focus its neighborhood. The whole file is self-contained, and the markdown is rendered server-side and escaped, so untrusted doc content cannot inject anything.
+
+## Verified architecture intelligence
+
+Beyond drawing the shape, `index` can look inside a repo, measure the real structure against a rule you declare, watch it change over time, and hand back a verdict you can re-run. These commands are additive; the five above are unchanged. Everything here runs offline, with no API, account, or model.
+
+### `internals` subcommand
+
+```text
+index internals --root REPO [--json] [--cycles]
+```
+
+| Flag       | Default           | Meaning                                                       |
+| ---------- | ----------------- | ------------------------------------------------------------- |
+| `--root`   | current directory | The single repo to look inside.                               |
+| `--json`   | off               | Emit the module graph as JSON (modules, edges, cycles, fan).  |
+| `--cycles` | off               | Report only the internal cycles.                              |
+
+The module graph is exact for Python (read from the syntax tree) and best-effort and file-level for JavaScript, TypeScript, Rust, and Go. Java stays repo-level. Each internal edge names the file and line that witnesses it. The bounds are stated in `docs/PROTOCOL.md`.
+
+#### Example, internals summary
+
+```bash
+index internals --root ./my-repo
+```
+
+```text
+modules=50 edges=93 cycles=0
+```
+
+### The `[architecture]` criterion
+
+A check needs a rule to measure against. Declare one in `.index.toml`:
+
+```toml
+[architecture]
+# ordered layers, lowest first; a lower layer may not import a higher one
+layers = ["core", "domain", "service", "web"]
+# edges that must never exist, by repo or module glob
+forbid = [{ from = "core/**", to = "web/**" }]
+# the most dependency cycles tolerated (omit to leave cycles unchecked)
+max_cycles = 0
+# optional ownership assertions
+[architecture.owns]
+"payments/**" = "team-payments"
+```
+
+The block is optional. With none declared, `check` returns UNVERIFIABLE rather than a hollow pass.
+
+### `check` subcommand
+
+```text
+index check --root ROOT [--internals] [--json] [--config CFG]
+```
+
+| Flag          | Default              | Meaning                                                   |
+| ------------- | -------------------- | --------------------------------------------------------- |
+| `--root`      | current directory    | Workspace root to scan.                                   |
+| `--internals` | off                  | Include intra-repo module checks, not only repo-level.    |
+| `--json`      | off                  | Emit the certificate as JSON.                             |
+| `--config`    | `<root>/.index.toml` | Path to the config holding the `[architecture]` block.    |
+
+`check` exits non-zero when the verdict is not MATCH, so it works directly as a CI gate. Each finding names the rule it broke, the offending edge, and the file and line.
+
+#### Example, a check certificate
+
+```bash
+index check --root . --json
+```
+
+```json
+{
+  "schema": "index.certificate/1",
+  "tool_version": "2.0.0",
+  "kind": "check",
+  "content_sha256": "…",
+  "criterion_sha256": "…",
+  "verdict": "DRIFT",
+  "findings": [
+    { "rule": "layer", "detail": "core must not depend upward on web",
+      "edge": "core -> web", "evidence": "core/db.py:12" }
+  ],
+  "recheck": "index check --root . --json"
+}
+```
+
+### `snapshot` and `drift` subcommands
+
+```text
+index snapshot --root ROOT --out FILE
+index drift --from OLD --to NEW [--json]
+```
+
+`snapshot` writes a canonical, byte-stable projection of the graph. `drift` diffs two snapshots into added and removed repos and edges, introduced and cleared cycles, and role changes, with a MATCH or DRIFT verdict. Like `check`, `drift` exits non-zero on DRIFT.
+
+#### Example, watch for drift in CI
+
+```bash
+index snapshot --root . --out baseline.json    # record once, commit it
+# later, in CI:
+index snapshot --root . --out now.json
+index drift --from baseline.json --to now.json
+```
+
+### The certificate and the protocol
+
+Both `check` and `drift` return a certificate whose verdict is one of three words, MATCH, DRIFT, or UNVERIFIABLE, never a fourth. You confirm it by re-running its `recheck` command and recomputing its hashes, not by trusting it. The snapshot and certificate shapes, the hashing rule, and the resolution bounds are specified in [`docs/PROTOCOL.md`](docs/PROTOCOL.md), so any consumer, whether a CI job, a reviewer, or another tool, can read them without depending on `index`.
 
 ## Notes
 
