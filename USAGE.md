@@ -375,8 +375,10 @@ index internals --root ./my-repo
 ```
 
 ```text
-modules=50 edges=93 cycles=0
+modules=50 edges=94 cycles=0 coverage=complete
 ```
+
+The summary ends with coverage: `complete` when every file parsed and every import resolved statically, otherwise a count of the files the scan could not parse and the dynamic imports it could not follow. `--json` carries the detail under a `coverage` object, and `index check --internals` folds the same coverage into the certificate so a verdict is honest about its soundness scope.
 
 ### The `[architecture]` criterion
 
