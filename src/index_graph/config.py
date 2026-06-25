@@ -10,6 +10,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from .arch.criteria import ArchitectureCriteria, parse_architecture
+
 DEFAULT_PRUNE_DIRS = frozenset({
     ".git", ".mypy_cache", ".pytest_cache", ".ruff_cache",
     "__pycache__", ".venv", "venv", "node_modules",
@@ -21,7 +23,7 @@ DEFAULT_MARKERS = (
 PUBLIC_HOSTS = frozenset({
     "github.com", "gitlab.com", "bitbucket.org", "codeberg.org", "git.sr.ht",
 })
-_KNOWN_TOP = frozenset({"rule", "scan", "privacy", "output"})
+_KNOWN_TOP = frozenset({"rule", "scan", "privacy", "output", "architecture"})
 
 
 def _default_jobs() -> int:
@@ -71,6 +73,7 @@ class Config:
     omit_origin_classes: frozenset[str] = frozenset()
     portable: bool = True
     annotations: dict[str, Any] = field(default_factory=dict)
+    architecture: ArchitectureCriteria = field(default_factory=ArchitectureCriteria)
 
     @property
     def prune(self) -> frozenset[str]:
@@ -117,8 +120,10 @@ def _build_config(data: dict[str, Any], path: Path) -> Config:
     portable = bool(output.get("portable", True))
     annotations = dict(output.get("annotations", {}))
 
+    architecture = parse_architecture(data.get("architecture", {}))
+
     for key in data:
         if key not in _KNOWN_TOP:
             print(f"{path}: warning: unknown config key '{key}'", file=sys.stderr)
 
-    return Config(tuple(rules), extra_prune, markers, jobs, omit, portable, annotations)
+    return Config(tuple(rules), extra_prune, markers, jobs, omit, portable, annotations, architecture)
