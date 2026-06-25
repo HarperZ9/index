@@ -35,6 +35,27 @@ def build_index(exposed: dict[str, set[str]]) -> dict[str, list[str]]:
     return index
 
 
+def _resolve_target(index: dict[str, list[str]], norm_target: str) -> tuple[str, list[str]]:
+    """Return (canonical_key, candidate_repos).
+
+    Exact match wins. Otherwise, for a slash-containing target (a path-like name,
+    e.g. a Go import path), fall back to the longest exposed name that is a
+    segment-aligned prefix of the target. Unmatched targets keep their own name
+    (they become external edges).
+    """
+    if norm_target in index:
+        return norm_target, index[norm_target]
+    if "/" in norm_target:
+        best: str | None = None
+        for key in index:
+            if "/" in key and (norm_target == key or norm_target.startswith(key + "/")):
+                if best is None or len(key) > len(best):
+                    best = key
+        if best is not None:
+            return best, index[best]
+    return norm_target, []
+
+
 def _grade(signals: list[Signal], ambiguous: bool, target: str, short_len: int) -> str:
     if ambiguous or len(normalize_name(target)) <= short_len:
         return "low"
@@ -50,16 +71,16 @@ def resolve_edges(repo_raw: dict[str, list[RawEdge]], index: dict[str, list[str]
     ambiguous_keys: set[tuple[str, str | None, str]] = set()
     for frm, raws in repo_raw.items():
         for r in raws:
-            candidates = index.get(normalize_name(r.target_name), [])
+            canon, candidates = _resolve_target(index, normalize_name(r.target_name))
             internal = [c for c in candidates if c != frm]
             sig = Signal(r.signal, r.evidence_file, r.evidence_line, r.raw_spec)
             if not candidates:
-                key = (frm, None, normalize_name(r.target_name))  # external
+                key = (frm, None, canon)                       # external
             elif not internal:
-                continue  # self-edge only -> drop
+                continue                                       # self-edge only -> drop
             else:
                 to = sorted(internal)[0]
-                key = (frm, to, normalize_name(r.target_name))
+                key = (frm, to, canon)
                 if len(internal) > 1:
                     ambiguous_keys.add(key)
                     warnings.append(
