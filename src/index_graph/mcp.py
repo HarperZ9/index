@@ -55,6 +55,8 @@ def call_tool(name: str, args: dict) -> str:
     from .graph.build import build_graph
     from .context.pack import to_json, closure, preservation, focus_subgraph
 
+    if "root" not in args:
+        raise ValueError("missing required argument: root")
     root = Path(args["root"]).resolve()
     if not root.is_dir():
         raise ValueError(f"root not found: {root}")
@@ -78,6 +80,8 @@ def call_tool(name: str, args: dict) -> str:
         from .verify import build_verification
         pack = to_json(build_graph(repo_paths))
         if args.get("depends"):
+            if "->" not in args["depends"]:
+                raise ValueError("depends must be 'A -> B'")
             frm, _, to = args["depends"].partition("->")
             claim = {"kind": "depends", "from": frm.strip(), "to": to.strip()}
         elif args.get("exists"):
@@ -111,9 +115,12 @@ def call_tool(name: str, args: dict) -> str:
             "repo": g.repo,
             "modules": [{"id": m.id, "path": m.path, "language": m.language} for m in g.modules],
             "edges": [{"from": e.from_id, "to": e.to_id, "file": e.evidence_file,
-                       "line": e.evidence_line} for e in g.edges],
+                       "line": e.evidence_line, "raw": e.raw} for e in g.edges],
             "cycles": [list(c) for c in g.cycles],
+            "fan_in": g.fan_in, "fan_out": g.fan_out,
             "coverage": {"complete": g.coverage.complete,
+                         "modules": g.coverage.modules,
+                         "internal_edges": g.coverage.internal_edges,
                          "parse_errors": list(g.coverage.parse_errors),
                          "dynamic_imports": [{"file": f, "line": ln}
                                              for f, ln in g.coverage.dynamic_imports]},
@@ -143,6 +150,9 @@ def handle_request(req: dict) -> dict | None:
         params = req.get("params") or {}
         name = params.get("name")
         args = params.get("arguments") or {}
+        if name not in {t["name"] for t in _tool_defs()}:
+            return {"jsonrpc": "2.0", "id": rid,
+                    "error": {"code": -32602, "message": f"unknown tool: {name!r}"}}
         try:
             text = call_tool(name, args)
             return {"jsonrpc": "2.0", "id": rid,
@@ -166,7 +176,7 @@ def serve(stdin=None, stdout=None) -> int:
         try:
             req = json.loads(line)
         except json.JSONDecodeError:
-            continue
+            continue  # no id to address a parse error to; conformant hosts send valid frames
         resp = handle_request(req)
         if resp is not None:
             stdout.write(json.dumps(resp) + "\n")
