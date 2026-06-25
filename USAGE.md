@@ -390,6 +390,8 @@ A check needs a rule to measure against. Declare one in `.index.toml`:
 layers = ["core", "domain", "service", "web"]
 # edges that must never exist, by repo or module glob
 forbid = [{ from = "core/**", to = "web/**" }]
+# edges that must exist (an intended dependency); a missing one is an "absence"
+require = [{ from = "web", to = "core" }]
 # the most dependency cycles tolerated (omit to leave cycles unchecked)
 max_cycles = 0
 # optional ownership assertions
@@ -412,7 +414,7 @@ index check --root ROOT [--internals] [--json] [--config CFG]
 | `--json`      | off                  | Emit the certificate as JSON.                             |
 | `--config`    | `<root>/.index.toml` | Path to the config holding the `[architecture]` block.    |
 
-`check` exits non-zero when the verdict is not MATCH, so it works directly as a CI gate. Each finding names the rule it broke, the offending edge, and the file and line.
+`check` exits non-zero when the verdict is not MATCH, so it works directly as a CI gate. Each finding names the rule it broke, the offending edge, and the file and line. A `require` rule whose intended edge is missing yields an `absence` finding, so `check` catches both edges that must not exist and edges that must (the Reflexion-model triad: convergence, divergence, absence).
 
 #### Example, a check certificate
 

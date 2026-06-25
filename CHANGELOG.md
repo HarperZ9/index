@@ -1,5 +1,18 @@
 # Changelog
 
+## 2.2.0
+
+### Added
+- Required-edge conformance. The `[architecture]` block gains `require` rules: intended
+  dependencies that must exist. `index check` reports an `absence` finding (DRIFT) when a
+  required edge is not realized. With the existing forbidden-edge and layer checks
+  (divergence), this completes the Reflexion-model conformance triad: convergence (the
+  intended edges that exist), divergence (edges that violate the model), and absence (the
+  intended edges that are missing). The criterion hash covers `require`.
+
+### Notes
+- Additive and backward compatible. Zero new dependencies.
+
 ## 2.1.0
 
 ### Added

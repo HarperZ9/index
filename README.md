@@ -134,6 +134,7 @@ Then you write down what you meant. A small `[architecture]` block in `.index.to
 [architecture]
 layers = ["core", "domain", "service", "web"]   # a lower layer may not import a higher one
 forbid = [{ from = "core/**", to = "web/**" }]
+require = [{ from = "web", to = "core" }]        # an intended edge that must exist
 max_cycles = 0
 ```
 
