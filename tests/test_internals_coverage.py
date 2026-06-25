@@ -48,3 +48,20 @@ def test_js_dynamic_require_is_reported(tmp_path):
     cov = build_internals(tmp_path, "app").coverage
     assert cov.complete is False
     assert any(f == "src/a.js" for f, _ in cov.dynamic_imports)
+
+
+def test_method_named_require_is_not_dynamic(tmp_path):
+    # a method call like container.require(token) is not a module load
+    _w(tmp_path, "src/a.js", "import { c } from './c';\nc.require(token);\n")
+    _w(tmp_path, "src/c.js", "export const c = {};\n")
+    cov = build_internals(tmp_path, "app").coverage
+    assert cov.complete is True
+    assert cov.dynamic_imports == ()
+
+
+def test_builtins_dunder_import_is_dynamic(tmp_path):
+    # builtins.__import__(...) must not be a false "complete"
+    _w(tmp_path, "pkg/__init__.py", "")
+    _w(tmp_path, "pkg/a.py", "import builtins\nbuiltins.__import__('os')\n")
+    cov = build_internals(tmp_path, "pkg").coverage
+    assert any(f == "pkg/a.py" for f, _ in cov.dynamic_imports)

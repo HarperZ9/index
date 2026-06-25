@@ -34,7 +34,10 @@ class InternalEdge:
 class Unresolved:
     """An import the static scan could not turn into a definite internal edge.
     The soundness gap a verdict must be honest about (call-graph soundness:
-    static analysis cannot see dynamic dispatch or unparseable files)."""
+    static analysis cannot see dynamic dispatch or unparseable files). Dynamic
+    detection over-approximates toward reporting (a method coincidentally named
+    import_module may be flagged); over-reporting unverifiability is the safe
+    direction for a soundness gap, never under-reporting it."""
     file: str
     line: int | None
     reason: str   # "parse_error" | "dynamic"
@@ -160,7 +163,7 @@ def _python_edges(repo_root: Path, ids: set[str]) -> tuple[list[InternalEdge], l
             elif isinstance(node, ast.Call):
                 fn = node.func
                 if (isinstance(fn, ast.Name) and fn.id == "__import__") or \
-                   (isinstance(fn, ast.Attribute) and fn.attr == "import_module"):
+                   (isinstance(fn, ast.Attribute) and fn.attr in ("import_module", "__import__")):
                     unresolved.append(Unresolved(rel, node.lineno, "dynamic", "dynamic import"))
     return out, unresolved
 
@@ -171,7 +174,7 @@ _JS_IMPORT = re.compile(
     r"""(?:import|export)[^'"]*?from\s*['"]([^'"]+)['"]"""
     r"""|require\(\s*['"]([^'"]+)['"]\s*\)"""
     r"""|import\(\s*['"]([^'"]+)['"]\s*\)""")
-_JS_DYNAMIC = re.compile(r"""\b(?:require|import)\(\s*[A-Za-z_$]""")
+_JS_DYNAMIC = re.compile(r"""(?<![.\w$])(?:require|import)\(\s*[A-Za-z_$]""")
 _JS_SUFFIXES = (".js", ".jsx", ".mjs", ".cjs", ".ts", ".tsx")
 
 

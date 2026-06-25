@@ -348,7 +348,7 @@ def _cmd_check(args) -> int:
                 "coverage": {
                     "complete": g.coverage.complete,
                     "parse_errors": list(g.coverage.parse_errors),
-                    "dynamic_imports": [[fpath, ln] for fpath, ln in g.coverage.dynamic_imports],
+                    "dynamic_imports": [{"file": fpath, "line": ln} for fpath, ln in g.coverage.dynamic_imports],
                 },
             }
             if crit.max_cycles is not None and len(g.cycles) > crit.max_cycles:

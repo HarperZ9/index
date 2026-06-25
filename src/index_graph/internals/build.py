@@ -49,7 +49,9 @@ def _coverage(modules: tuple[ModuleNode, ...], edges: tuple[InternalEdge, ...],
         modules=len(modules),
         internal_edges=len(edges),
         parse_errors=tuple(sorted({u.file for u in unresolved if u.reason == "parse_error"})),
-        dynamic_imports=tuple((u.file, u.line) for u in unresolved if u.reason == "dynamic"),
+        dynamic_imports=tuple(sorted(
+            {(u.file, u.line) for u in unresolved if u.reason == "dynamic"},
+            key=lambda t: (t[0], t[1] or 0))),
     )
 
 
