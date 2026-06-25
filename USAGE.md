@@ -209,7 +209,21 @@ index graph --root ROOT [--json] [--cycles]
 | `--json`   | off               | Emit a JSON array of relation objects instead of text.      |
 | `--cycles` | off               | Report dependency cycles instead of the full graph.         |
 
-Edges are derived from Python (`pyproject.toml`, `setup.cfg`, source imports) and JavaScript or TypeScript (`package.json`, source imports). Each edge carries the file (and line) that witnesses it, and a confidence grade:
+Edges are read from nine ecosystems, each from its own manifest and its own source imports. None of them adds a runtime dependency.
+
+| Ecosystem | Manifest signal | Import signal |
+| --- | --- | --- |
+| Python | `pyproject.toml`, `setup.cfg` | `import` / `from` in `.py` |
+| JavaScript, TypeScript | `package.json` | `import` / `require` in `.js`, `.ts` |
+| Rust | `Cargo.toml` dependencies | `use`, `extern crate` in `.rs` |
+| Go | `go.mod` require | `import` in `.go` |
+| Java | Maven `pom.xml`, best-effort Gradle | manifest-only |
+| C# | `.csproj` PackageReference, ProjectReference | `using` in `.cs` |
+| Ruby | `Gemfile` gems, `*.gemspec` name | `require`, `require_relative` in `.rb` |
+| PHP | `composer.json` require, require-dev | `use` namespaces in `.php` |
+| C, C++ | CMake `target_link_libraries`, `add_subdirectory` | `#include` in sources, best-effort |
+
+Each edge carries the file (and line) that witnesses it, and a confidence grade:
 
 - `high`: both a declared dependency and an observed import agree.
 - `moderate`: a single signal, manifest-only or import-only.

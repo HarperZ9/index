@@ -4,7 +4,7 @@
 
 [![license: fair source](https://img.shields.io/badge/license-fair%20source-blue.svg)](LICENSE)
 ![python](https://img.shields.io/badge/python-3.11%2B-blue.svg)
-![version](https://img.shields.io/badge/version-2.0-informational.svg)
+![version](https://img.shields.io/badge/version-2.6-informational.svg)
 [![CI](https://github.com/HarperZ9/index-graph/actions/workflows/ci.yml/badge.svg)](https://github.com/HarperZ9/index-graph/actions/workflows/ci.yml)
 ![deps: none](https://img.shields.io/badge/deps-none-success.svg)
 
@@ -190,6 +190,8 @@ flowchart TD
 ```
 
 When a manifest dependency and an observed import point the same way, you get a high-confidence edge. When only one of them does, it still gets recorded, along with the exact file and line that witnesses it. Nothing enters the graph on faith.
+
+`index` reads nine ecosystems this way, each from its own manifest and its own source imports: Python, JavaScript and TypeScript, Rust, Go, Java, C#, Ruby, PHP, and C and C++. The reach is additive. Each new ecosystem is one small resolver class behind a shared protocol, and not one of them adds a runtime dependency.
 
 ---
 
