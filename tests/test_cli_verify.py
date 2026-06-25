@@ -128,3 +128,15 @@ def test_empty_require_does_not_change_criterion_hash(tmp_path):
     cert = json.loads(_run(["check", "--root", str(tmp_path), "--json"]).stdout)
     expected = canonical_sha({"layers": [], "forbid": [], "max_cycles": 0, "owns": []})
     assert cert["criterion_sha256"] == expected
+
+
+def test_context_focus_emits_preservation_manifest(tmp_path):
+    (tmp_path / "solo" / ".git").mkdir(parents=True)
+    (tmp_path / "solo" / "pyproject.toml").write_text(
+        "[project]\nname='solo'\nversion='0'\n", encoding="utf-8")
+    r = _run(["context", "--root", str(tmp_path), "--focus", "solo", "--hops", "1", "--json"])
+    data = json.loads(r.stdout)
+    assert "preserved" in data
+    assert data["preserved"]["focus"] == ["solo"]
+    assert data["preserved"]["hops"] == 1
+    assert "boundary" in data["preserved"]

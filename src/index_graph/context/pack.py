@@ -77,7 +77,9 @@ def to_json(graph: DependencyGraph) -> dict:
     }
 
 
-def closure(edges: list[Edge], focus: str) -> set[str]:
+def closure(edges: list[Edge], focus: str, hops: int | None = None) -> set[str]:
+    """Nodes reachable from focus (bidirectionally). With hops=N, bounded to the
+    N-hop neighborhood; with hops=None, the whole connected component."""
     adj: dict[str, set[str]] = {}
     for e in edges:
         if e.external or e.to_repo is None:
@@ -85,14 +87,47 @@ def closure(edges: list[Edge], focus: str) -> set[str]:
         adj.setdefault(e.from_repo, set()).add(e.to_repo)
         adj.setdefault(e.to_repo, set()).add(e.from_repo)
     seen = {focus}
-    stack = [focus]
-    while stack:
-        n = stack.pop()
-        for m in adj.get(n, ()):
-            if m not in seen:
-                seen.add(m)
-                stack.append(m)
+    frontier = {focus}
+    depth = 0
+    while frontier and (hops is None or depth < hops):
+        nxt: set[str] = set()
+        for n in frontier:
+            for m in adj.get(n, ()):
+                if m not in seen:
+                    seen.add(m)
+                    nxt.add(m)
+        frontier = nxt
+        depth += 1
     return seen
+
+
+def preservation(edges: list[Edge], keep: set[str], focus: str,
+                 hops: int | None) -> dict:
+    """State what a focused pack preserves and what it drops at the boundary.
+
+    An internal edge with exactly one endpoint inside `keep` crosses the boundary
+    and is not carried. Stating this is the information-bottleneck discipline: the
+    pack declares what structural information it guarantees to preserve and what it
+    knowingly drops, so a compact pack never reads as if it were complete.
+    """
+    dropped_nodes: set[str] = set()
+    dropped_edges: set[str] = set()
+    for e in edges:
+        if e.external or e.to_repo is None:
+            continue
+        a_in, b_in = e.from_repo in keep, e.to_repo in keep
+        if a_in != b_in:
+            dropped_nodes.add(e.to_repo if a_in else e.from_repo)
+            dropped_edges.add(f"{e.from_repo} -> {e.to_repo}")
+    return {
+        "focus": [focus],
+        "hops": hops,
+        "kept_nodes": len(keep),
+        "boundary": {
+            "dropped_nodes": sorted(dropped_nodes),
+            "dropped_edges": sorted(dropped_edges),
+        },
+    }
 
 
 def focus_subgraph(graph: DependencyGraph, keep: set[str]) -> DependencyGraph:

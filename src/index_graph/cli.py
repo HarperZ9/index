@@ -9,7 +9,7 @@ from pathlib import Path
 
 from . import __version__
 from .config import load_config
-from .context.pack import closure, focus_subgraph, render_text, to_json
+from .context.pack import closure, focus_subgraph, preservation, render_text, to_json
 from .graph.build import build_graph
 from .scan import build_map, discover_repos, write_map
 
@@ -44,6 +44,7 @@ def build_parser() -> argparse.ArgumentParser:
     c.add_argument("--root", type=Path, default=Path.cwd())
     c.add_argument("--json", action="store_true")
     c.add_argument("--focus", default=None)
+    c.add_argument("--hops", type=int, default=None)
     c.add_argument("--audit", action="store_true")
 
     v = sub.add_parser("viz", help="Render the dependency graph (html/svg/mermaid).")
@@ -173,17 +174,33 @@ def _cmd_context(args) -> int:
         for w in data["salience_audit"]:
             print(f"  [{w['kind']}] {w['node']} (in={w['in_degree']}) — {w['note']}")
         return 0
+    preserved = None
     if args.focus:
         if args.focus not in names:
             near = [n for n in names if args.focus.lower() in n.lower()]
             print(f"unknown project: {args.focus!r}"
                   + (f" — did you mean: {', '.join(sorted(near))}?" if near else ""))
             return 2
-        graph = focus_subgraph(graph, closure(list(graph.edges), args.focus))
-        title = f"focus={args.focus}"
+        keep = closure(list(graph.edges), args.focus, hops=args.hops)
+        preserved = preservation(list(graph.edges), keep, args.focus, args.hops)
+        graph = focus_subgraph(graph, keep)
+        title = f"focus={args.focus}" + (f" hops={args.hops}" if args.hops is not None else "")
     else:
         title = "workstation context"
-    print(json.dumps(to_json(graph), indent=2) if args.json else render_text(graph, title))
+    if args.json:
+        pack = to_json(graph)
+        if preserved is not None:
+            pack["preserved"] = preserved
+        print(json.dumps(pack, indent=2))
+    else:
+        text = render_text(graph, title)
+        if preserved is not None:
+            b = preserved["boundary"]
+            text += (f"\n## Preserved\n- focus: {', '.join(preserved['focus'])}; "
+                     f"hops: {preserved['hops']}; kept: {preserved['kept_nodes']} nodes\n"
+                     f"- boundary dropped: {len(b['dropped_edges'])} edge(s) to "
+                     f"{len(b['dropped_nodes'])} node(s)")
+        print(text)
     return 0
 
 
