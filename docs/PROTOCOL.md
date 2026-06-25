@@ -119,6 +119,48 @@ dispatch, so the certificate says so rather than implying the graph is complete.
 MATCH as "no violation found in the structurally verifiable portion", not "proven
 complete". `index internals --json` carries the same coverage detail per repo.
 
+### Freshness (optional)
+
+When a check runs with `--freshness`, the certificate carries a `freshness` stamp: a
+content fingerprint of the workspace at mint time.
+
+```json
+"freshness": {
+  "schema": "index.freshness/1",
+  "root": "<sha256 fold of the per-repo fingerprints>",
+  "repos": {"myrepo": "<sha256 over its graph-relevant files>"}
+}
+```
+
+A repo fingerprint is a SHA-256 over the sorted `(relative-path, file-sha256)` pairs of
+every graph-relevant file in the repo: the manifests and source suffixes the resolvers
+read, across all ecosystems. It is deterministic and platform-independent. It is
+conservative: a change to a relevant file always moves it, but a change to an irrelevant
+file (a README, a note) does not, so STALE may be a false alarm while FRESH is never a
+false assurance. The relevant-file set is the union of each resolver's declared
+`fingerprint_names`, `fingerprint_suffixes`, and `fingerprint_globs`, so a new ecosystem
+is covered without changing this schema.
+
+`index freshness --cert CERT --root ROOT` recomputes the live workspace fingerprint and
+compares it to the stamp, emitting a re-checkable report:
+
+```json
+{
+  "schema": "index.freshness-report/1",
+  "verdict": "STALE",
+  "stamp_root": "<the certificate's freshness.root>",
+  "current_root": "<the live fold>",
+  "repos_added": [], "repos_removed": [], "repos_changed": ["myrepo"],
+  "recheck": "index freshness --cert \"cert.json\" --root \".\""
+}
+```
+
+The verdict is `FRESH` (the folds match), `STALE` (they do not; the deltas name the
+repos), or `UNVERIFIABLE` (the certificate carries no freshness stamp). The command exits
+0, 1, or 2 to match. This is a freshness verdict, a separate axis from the conformance
+verdict above: a certificate can be a perfectly valid MATCH and also STALE, meaning the
+structure it proved was correct then but the workspace has since moved.
+
 ### How to verify a certificate
 
 You do not trust a certificate. You re-run it.
