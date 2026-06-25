@@ -161,6 +161,14 @@ repos), or `UNVERIFIABLE` (the certificate carries no freshness stamp). The comm
 verdict above: a certificate can be a perfectly valid MATCH and also STALE, meaning the
 structure it proved was correct then but the workspace has since moved.
 
+The fingerprint tracks the files that determine the dependency graph, not every byte the
+certificate hashes. A repo's free-text description, read from its README, is part of the
+certificate's `content_sha256` but not the fingerprint, so editing only a README changes
+the content hash that `recheck` recomputes while `freshness` still reports FRESH. The two
+ask different questions on purpose. `recheck` asks whether this exact certificate
+reproduces, byte for byte. `freshness` asks whether the structure it verified has moved.
+For the dependency graph itself, FRESH is never a false assurance.
+
 ### How to verify a certificate
 
 You do not trust a certificate. You re-run it.
