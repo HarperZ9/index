@@ -486,17 +486,19 @@ def _cmd_verify(args) -> int:
     root = args.root.resolve()
     if not root.is_dir():
         raise SystemExit(f"root not found: {root}")
-    if bool(args.depends) == bool(args.exists):
+    if (args.depends is None) == (args.exists is None):
         raise SystemExit("verify: pass exactly one of --depends 'A -> B' or --exists NAME")
+    if args.exists is not None and not args.exists.strip():
+        raise SystemExit("verify: --exists NAME must be non-empty")
     if args.depends:
         if "->" not in args.depends:
             raise SystemExit("verify: --depends must be 'A -> B'")
         frm, to = (s.strip() for s in args.depends.split("->", 1))
         claim = {"kind": "depends", "from": frm, "to": to}
-        recheck = f'index verify --root {args.root} --depends "{args.depends}"'
+        recheck = f'index verify --root "{args.root}" --depends "{args.depends}"'
     else:
         claim = {"kind": "exists", "name": args.exists.strip()}
-        recheck = f"index verify --root {args.root} --exists {args.exists}"
+        recheck = f'index verify --root "{args.root}" --exists "{args.exists}"'
     pack = to_json(build_graph(_repo_paths(root)))
     rec = build_verification(pack, claim, tool_version=__version__, recheck=recheck)
     if args.json:

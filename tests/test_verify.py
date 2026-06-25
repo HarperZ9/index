@@ -68,3 +68,35 @@ def test_verify_cli_exists_and_refuted(tmp_path):
     r2 = _run(["verify", "--root", str(tmp_path), "--exists", "ghost"])
     assert r2.returncode == 1  # REFUTED
     assert "REFUTED" in r2.stdout
+
+
+def test_verify_strongest_edge_evidence():
+    pack = _pack(
+        [{"from": "a", "to": "b", "external": False, "confidence": "low",
+          "signals": [{"file": "a/z.py", "line": 1}]},
+         {"from": "a", "to": "b", "external": False, "confidence": "high",
+          "signals": [{"file": "a/m.py", "line": 9}]}],
+        {"a": [], "b": []})
+    r = verify_claim(pack, {"kind": "depends", "from": "a", "to": "b"})
+    assert r["verdict"] == "MATCH"
+    assert r["evidence"] == "a/m.py:9"  # the high-confidence edge, not the first by name
+    assert "2 edges agree" in r["detail"]
+
+
+def test_verify_cli_depends_match_and_unverifiable(tmp_path):
+    (tmp_path / "core" / ".git").mkdir(parents=True)
+    (tmp_path / "core" / "pyproject.toml").write_text(
+        "[project]\nname='core'\nversion='0'\n", encoding="utf-8")
+    (tmp_path / "core" / "core").mkdir()
+    (tmp_path / "core" / "core" / "__init__.py").write_text("", encoding="utf-8")
+    (tmp_path / "web" / ".git").mkdir(parents=True)
+    (tmp_path / "web" / "pyproject.toml").write_text(
+        "[project]\nname='web'\nversion='0'\ndependencies=['core']\n", encoding="utf-8")
+    # no spaces around the arrow, exercising the strip; web depends on core via its manifest
+    r = _run(["verify", "--root", str(tmp_path), "--depends", "web->core"])
+    assert r.returncode == 0, r.stderr
+    assert "MATCH" in r.stdout
+    # UNVERIFIABLE exit code 2 pinned
+    r2 = _run(["verify", "--root", str(tmp_path), "--depends", "web -> ghost"])
+    assert r2.returncode == 2
+    assert "UNVERIFIABLE" in r2.stdout

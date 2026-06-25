@@ -4,7 +4,9 @@ The deterministic anti-hallucination oracle. An agent asserts a dependency or an
 existence claim about the code; index confirms or refutes it from the real graph with
 file:line evidence, instead of the agent trusting its own memory. This artifact has its
 own honest triad (a false claim is REFUTED, not DRIFT) and is re-checkable: a consumer
-re-runs `recheck` and recomputes the hash rather than trusting the verdict.
+re-runs `recheck` and recomputes the hash rather than trusting the verdict. The content
+hash covers the whole graph (graph-scoped provenance, matching the certificate
+convention), so it binds the verdict to the exact graph state it was computed against.
 """
 from __future__ import annotations
 
@@ -52,10 +54,19 @@ def verify_claim(pack: dict, claim: dict) -> dict:
             missing = frm if frm not in names else to
             return {"verdict": "UNVERIFIABLE", "evidence": None,
                     "detail": f"{missing} is not a repo in the workspace"}
-        for r in pack.get("relations", []):
-            if not r.get("external") and r.get("from") == frm and r.get("to") == to:
-                return {"verdict": "MATCH", "evidence": _evidence(r),
-                        "detail": f"{frm} depends on {to}"}
+        matches = [r for r in pack.get("relations", [])
+                   if not r.get("external") and r.get("from") == frm and r.get("to") == to]
+        if matches:
+            # return the strongest edge's evidence (high > moderate > low), file as a
+            # deterministic tiebreak, so the oracle hands back its best witness, not the
+            # alphabetically-first one.
+            rank = {"high": 0, "moderate": 1, "low": 2}
+            best = min(matches, key=lambda r: (rank.get(r.get("confidence"), 3),
+                                               (r.get("signals") or [{}])[0].get("file", "")))
+            detail = f"{frm} depends on {to}"
+            if len(matches) > 1:
+                detail += f" ({len(matches)} edges agree)"
+            return {"verdict": "MATCH", "evidence": _evidence(best), "detail": detail}
         return {"verdict": "REFUTED", "evidence": None,
                 "detail": f"no dependency {frm} -> {to} in the graph"}
 
