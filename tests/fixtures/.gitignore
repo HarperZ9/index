@@ -1,0 +1,6 @@
+# Resolver fixtures hold only source manifests plus a small source file for the
+# resolvers to parse. Never commit ecosystem build artifacts.
+**/target/
+**/build/
+**/.gradle/
+**/Cargo.lock
