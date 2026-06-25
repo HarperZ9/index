@@ -32,3 +32,15 @@ def test_malformed_forbid_raises():
 def test_negative_max_cycles_raises():
     with pytest.raises(SystemExit):
         parse_architecture({"max_cycles": -1})
+
+
+def test_require_rules_parsed():
+    c = parse_architecture({"require": [{"from": "web", "to": "core"}]})
+    assert c.require[0].from_glob == "web"
+    assert c.require[0].to_glob == "core"
+    assert c.declared is True
+
+
+def test_malformed_require_raises():
+    with pytest.raises(SystemExit):
+        parse_architecture({"require": [{"from": "web"}]})

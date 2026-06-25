@@ -90,4 +90,14 @@ def check_graph(pack: dict, criteria: ArchitectureCriteria) -> list[Finding]:
                 findings.append(Finding(
                     "owns", f"ownership glob {glob} ({owner}) matches no repo", None, None))
 
+    # required edges (Reflexion absence): an intended dependency that is not realized
+    for rule in criteria.require:
+        present = any(
+            r.get("to") and _match(rule.from_glob, r.get("from")) and _match(rule.to_glob, r.get("to"))
+            for r in relations)
+        if not present:
+            findings.append(Finding(
+                "absence", f"{rule.from_glob} should depend on {rule.to_glob} but does not",
+                None, None))
+
     return sorted(findings, key=lambda f: (f.rule, f.edge or "", f.detail))
