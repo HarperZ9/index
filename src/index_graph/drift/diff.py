@@ -37,10 +37,14 @@ class DriftReport:
 
 
 def _cycle_set(snap: dict) -> set[tuple[str, ...]]:
-    return {tuple(c) for c in snap.get("cycles", [])}
+    # a cycle is an unordered node set; normalize so diffs are order-insensitive
+    return {tuple(sorted(c)) for c in snap.get("cycles", [])}
 
 
 def diff_snapshots(old: dict, new: dict) -> DriftReport:
+    for snap in (old, new):
+        if not isinstance(snap, dict) or snap.get("schema") != "index.snapshot/1":
+            raise ValueError("not an index.snapshot/1 document; refusing to diff")
     o_repos, n_repos = set(old.get("repos", [])), set(new.get("repos", []))
     o_edges, n_edges = set(old.get("edges", [])), set(new.get("edges", []))
     o_cyc, n_cyc = _cycle_set(old), _cycle_set(new)

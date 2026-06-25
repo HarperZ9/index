@@ -60,3 +60,26 @@ def test_snapshot_then_drift_roundtrip(tmp_path):
     assert r2.returncode == 0, r2.stderr
     report = json.loads(r2.stdout)
     assert report["verdict"] == "MATCH"
+
+
+def test_check_internals_finds_internal_cycle_and_outranks_unverifiable(tmp_path):
+    # A repo with an internal module cycle. The bare repo-level check sees no
+    # cycle and an unmatched 'ghost' layer -> UNVERIFIABLE. With --internals the
+    # real internal cycle is a confirmed breach, which must outrank UNVERIFIABLE.
+    repo = tmp_path / "myrepo"
+    (repo / "pkg").mkdir(parents=True)
+    (repo / ".git").mkdir()
+    (repo / "pkg" / "__init__.py").write_text("", encoding="utf-8")
+    (repo / "pkg" / "a.py").write_text("from . import b\n", encoding="utf-8")
+    (repo / "pkg" / "b.py").write_text("from . import a\n", encoding="utf-8")
+    (tmp_path / ".index.toml").write_text(
+        "[architecture]\nmax_cycles = 0\nlayers = ['ghost']\n", encoding="utf-8")
+
+    bare = json.loads(_run(["check", "--root", str(tmp_path), "--json"]).stdout)
+    deep = json.loads(_run(["check", "--root", str(tmp_path), "--internals", "--json"]).stdout)
+
+    assert bare["verdict"] == "UNVERIFIABLE"
+    assert deep["verdict"] == "DRIFT"
+    assert any(f["rule"] == "max_cycles" for f in deep["findings"])
+    # the certificate's content hash must cover the internals it checked
+    assert deep["content_sha256"] != bare["content_sha256"]

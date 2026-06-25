@@ -42,3 +42,20 @@ def test_rust_mod_declaration_edge(tmp_path):
     _w(tmp_path, "src/helpers.rs", "pub fn h() {}\n")
     g = build_internals(tmp_path, "app")
     assert ("src/main", "src/helpers") in {(e.from_id, e.to_id) for e in g.edges}
+
+
+def test_js_import_escaping_root_makes_no_edge(tmp_path):
+    # '../../' from src/a.js resolves above the repo root; no internal edge
+    _w(tmp_path, "src/a.js", "import { x } from '../../shared/x';\n")
+    _w(tmp_path, "shared/x.js", "export const x = 1;\n")
+    g = build_internals(tmp_path, "app")
+    assert not any(e.from_id == "src/a" for e in g.edges)
+
+
+def test_typescript_is_labeled_typescript(tmp_path):
+    _w(tmp_path, "src/a.ts", "import { f } from './b';\n")
+    _w(tmp_path, "src/b.ts", "export const f = 1;\n")
+    g = build_internals(tmp_path, "app")
+    assert "typescript" in {m.language for m in g.modules}
+    # resolution still works across the shared js/ts bucket
+    assert ("src/a", "src/b") in {(e.from_id, e.to_id) for e in g.edges}
