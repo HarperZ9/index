@@ -14,7 +14,7 @@ from .graph.build import build_graph
 from .scan import build_map, discover_repos, write_map
 
 _SUBCOMMANDS = {"map", "graph", "context", "viz", "atlas",
-                "internals", "check", "snapshot", "drift"}
+                "internals", "check", "snapshot", "drift", "router"}
 
 
 def _add_map_args(p: argparse.ArgumentParser) -> None:
@@ -81,6 +81,10 @@ def build_parser() -> argparse.ArgumentParser:
     dr.add_argument("--from", dest="from_snap", type=Path, required=True)
     dr.add_argument("--to", dest="to_snap", type=Path, required=True)
     dr.add_argument("--json", action="store_true")
+
+    rt = sub.add_parser("router", help="Emit a workspace map (CLAUDE.md/AGENTS.md) from the graph and docs.")
+    rt.add_argument("--root", type=Path, default=Path.cwd())
+    rt.add_argument("--out", default=None)
     return parser
 
 
@@ -444,6 +448,30 @@ def _cmd_drift(args) -> int:
     return 0 if report.verdict == "MATCH" else 1
 
 
+def _cmd_router(args) -> int:
+    from .knowledge.atlas import build_atlas_pack
+    from .knowledge.docs import discover_docs
+    from .router import render_router
+    root = args.root.resolve()
+    if not root.is_dir():
+        raise SystemExit(f"root not found: {root}")
+    repo_paths = _repo_paths(root)
+
+    def _rel(p: Path) -> str:
+        r = p.resolve().relative_to(root).as_posix()
+        return "" if r == "." else r
+
+    repo_dirs = {name: _rel(p) for name, p in repo_paths.items()}
+    pack = build_atlas_pack(build_graph(repo_paths), discover_docs(root), repo_dirs)
+    text = render_router(pack)
+    if args.out:
+        Path(args.out).write_text(text, encoding="utf-8")
+        print(f"wrote {args.out}")
+    else:
+        print(text)
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     raw = list(sys.argv[1:] if argv is None else argv)
     # No leading subcommand: route top-level --version/--help to the root
@@ -470,4 +498,6 @@ def main(argv: list[str] | None = None) -> int:
         return _cmd_snapshot(args)
     if args.cmd == "drift":
         return _cmd_drift(args)
+    if args.cmd == "router":
+        return _cmd_router(args)
     return _cmd_map(args)
