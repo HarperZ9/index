@@ -18,7 +18,9 @@ class CSharpResolver:
     name = "csharp"
 
     def matches(self, repo_root: Path) -> bool:
-        return any(True for _ in repo_root.rglob("*.csproj"))
+        # walk_files is fail-closed (never raises on a permission-denied subdir)
+        # and pruned; rglob would propagate an OSError out and crash the graph build.
+        return any(walk_files(repo_root, suffixes=(".csproj",)))
 
     def exposed_names(self, repo_root: Path) -> set[str]:
         names: set[str] = set()

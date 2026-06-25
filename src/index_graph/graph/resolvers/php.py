@@ -47,6 +47,6 @@ class PhpResolver:
             rel = src.relative_to(repo_root).as_posix()
             for i, line in enumerate(lines, 1):
                 m = _USE_STMT.match(line)
-                if m:
+                if m and m.group(1) not in ("function", "const"):
                     edges.append(RawEdge(m.group(1), "import", rel, i, line.strip()))
         return edges
