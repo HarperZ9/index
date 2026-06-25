@@ -152,13 +152,14 @@ All of it runs offline. No API, no account, no model, no network. The tool reads
 index atlas     [--root ROOT] [--format html] [--json] [--out FILE] [--no-external]
 index map       [--root ROOT] [--output FILE] [--json] [--config CFG]
 index graph     [--root ROOT] [--json] [--cycles]
-index context   [--root ROOT] [--focus REPO]
+index context   [--root ROOT] [--focus REPO] [--hops N] [--json] [--audit]
 index viz       [--root ROOT] [--format {html,svg,mermaid,all}]
                 [--focus REPO] [--no-external] [--out FILE] [--out-dir DIR]
 index internals [--root REPO] [--json] [--cycles]
 index check     [--root ROOT] [--internals] [--json] [--config CFG]
 index snapshot  [--root ROOT] --out FILE
 index drift     --from OLD --to NEW [--json]
+index router    [--root ROOT] [--out FILE]
 ```
 
 `--focus REPO` narrows a `viz` or `context` render to one repo's dependency neighborhood.
