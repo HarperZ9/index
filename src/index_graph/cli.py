@@ -170,6 +170,8 @@ def _cmd_graph(args) -> int:
 
 
 def _cmd_context(args) -> int:
+    if args.hops is not None and args.hops < 0:
+        raise SystemExit("--hops must be >= 0")
     graph = build_graph(_repo_paths(args.root.resolve()))
     names = {n.name for n in graph.repos}
     if args.audit:
@@ -195,7 +197,7 @@ def _cmd_context(args) -> int:
         pack = to_json(graph)
         if preserved is not None:
             pack["preserved"] = preserved
-        print(json.dumps(pack, indent=2))
+        print(json.dumps(pack, indent=2, sort_keys=True))
     else:
         text = render_text(graph, title)
         if preserved is not None:
