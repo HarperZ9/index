@@ -57,6 +57,13 @@ def test_router_omits_empty_sections():
     assert "`solo` (unclassified)" in out
 
 
+def test_negative_hops_rejected(tmp_path):
+    (tmp_path / "solo" / ".git").mkdir(parents=True)
+    r = _run(["context", "--root", str(tmp_path), "--hops", "-1"])
+    assert r.returncode != 0
+    assert "hops" in (r.stderr + r.stdout).lower()
+
+
 def test_router_cli_smoke(tmp_path):
     (tmp_path / "solo" / ".git").mkdir(parents=True)
     (tmp_path / "solo" / "pyproject.toml").write_text(
