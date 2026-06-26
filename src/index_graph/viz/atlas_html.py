@@ -5,7 +5,7 @@ import json
 
 from ..knowledge.markdown import render_markdown
 from .theme import css_variables
-from .atlas_assets import ATLAS_CSS, ATLAS_JS
+from .atlas_assets import ATLAS_CSS, ATLAS_JS, ATLAS_SKIP_LINK
 
 
 def _backlinks(pack: dict) -> dict:
@@ -25,11 +25,12 @@ def render_atlas_html(pack: dict, docs: list, *, svg: str, include_external: boo
         "<!doctype html>"
         '<html lang="en"><head><meta charset="utf-8">'
         '<meta name="viewport" content="width=device-width,initial-scale=1">'
-        "<title>index · atlas</title>"
+        "<title>index | atlas</title>"
         f"<style>{css_variables()}{ATLAS_CSS}</style></head><body>"
+        f"{ATLAS_SKIP_LINK}"
         '<main><section id="stage">'
         '<div class="controls">'
-        '<input type="search" id="search" placeholder="search repos + docs…" aria-label="search">'
+        '<input type="search" id="search" placeholder="search repos + docs" aria-label="search">'
         '<button class="chip" id="zoom-reset">reset view</button>'
         '<button class="chip" id="focus-clear">clear focus</button>'
         '<button class="chip" id="toggle-mentions" aria-pressed="true">mentions</button>'
