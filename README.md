@@ -1,12 +1,40 @@
+<p align="center">
+  <img src="docs/brand/index-hero.svg" alt="index, a Project Telos flagship for workspace atlas mapping">
+</p>
+<!-- Project mark: docs/brand/index-mark.svg -->
+
 # index
 
-> Every codebase has a shape. Past a handful of repos, that shape lives only in someone's head, and they are usually busy or already gone. `index` draws it for you: how your repositories depend on each other, and the docs that explain why, as one map you can open. Built from evidence, not guesses. Zero dependencies.
+> Map a workspace from evidence, not memory.
+
+[Project Telos](https://harperz9.github.io) | [gather](https://github.com/HarperZ9/gather) | [index](https://github.com/HarperZ9/index) | [forum](https://github.com/HarperZ9/forum) | [crucible](https://github.com/HarperZ9/crucible) | [telos](https://github.com/HarperZ9/telos)
 
 [![license: fair source](https://img.shields.io/badge/license-fair%20source-blue.svg)](LICENSE)
 ![python](https://img.shields.io/badge/python-3.11%2B-blue.svg)
 ![version](https://img.shields.io/badge/version-2.8-informational.svg)
 [![CI](https://github.com/HarperZ9/index-graph/actions/workflows/ci.yml/badge.svg)](https://github.com/HarperZ9/index-graph/actions/workflows/ci.yml)
 ![deps: none](https://img.shields.io/badge/deps-none-success.svg)
+
+## Try it
+
+```bash
+pip install index-graph
+index atlas --root /path/to/your/workspace --format html --out atlas.html
+```
+
+Open the visual atlas sample at [`examples/atlas-demo.html`](examples/atlas-demo.html) or the static proof surface at [`examples/index-demo.html`](examples/index-demo.html).
+
+## Why it matters
+
+A workspace becomes risky when nobody can hold its shape. index gives teams and agents a map built from imports, manifests, docs, and evidence instead of memory.
+
+## Work with it
+
+Run it on a real multi-repo workspace, use the atlas for onboarding or diligence, or fund deeper language and documentation resolvers.
+
+## What it does
+
+Every codebase has a shape. Past a handful of repos, that shape lives only in someone's head, and they are usually busy or already gone. `index` draws it for you: how your repositories depend on each other, and the docs that explain why, as one map you can open. Built from evidence, not guesses. Zero dependencies.
 
 Point `index` at a folder of Git repositories and it answers the question that gets harder with every repo you add. How does all of this actually fit together? It reads the dependencies the way your code already states them, an import in one file, a manifest line in another, and it records each edge with the file and line that proves it. Then `index atlas` does the part most tools skip. It pulls your markdown into the same picture, the READMEs, the ADRs, the design notes, so the explanation finally sits next to the thing it explains. What comes back is a single HTML file. No server, no build step, no account. Nothing to install but Python.
 
@@ -92,18 +120,18 @@ There are four kinds of edge on the map, and the tool derives every one of them 
 
 Open the result and it behaves like a workbench, not a poster.
 
-```
-┌──────────────────────────────────────────────┬───────────────────────┐
-│  search repos + docs…   [reset][focus][○ ...] │  Architecture  ·doc   │
-│                                                │  links: api, storage  │
-│       ┌─────┐         ┌─────────┐              │  linked from: api/RE… │
-│       │ api │────────▶│ storage │   ← repos    │  ───────────────────  │
-│       └──┬──┘         └────┬────┘              │  # Architecture       │
-│        · api/README     · storage/README       │  api is the entry;    │
-│       · · · ·  knowledge band  · · · ·         │  storage is the core. │
-│       ▢ architecture     ▢ adr-001-storage     │  > Rule: api never    │
-│   pan · zoom · click a doc to read it rendered │  >   imports a peer.  │
-└──────────────────────────────────────────────┴───────────────────────┘
+```text
++----------------------------------------------+-----------------------+
+| search repos + docs   [reset][focus][filter] | Architecture doc      |
+|                                              | links: api, storage   |
+|       +-----+         +---------+            | linked from: api/RE   |
+|       | api |-------->| storage |   repos    | -------------------   |
+|       +--+--+         +----+----+            | # Architecture        |
+|        . api/README     . storage/README     | api is the entry;     |
+|       . . . . knowledge band . . . .         | storage is the core.  |
+|       [architecture]    [adr-001-storage]    | > Rule: api never     |
+|   pan / zoom / click a doc to read it        | > imports a peer.     |
++----------------------------------------------+-----------------------+
 ```
 
 - Pan and zoom the graph. The wheel zooms about the cursor, drag pans, and one button resets the view.

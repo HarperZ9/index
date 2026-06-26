@@ -1,4 +1,4 @@
-"""Dark Serious palette + font tokens, shared by every renderer."""
+"""Project Telos palette + font tokens, shared by every renderer."""
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -6,17 +6,17 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class Theme:
-    bg: str = "#0d1b1c"
-    ink: str = "#e9e2d0"
-    accent: str = "#df5e00"
-    teal: str = "#476762"
-    gold: str = "#efab30"
-    ok: str = "#5fae93"
-    muted: str = "#8a9b92"
+    bg: str = "#f4f3ef"
+    ink: str = "#0b0c0e"
+    accent: str = "#4636e8"
+    teal: str = "#585c64"
+    gold: str = "#0b0c0e"
+    ok: str = "#2f3238"
+    muted: str = "#585c64"
     alert: str = "#d9544d"
-    hairline: str = "rgba(239,171,48,.15)"
-    font_body: str = '"EB Garamond", Georgia, serif'
-    font_mono: str = '"Spline Sans Mono", ui-monospace, monospace'
+    hairline: str = "rgba(11,12,14,.14)"
+    font_body: str = "Arial,Helvetica,sans-serif"
+    font_mono: str = "ui-monospace,SFMono-Regular,Consolas,monospace"
 
 
 THEME = Theme()

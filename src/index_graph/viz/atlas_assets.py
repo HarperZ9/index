@@ -2,11 +2,14 @@
 from __future__ import annotations
 
 ATLAS_CSS = """
+:root{--bg:#f4f3ef;--panel:rgba(255,255,255,.55);--ink:#0b0c0e;--soft:#2f3238;--muted:#585c64;--hairline:rgba(11,12,14,.14);--accent:#4636e8;--gold:#0b0c0e;--font-body:Arial,Helvetica,sans-serif;--font-mono:ui-monospace,SFMono-Regular,Consolas,monospace}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body)}
 main{display:grid;grid-template-columns:1fr 360px;min-height:100vh}
-#stage{overflow:hidden;padding:1rem;position:relative}#stage svg{max-width:100%;height:auto;cursor:grab}
+.skip-link{position:absolute;left:1rem;top:1rem;transform:translateY(-140%);background:var(--bg);border:1px solid var(--hairline);padding:.55rem .85rem;z-index:10}
+.skip-link:focus{transform:none;outline:2px solid var(--accent);outline-offset:3px}
+#stage{overflow:hidden;padding:1rem;position:relative}#stage svg{max-width:100%;height:auto;cursor:grab;background:var(--bg)}
 #stage.grabbing svg{cursor:grabbing}
-aside{border-left:1px solid var(--hairline);padding:1rem;font-family:var(--font-mono);font-size:.82rem;overflow:auto}
+aside{border-left:1px solid var(--hairline);padding:1rem;font-family:var(--font-mono);font-size:.82rem;overflow:auto;background:var(--panel)}
 .controls{display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:.6rem;align-items:center}
 .chip{cursor:pointer;border:1px solid var(--hairline);border-radius:6px;padding:.2em .5em;background:transparent;color:var(--ink)}
 .chip[aria-pressed=true]{background:var(--accent);color:var(--bg)}
@@ -15,12 +18,14 @@ input[type=search]{flex:1;min-width:8rem;padding:.4em;background:transparent;col
 #trail a{color:var(--gold);cursor:pointer;text-decoration:underline}
 #detail h3{margin:.2rem 0;color:var(--gold)}#detail h4{margin:.6rem 0 .2rem;color:var(--gold)}
 #detail .md{font-family:var(--font-body);font-size:.95rem;line-height:1.5;border-top:1px solid var(--hairline);margin-top:.6rem;padding-top:.6rem}
-#detail .md pre{background:rgba(0,0,0,.3);padding:.5em;overflow:auto}#detail .md table{border-collapse:collapse}
+#detail .md pre{background:rgba(255,255,255,.55);border:1px solid var(--hairline);padding:.5em;overflow:auto}#detail .md table{border-collapse:collapse}
 #detail .md th,#detail .md td{border:1px solid var(--hairline);padding:.2em .5em}
 #detail .md .wikilink{color:var(--accent);cursor:pointer}#detail .md .md-img{opacity:.6;font-style:italic}
 a.wikilink{color:var(--accent)}
 @media(max-width:820px){main{grid-template-columns:1fr}aside{border-left:none}}
 """
+
+ATLAS_SKIP_LINK = '<a class="skip-link" href="#detail">Skip to content</a>'
 
 ATLAS_JS = r"""
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
@@ -65,7 +70,7 @@ function wireWikilinks(){$$('#detail .wikilink,#detail .navlink').forEach(a=>a.a
   if(t)go(t.kind,t.id);}));}
 let trail=[];
 function pushTrail(node){if(trail.length&&trail[trail.length-1].id===node.id)return;trail.push(node);renderTrail();}
-function renderTrail(){$('#trail').innerHTML=trail.map((n,i)=>`<a data-i="${i}">${esc(n.id)}</a>`).join(' › ');
+function renderTrail(){$('#trail').innerHTML=trail.map((n,i)=>`<a data-i="${i}">${esc(n.id)}</a>`).join(' > ');
  $$('#trail a').forEach(a=>a.addEventListener('click',()=>{const n=trail[+a.dataset.i];trail=trail.slice(0,+a.dataset.i);go(n.kind,n.id);}));}
 let view={k:1,tx:0,ty:0};
 function applyView(){const vp=$('#viewport');if(vp)vp.setAttribute('transform',`translate(${view.tx},${view.ty}) scale(${view.k})`);}

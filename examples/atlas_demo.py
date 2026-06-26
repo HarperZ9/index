@@ -6,7 +6,11 @@ Path-independent + deterministic (uses repo names + workspace-relative doc paths
 from __future__ import annotations
 
 import tempfile
+import sys
 from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "src"))
 
 from index_graph import viz
 from index_graph.config import load_config

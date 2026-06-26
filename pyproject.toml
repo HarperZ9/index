@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "index-graph"
 dynamic = ["version"]
-description = "A dependency graph and a two-layer code-and-docs map for multi-repo workspaces, built from evidence. Zero dependencies."
+description = "Evidence-built repo and documentation atlas for multi-repo workspaces."
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "FSL-1.1-MIT" }
