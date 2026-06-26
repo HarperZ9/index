@@ -42,6 +42,20 @@ Each command writes one HTML file. Open it in any browser, offline. Nothing to h
 
 ---
 
+## Try it in the field
+
+`index` is the right first test when the problem is a workspace nobody can hold in their head anymore.
+
+- **Engineering / agent routing:** map the repo graph and docs before assigning model work, so tokens go to the files and decisions that actually matter.
+- **Clinical or regulated software teams:** preserve architecture evidence around the systems that touch policy, records, or review workflows.
+- **Media / research teams:** keep source repos, notes, and project docs in one rerunnable atlas instead of rebuilding the map from memory.
+
+Project Telos: <https://harperz9.github.io>. GitHub: <https://github.com/HarperZ9>. Peer flagships: [gather](https://github.com/HarperZ9/gather), [forum](https://github.com/HarperZ9/forum), [crucible](https://github.com/HarperZ9/crucible), and [the telos engine](https://github.com/HarperZ9/telos).
+
+I am looking for verification, testing against real workspaces, early traction from people willing to inspect the certificates, and possibly modest grassroots research funding or pointers.
+
+---
+
 ## `index atlas`, the two-layer map
 
 Most dependency tools stop at the code. But code is only half of what you need to understand a system. The other half is the prose that explains it, and that prose is usually stranded somewhere the graph can't see. `index atlas` brings it back in. Every markdown file becomes a node, joined to the code it documents, and you can read it without ever leaving the map.
