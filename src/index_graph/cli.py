@@ -10,12 +10,13 @@ from pathlib import Path
 from . import __version__
 from .config import load_config
 from .context.pack import closure, focus_subgraph, preservation, render_text, to_json
+from .flagship import cmd_demo, cmd_doctor, cmd_status
 from .graph.build import build_graph
 from .scan import build_map, discover_repos, write_map
 
 _SUBCOMMANDS = {"map", "graph", "context", "viz", "atlas",
                 "internals", "check", "snapshot", "drift", "router", "verify",
-                "freshness", "bench", "mcp"}
+                "freshness", "bench", "mcp", "status", "doctor", "demo"}
 
 
 def _add_map_args(p: argparse.ArgumentParser) -> None:
@@ -32,6 +33,15 @@ def build_parser() -> argparse.ArgumentParser:
         description="Repository inventory maps + dependency graph + context packs.")
     parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     sub = parser.add_subparsers(dest="cmd")
+
+    status = sub.add_parser("status", help="emit Index's Project Telos operator-spine status")
+    status.add_argument("--json", action="store_true", help="emit a Project Telos action envelope")
+
+    doctor = sub.add_parser("doctor", help="check Index's operator-spine readiness")
+    doctor.add_argument("--json", action="store_true", help="emit a Project Telos action envelope")
+
+    demo = sub.add_parser("demo", help="show Index's operator-spine demo command")
+    demo.add_argument("--json", action="store_true", help="emit a Project Telos action envelope")
 
     _add_map_args(sub.add_parser("map", help="Write the repository inventory map (default)."))
 
@@ -607,6 +617,12 @@ def main(argv: list[str] | None = None) -> int:
             build_parser().parse_args(raw[:1])  # prints and exits
         raw = ["map", *raw]
     args = build_parser().parse_args(raw)
+    if args.cmd == "status":
+        return cmd_status(args)
+    if args.cmd == "doctor":
+        return cmd_doctor(args)
+    if args.cmd == "demo":
+        return cmd_demo(args)
     if args.cmd == "atlas":
         return _cmd_atlas(args)
     if args.cmd == "graph":
