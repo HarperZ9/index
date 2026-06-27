@@ -1,19 +1,19 @@
 <p align="center">
-  <img src="docs/brand/index-hero.svg" alt="index, a Project Telos flagship for workspace atlas mapping">
+  <img src="docs/brand/index-hero.svg" alt="Index, a Project Telos flagship for workspace atlas mapping">
 </p>
 <!-- Project mark: docs/brand/index-mark.svg -->
 
-# index
+# Index
 
 > Map a workspace from evidence, not memory.
 
-[Project Telos](https://harperz9.github.io) | [gather](https://github.com/HarperZ9/gather) | [index](https://github.com/HarperZ9/index) | [forum](https://github.com/HarperZ9/forum) | [crucible](https://github.com/HarperZ9/crucible) | [telos](https://github.com/HarperZ9/telos)
+[Project Telos](https://harperz9.github.io) | [Gather](https://github.com/HarperZ9/gather) | [Crucible](https://github.com/HarperZ9/crucible) | [Index](https://github.com/HarperZ9/index) | [Forum](https://github.com/HarperZ9/forum) | [Telos](https://github.com/HarperZ9/telos)
 
-[![license: fair source](https://img.shields.io/badge/license-fair%20source-blue.svg)](LICENSE)
-![python](https://img.shields.io/badge/python-3.11%2B-blue.svg)
-![version](https://img.shields.io/badge/version-2.8-informational.svg)
-[![CI](https://github.com/HarperZ9/index-graph/actions/workflows/ci.yml/badge.svg)](https://github.com/HarperZ9/index-graph/actions/workflows/ci.yml)
+[![CI](https://github.com/HarperZ9/index/actions/workflows/ci.yml/badge.svg)](https://github.com/HarperZ9/index/actions/workflows/ci.yml)
+![version: 2.8](https://img.shields.io/badge/version-2.8-informational.svg)
+![python: 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)
 ![deps: none](https://img.shields.io/badge/deps-none-success.svg)
+[![license: fair-source](https://img.shields.io/badge/license-fair--source-blue.svg)](LICENSE)
 
 ## Try it
 
@@ -31,6 +31,12 @@ A workspace becomes risky when nobody can hold its shape. index gives teams and 
 ## Work with it
 
 Run it on a real multi-repo workspace, use the atlas for onboarding or diligence, or fund deeper language and documentation resolvers.
+
+## Current status
+
+- **Release:** `index-graph 2.8.0`; command `index`; Python 3.11+; zero runtime dependencies.
+- **Operator surface:** `index status --json`, `index doctor --json`, `index demo --json`, and `index mcp` expose the Project Telos action envelope and native MCP tools: `index.map`, `index.context`, `index.status`, `index.doctor`, plus the existing graph, focus, verify, router, and internals tools.
+- **Current floor:** 2.8.0 covers atlas mapping, nine ecosystem resolvers, architecture certificates, freshness checks, token-economics benchmarking, and MCP-native workspace intelligence.
 
 ## What it does
 
@@ -78,7 +84,7 @@ Each command writes one HTML file. Open it in any browser, offline. Nothing to h
 - **Clinical or regulated software teams:** preserve architecture evidence around the systems that touch policy, records, or review workflows.
 - **Media / research teams:** keep source repos, notes, and project docs in one rerunnable atlas instead of rebuilding the map from memory.
 
-Project Telos: <https://harperz9.github.io>. GitHub: <https://github.com/HarperZ9>. Peer flagships: [gather](https://github.com/HarperZ9/gather), [forum](https://github.com/HarperZ9/forum), [crucible](https://github.com/HarperZ9/crucible), and [the telos engine](https://github.com/HarperZ9/telos).
+Project Telos: <https://harperz9.github.io>. GitHub: <https://github.com/HarperZ9>. Peer flagships: [Gather](https://github.com/HarperZ9/gather), [Crucible](https://github.com/HarperZ9/crucible), [Forum](https://github.com/HarperZ9/forum), and [the Telos engine](https://github.com/HarperZ9/telos).
 
 I am looking for verification, testing against real workspaces, early traction from people willing to inspect the certificates, and possibly modest grassroots research funding or pointers.
 

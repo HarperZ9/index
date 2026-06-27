@@ -33,7 +33,23 @@ def _next(tool: str, action: str, reason: str) -> dict:
 def status_payload() -> dict:
     return envelope(
         "status",
-        native={"role": "structure-context", "commands": ["map", "graph", "context", "atlas", "verify"]},
+        native={
+            "role": "structure-context",
+            "commands": ["map", "graph", "context", "atlas", "verify"],
+            "operator_commands": ["status", "doctor", "demo", "mcp"],
+            "mcp_tools": [
+                "index.map",
+                "index.context",
+                "index.status",
+                "index.doctor",
+                "index_graph",
+                "index_focus",
+                "index_verify",
+                "index_router",
+                "index_internals",
+            ],
+            "current_status": "2.8.0 workspace atlas, certificates, freshness, benchmarking, and MCP parity",
+        },
         next_actions=[_next("gather", "docs", "gather docs backing structural decisions")],
     )
 
@@ -55,7 +71,7 @@ def demo_payload() -> dict:
     return envelope(
         "demo",
         native={"command": "index map --root <workspace> --json"},
-        next_actions=[_next("telos", "reconcile", "render workspace structure into the shared room")],
+        next_actions=[_next("telos", "workflow", "render workspace structure into the shared room")],
     )
 
 
