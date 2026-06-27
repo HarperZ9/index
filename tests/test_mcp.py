@@ -14,6 +14,7 @@ def test_tools_list_has_core_tools():
     r = handle_request({"jsonrpc": "2.0", "id": 2, "method": "tools/list"})
     names = {t["name"] for t in r["result"]["tools"]}
     assert {"index_graph", "index_focus", "index_verify", "index_router", "index_internals"} <= names
+    assert {"index.map", "index.context"} <= names
     for t in r["result"]["tools"]:
         assert t["inputSchema"]["type"] == "object"
 
@@ -37,6 +38,29 @@ def test_tools_call_verify(tmp_path):
     assert r["result"]["isError"] is False
     rec = json.loads(r["result"]["content"][0]["text"])
     assert rec["verdict"] == "MATCH"
+
+
+def test_catalog_map_alias_returns_inventory(tmp_path):
+    (tmp_path / "solo" / ".git").mkdir(parents=True)
+    (tmp_path / "solo" / "pyproject.toml").write_text(
+        "[project]\nname='solo'\nversion='0'\n", encoding="utf-8")
+    r = handle_request({"jsonrpc": "2.0", "id": 8, "method": "tools/call",
+                        "params": {"name": "index.map", "arguments": {"root": str(tmp_path)}}})
+    assert r["result"]["isError"] is False
+    rec = json.loads(r["result"]["content"][0]["text"])
+    assert rec["repo_count"] == 1
+    assert rec["repositories"][0]["path"] == "solo"
+
+
+def test_catalog_context_alias_returns_graph_pack(tmp_path):
+    (tmp_path / "solo" / ".git").mkdir(parents=True)
+    (tmp_path / "solo" / "pyproject.toml").write_text(
+        "[project]\nname='solo'\nversion='0'\n", encoding="utf-8")
+    r = handle_request({"jsonrpc": "2.0", "id": 10, "method": "tools/call",
+                        "params": {"name": "index.context", "arguments": {"root": str(tmp_path)}}})
+    assert r["result"]["isError"] is False
+    rec = json.loads(r["result"]["content"][0]["text"])
+    assert rec["repos"][0]["name"] == "solo"
 
 
 def test_tools_call_error_is_flagged(tmp_path):
