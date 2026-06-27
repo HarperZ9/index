@@ -12,12 +12,12 @@ def render_router(pack: dict) -> str:
     relations = [r for r in pack.get("relations", []) if not r.get("external")]
     roles = pack.get("roles", {})
     repos = sorted(r["name"] for r in pack.get("repos", []))
-    deps_out: dict[str, set[str]] = {}
+    deps_out: dict[str, dict[str, str]] = {}
     deps_in: dict[str, set[str]] = {}
     for r in relations:
         frm, to = r.get("from"), r.get("to")
         if to:
-            deps_out.setdefault(frm, set()).add(to)
+            deps_out.setdefault(frm, {})[to] = _relation_label(r)
             deps_in.setdefault(to, set()).add(frm)
 
     L = ["# Workspace map", "",
@@ -28,7 +28,7 @@ def render_router(pack: dict) -> str:
     if entry:
         L.append("## Entry points")
         for n in entry:
-            out = ", ".join(sorted(deps_out.get(n, []))) or "nothing internal"
+            out = _deps_label(deps_out.get(n, {})) or "nothing internal"
             L.append(f"- `{n}` starts here; depends on {out}")
         L.append("")
 
@@ -43,8 +43,8 @@ def render_router(pack: dict) -> str:
     L.append("## Where things live")
     for n in repos:
         rs = ", ".join(roles.get(n, [])) or "unclassified"
-        out = sorted(deps_out.get(n, []))
-        dep = f"; depends on {', '.join(out)}" if out else ""
+        out = _deps_label(deps_out.get(n, {}))
+        dep = f"; depends on {out}" if out else ""
         L.append(f"- `{n}` ({rs}){dep}")
     L.append("")
 
@@ -57,3 +57,27 @@ def render_router(pack: dict) -> str:
         L.append("")
 
     return "\n".join(L).rstrip() + "\n"
+
+
+def _deps_label(deps: dict[str, str]) -> str:
+    return ", ".join(label for _name, label in sorted(deps.items()))
+
+
+def _relation_label(relation: dict) -> str:
+    to = str(relation.get("to") or "")
+    evidence = _first_signal(relation.get("signals"))
+    return f"{to} [{evidence}]" if evidence else to
+
+
+def _first_signal(value: object) -> str:
+    if not isinstance(value, list):
+        return ""
+    for signal in value:
+        if not isinstance(signal, dict):
+            continue
+        file = signal.get("file")
+        if not isinstance(file, str) or not file:
+            continue
+        line = signal.get("line")
+        return f"{file}:{line}" if isinstance(line, int) and line > 0 else file
+    return ""

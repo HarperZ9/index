@@ -8,6 +8,7 @@ Presentation and operator-surface housekeeping for Project Telos parity.
 - Status payload: exposes current operator commands, MCP tool names, and the 2.8 capability summary under `native`.
 - MCP tools: records native availability for `index.map`, `index.context`, `index.status`, and `index.doctor` alongside the existing graph/focus/verify/router/internals tools.
 - Operator commands: documents `index status --json`, `index doctor --json`, and `index demo --json` as part of the shared Project Telos action envelope.
+- Router: carries the first dependency signal into generated workspace maps, so compact `AGENTS.md`/`CLAUDE.md` output names the file and line behind each internal edge.
 
 ## 2.8.0
 

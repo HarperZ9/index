@@ -35,6 +35,22 @@ def test_router_renders_sections():
     assert "## Docs" in out
     assert "`core/README.md` describes `core`" in out
 
+def test_router_includes_dependency_evidence_compactly():
+    pack = {
+        "repos": [{"name": "api"}, {"name": "core"}, {"name": "web"}],
+        "roles": {"api": ["entrypoint"], "core": ["hub"], "web": ["entrypoint"]},
+        "relations": [
+            {"from": "api", "to": "core", "external": False,
+             "signals": [{"file": "api/pyproject.toml", "line": 4}]},
+            {"from": "web", "to": "core", "external": False,
+             "signals": [{"file": "web/package.json", "line": None}]},
+        ],
+        "knowledge_edges": [],
+    }
+    out = render_router(pack)
+    assert "`api` starts here; depends on core [api/pyproject.toml:4]" in out
+    assert "`web` starts here; depends on core [web/package.json]" in out
+    assert "`api` (entrypoint); depends on core [api/pyproject.toml:4]" in out
 
 def test_router_is_deterministic_and_sorted():
     pack = {
