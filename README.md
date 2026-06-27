@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/brand/index-hero.svg" alt="Index, a Project Telos flagship for workspace atlas mapping">
+  <img src="docs/brand/index-hero.png" alt="Index, a Project Telos flagship for workspace atlas mapping">
 </p>
 <!-- Project mark: docs/brand/index-mark.svg -->
 
