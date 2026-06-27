@@ -26,6 +26,12 @@ def _root_schema(extra: dict | None = None, required: list | None = None) -> dic
 
 def _tool_defs() -> list[dict]:
     return [
+        {"name": "index.map",
+         "description": "Repository inventory map as JSON, matching the `index map --json` CLI surface.",
+         "inputSchema": _root_schema()},
+        {"name": "index.context",
+         "description": "Repo-level dependency context pack as JSON, matching the `index context --json` CLI surface.",
+         "inputSchema": _root_schema()},
         {"name": "index_graph",
          "description": "Repo-level dependency graph (relations, roles, cycles) as JSON.",
          "inputSchema": _root_schema()},
@@ -62,7 +68,13 @@ def call_tool(name: str, args: dict) -> str:
         raise ValueError(f"root not found: {root}")
     repo_paths = _repo_paths(root)
 
-    if name == "index_graph":
+    if name == "index.map":
+        from .config import load_config
+        from .scan import build_map
+        return json.dumps(build_map(root, load_config(None, root), __version__).to_json(),
+                          indent=2, sort_keys=True)
+
+    if name in ("index.context", "index_graph"):
         return json.dumps(to_json(build_graph(repo_paths)), indent=2, sort_keys=True)
 
     if name == "index_focus":
