@@ -1,12 +1,12 @@
 from index_graph.viz.theme import THEME, css_variables, svg_style
 
 
-def test_theme_has_dark_serious_palette():
-    assert THEME.bg == "#0d1b1c"
-    assert THEME.accent == "#df5e00"
-    assert THEME.ok == "#5fae93"
+def test_theme_has_telos_palette():
+    assert THEME.bg == "#f4f3ef"
+    assert THEME.accent == "#4636e8"
+    assert THEME.ok == "#2f3238"
     # font stacks carry system fallbacks (no external font dependency)
-    assert "serif" in THEME.font_body.lower()
+    assert "sans-serif" in THEME.font_body.lower()
     assert "monospace" in THEME.font_mono.lower()
 
 
