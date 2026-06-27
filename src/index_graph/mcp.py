@@ -32,6 +32,12 @@ def _tool_defs() -> list[dict]:
         {"name": "index.context",
          "description": "Repo-level dependency context pack as JSON, matching the `index context --json` CLI surface.",
          "inputSchema": _root_schema()},
+        {"name": "index.status",
+         "description": "Project Telos operator-spine status action envelope, matching the `index status --json` CLI surface.",
+         "inputSchema": {"type": "object", "properties": {}}},
+        {"name": "index.doctor",
+         "description": "Project Telos operator-spine readiness checks action envelope, matching the `index doctor --json` CLI surface.",
+         "inputSchema": {"type": "object", "properties": {}}},
         {"name": "index_graph",
          "description": "Repo-level dependency graph (relations, roles, cycles) as JSON.",
          "inputSchema": _root_schema()},
@@ -58,6 +64,14 @@ def _repo_paths(root: Path) -> dict:
 
 
 def call_tool(name: str, args: dict) -> str:
+    if name == "index.status":
+        from .flagship import status_payload
+        return json.dumps(status_payload(), indent=2, sort_keys=True)
+
+    if name == "index.doctor":
+        from .flagship import doctor_payload
+        return json.dumps(doctor_payload(), indent=2, sort_keys=True)
+
     from .graph.build import build_graph
     from .context.pack import to_json, closure, preservation, focus_subgraph
 

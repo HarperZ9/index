@@ -14,10 +14,31 @@ def test_tools_list_has_core_tools():
     r = handle_request({"jsonrpc": "2.0", "id": 2, "method": "tools/list"})
     names = {t["name"] for t in r["result"]["tools"]}
     assert {"index_graph", "index_focus", "index_verify", "index_router", "index_internals"} <= names
-    assert {"index.map", "index.context"} <= names
+    assert {"index.map", "index.context", "index.status", "index.doctor"} <= names
     for t in r["result"]["tools"]:
         assert t["inputSchema"]["type"] == "object"
 
+
+def test_status_tool_returns_cli_action_envelope_without_root():
+    r = handle_request({"jsonrpc": "2.0", "id": 11, "method": "tools/call",
+                        "params": {"name": "index.status", "arguments": {}}})
+    assert r["result"]["isError"] is False
+    payload = json.loads(r["result"]["content"][0]["text"])
+    assert payload["schema"] == "project-telos.flagship-action/v1"
+    assert payload["tool"] == "index"
+    assert payload["command"] == "status"
+    assert payload["native"]["role"] == "structure-context"
+
+
+def test_doctor_tool_returns_cli_action_envelope_without_root():
+    r = handle_request({"jsonrpc": "2.0", "id": 12, "method": "tools/call",
+                        "params": {"name": "index.doctor", "arguments": {}}})
+    assert r["result"]["isError"] is False
+    payload = json.loads(r["result"]["content"][0]["text"])
+    assert payload["schema"] == "project-telos.flagship-action/v1"
+    assert payload["tool"] == "index"
+    assert payload["command"] == "doctor"
+    assert payload["native"]["checks"][0]["status"] == "MATCH"
 
 def test_notification_returns_none():
     assert handle_request({"jsonrpc": "2.0", "method": "notifications/initialized"}) is None
