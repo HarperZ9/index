@@ -10,6 +10,11 @@ def test_status_json_is_action_envelope(capsys):
     assert payload["tool"] == "index"
     assert payload["native"]["role"] == "structure-context"
     assert "index.doctor" in payload["native"]["mcp_tools"]
+    contracts = payload["native"]["telos_contracts"]
+    assert "CLI JSON" in contracts["host_surfaces"]
+    assert "project-telos.context-envelope/v1" in contracts["schemas"]
+    assert "creative" in contracts["workflow_domains"]
+    assert "dormant engine parts" in contracts["second_brain_role"]
 
 
 def test_doctor_human_prints_next_action(capsys):
