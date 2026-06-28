@@ -35,8 +35,8 @@ Run it on a real multi-repo workspace, use the atlas for onboarding or diligence
 ## Current status
 
 - **Release:** `index-graph 2.8.0`; command `index`; Python 3.11+; zero runtime dependencies.
-- **Operator surface:** `index status --json`, `index doctor --json`, `index demo --json`, and `index mcp` expose the Project Telos action envelope and native MCP tools: `index.map`, `index.context`, `index.status`, `index.doctor`, plus the existing graph, focus, verify, router, and internals tools. Generated routers now carry compact dependency evidence like `pyproject.toml:12` beside internal edges, and the status payload advertises shared CLI/MCP/plugin/IDE/TUI/app contracts for enterprise, research, creative, scientific, and education workflows.
-- **Current floor:** 2.8.0 covers atlas mapping, nine ecosystem resolvers, architecture certificates, freshness checks, token-economics benchmarking, and MCP-native workspace intelligence.
+- **Operator surface:** `index status --json`, `index doctor --json`, `index demo --json`, and `index mcp` expose the Project Telos action envelope and native MCP tools: `index.map`, `index.context`, `index.context.envelope`, `index.status`, `index.doctor`, plus the existing graph, focus, verify, router, and internals tools. Generated routers now carry compact dependency evidence like `pyproject.toml:12` beside internal edges, and the status payload advertises shared CLI/MCP/plugin/IDE/TUI/app contracts for enterprise, research, creative, scientific, and education workflows.
+- **Current floor:** 2.8.0 covers atlas mapping, nine ecosystem resolvers, architecture certificates, freshness checks, token-economics benchmarking, budgeted context envelopes, and MCP-native workspace intelligence.
 
 - **Enterprise readiness:** [docs/ENTERPRISE-READINESS.md](docs/ENTERPRISE-READINESS.md) records the large-context, action-receipt, readability, and host-integration contract for unattended agent workflows.
 
@@ -166,6 +166,7 @@ A rendered sample ships with the repo at [`examples/atlas-demo.html`](examples/a
 | **JSON context manifest** | `index map` | Machine-readable inventory: remotes, branches, dirty counts, classification |
 | **Dependency graph (text/JSON)** | `index graph [--cycles]` | Repo to repo edges with evidence, and a report of dependency cycles |
 | **Context pack (prose + relations)** | `index context` | Synthesis pack: roles, relations, narrative summary |
+| **Context envelope** | `index context-envelope --budget N` | Budgeted, receipt-backed context for large-codebase agent workflows; keeps omissions explicit |
 | **Module graph (internals)** | `index internals` | The dependency graph inside one repo, with internal cycles and fan-in/out |
 | **Architecture check (certificate)** | `index check` | Measure structure against your `[architecture]` rule; emits a re-checkable verdict |
 | **Drift (certificate)** | `index snapshot` then `index drift` | Snapshot the shape, then see exactly what changed |
@@ -209,6 +210,7 @@ index atlas     [--root ROOT] [--format html] [--json] [--out FILE] [--no-extern
 index map       [--root ROOT] [--output FILE] [--json] [--config CFG]
 index graph     [--root ROOT] [--json] [--cycles]
 index context   [--root ROOT] [--focus REPO] [--hops N] [--json] [--audit]
+index context-envelope [--root ROOT] [--budget N] [--focus REPO] [--hops N] [--json]
 index viz       [--root ROOT] [--format {html,svg,mermaid,all}]
                 [--focus REPO] [--no-external] [--out FILE] [--out-dir DIR]
 index internals [--root REPO] [--json] [--cycles]

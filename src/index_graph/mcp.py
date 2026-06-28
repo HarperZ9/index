@@ -32,6 +32,13 @@ def _tool_defs() -> list[dict]:
         {"name": "index.context",
          "description": "Repo-level dependency context pack as JSON, matching the `index context --json` CLI surface.",
          "inputSchema": _root_schema()},
+        {"name": "index.context.envelope",
+         "description": "Budgeted, receipt-backed context envelope for large-codebase agent workflows.",
+         "inputSchema": _root_schema({
+             "budget": {"type": "integer"},
+             "focus": {"type": "string"},
+             "hops": {"type": "integer"},
+         })},
         {"name": "index.status",
          "description": "Project Telos operator-spine status action envelope, matching the `index status --json` CLI surface.",
          "inputSchema": {"type": "object", "properties": {}}},
@@ -90,6 +97,17 @@ def call_tool(name: str, args: dict) -> str:
 
     if name in ("index.context", "index_graph"):
         return json.dumps(to_json(build_graph(repo_paths)), indent=2, sort_keys=True)
+
+    if name == "index.context.envelope":
+        from .context.envelope import build_context_envelope
+        env = build_context_envelope(
+            build_graph(repo_paths),
+            root=root,
+            token_budget=int(args.get("budget", 1200)),
+            focus=args.get("focus"),
+            hops=args.get("hops"),
+        )
+        return json.dumps(env, indent=2, sort_keys=True)
 
     if name == "index_focus":
         graph = build_graph(repo_paths)

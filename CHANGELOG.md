@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Context envelopes: adds `index context-envelope --budget N [--focus REPO] [--hops N] --json` and
+  the `index.context.envelope` MCP tool for budgeted, receipt-backed, source-ref-only context packets.
+  The envelope records retained repos, omitted repos, token budget pressure, graph-pack receipts, and
+  privacy boundaries without exporting raw source.
 - Enterprise readiness: adds `docs/ENTERPRISE-READINESS.md` for context envelopes, action receipts, readability gates, and host-neutral operation.
 - Operator surface: the status payload now advertises shared Project Telos CLI/MCP/plugin/IDE/TUI/app contracts for enterprise, research, creative, scientific, and education workflows.
 
@@ -9,7 +13,7 @@ Presentation and operator-surface housekeeping for Project Telos parity.
 
 - README: uses the shared five-flagship navigation, fixes the CI badge to the current `HarperZ9/index` repository, and adds a current-status block.
 - Status payload: exposes current operator commands, MCP tool names, and the 2.8 capability summary under `native`.
-- MCP tools: records native availability for `index.map`, `index.context`, `index.status`, and `index.doctor` alongside the existing graph/focus/verify/router/internals tools.
+- MCP tools: records native availability for `index.map`, `index.context`, `index.context.envelope`, `index.status`, and `index.doctor` alongside the existing graph/focus/verify/router/internals tools.
 - Operator commands: documents `index status --json`, `index doctor --json`, and `index demo --json` as part of the shared Project Telos action envelope.
 - Router: carries the first dependency signal into generated workspace maps, so compact `AGENTS.md`/`CLAUDE.md` output names the file and line behind each internal edge.
 

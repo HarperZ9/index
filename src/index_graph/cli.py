@@ -14,7 +14,7 @@ from .flagship import cmd_demo, cmd_doctor, cmd_status
 from .graph.build import build_graph
 from .scan import build_map, discover_repos, write_map
 
-_SUBCOMMANDS = {"map", "graph", "context", "viz", "atlas",
+_SUBCOMMANDS = {"map", "graph", "context", "context-envelope", "viz", "atlas",
                 "internals", "check", "snapshot", "drift", "router", "verify",
                 "freshness", "bench", "mcp", "status", "doctor", "demo"}
 
@@ -57,6 +57,14 @@ def build_parser() -> argparse.ArgumentParser:
     c.add_argument("--focus", default=None)
     c.add_argument("--hops", type=int, default=None)
     c.add_argument("--audit", action="store_true")
+
+    ce = sub.add_parser("context-envelope", help="Emit a budgeted, receipt-backed context envelope.")
+    ce.add_argument("--root", type=Path, default=Path.cwd())
+    ce.add_argument("--budget", type=int, default=1200,
+                    help="approximate token budget for retained context entries")
+    ce.add_argument("--focus", default=None)
+    ce.add_argument("--hops", type=int, default=None)
+    ce.add_argument("--json", action="store_true")
 
     v = sub.add_parser("viz", help="Render the dependency graph (html/svg/mermaid).")
     v.add_argument("--root", type=Path, default=Path.cwd())
@@ -240,6 +248,33 @@ def _cmd_context(args) -> int:
                      f"- boundary dropped: {len(b['dropped_edges'])} edge(s) to "
                      f"{len(b['dropped_nodes'])} node(s)")
         print(text)
+    return 0
+
+
+def _cmd_context_envelope(args) -> int:
+    if args.budget < 1:
+        raise SystemExit("--budget must be a positive integer")
+    if args.hops is not None and args.hops < 0:
+        raise SystemExit("--hops must be >= 0")
+    from .context.envelope import build_context_envelope
+    graph = build_graph(_repo_paths(args.root.resolve()))
+    try:
+        env = build_context_envelope(
+            graph,
+            root=args.root.resolve(),
+            token_budget=args.budget,
+            focus=args.focus,
+            hops=args.hops,
+        )
+    except ValueError as exc:
+        print(str(exc))
+        return 2
+    if args.json:
+        print(json.dumps(env, indent=2, sort_keys=True))
+    else:
+        print(f"context-envelope verdict={env['verification_verdict']} "
+              f"tokens={env['budget']['approx_tokens']}/{env['budget']['token_budget']}")
+        print(f"retained={len(env['retained'])} omitted={len(env['omitted'])}")
     return 0
 
 
@@ -629,6 +664,8 @@ def main(argv: list[str] | None = None) -> int:
         return _cmd_graph(args)
     if args.cmd == "context":
         return _cmd_context(args)
+    if args.cmd == "context-envelope":
+        return _cmd_context_envelope(args)
     if args.cmd == "viz":
         return _cmd_viz(args)
     if args.cmd == "internals":

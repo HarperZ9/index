@@ -15,14 +15,19 @@ This guide aligns the flagship with Project Telos context envelopes and action r
 - `index status --json` and `index doctor --json` for host readiness.
 - `index map --root ROOT --json` before assignment or routing.
 - `index context --root ROOT --focus NAME --json --audit` for source-ref packets.
+- `index context-envelope --root ROOT --budget N --focus NAME --hops N --json` for budgeted,
+  receipt-backed context that keeps retained and omitted material explicit.
 - `index verify --root ROOT --depends "A -> B" --json` for claim grounding.
 - `index freshness --cert CERT --root ROOT --json` before trusting an old packet.
 
 ## Context Envelope Contribution
 
-- Context envelopes should start from an index map and include root hash, git head, dirty state, source refs, and expansion commands.
+- Context envelopes start from the graph pack and include a graph-pack receipt, source refs, retained
+  repo records, omitted repo records, budget accounting, and recheck fields.
 - Summaries must point to evidence like `pyproject.toml:12` or a symbol/file range, not memory of the repo.
 - A large codebase should be routed through focused packs and on-demand expansion instead of raw full-tree dumps.
+- Raw source remains outside the envelope; hosts receive source refs and hashes, then request
+  expansion only for the exact files or repos needed for the next action.
 
 ## Action Receipt Contribution
 

@@ -1,1 +1,1 @@
-"""Synthesis context-pack renderer."""
+"""Synthesis context-pack and context-envelope renderers."""
