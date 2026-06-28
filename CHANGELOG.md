@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Enterprise readiness: adds `docs/ENTERPRISE-READINESS.md` for context envelopes, action receipts, readability gates, and host-neutral operation.
+
 Presentation and operator-surface housekeeping for Project Telos parity.
 
 - README: uses the shared five-flagship navigation, fixes the CI badge to the current `HarperZ9/index` repository, and adds a current-status block.
