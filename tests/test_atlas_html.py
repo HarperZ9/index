@@ -18,11 +18,12 @@ def test_flagship_brand_assets_and_atlas_theme():
     readme = (root / "README.md").read_text(encoding="utf-8")
     for rel in [
         "docs/brand/index-mark.svg",
-        "docs/brand/index-hero.svg",
+        "docs/brand/index-hero.png",
         "examples/index-demo.html",
     ]:
         assert (root / rel).exists(), rel
         assert rel in readme
+    assert (root / "docs/brand/index-hero.svg").exists()
     assert "## Why it matters" in readme
     assert "## Work with it" in readme
     assets = (root / "src/index_graph/viz/atlas_assets.py").read_text(encoding="utf-8")
