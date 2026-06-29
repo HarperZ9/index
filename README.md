@@ -35,6 +35,12 @@ A workspace becomes risky when nobody can hold its shape. index gives teams and 
 
 Run it on a real multi-repo workspace, use the atlas for onboarding, diligence, or agent handoffs, and test whether the context envelopes preserve enough structure for another person to resume the work.
 
+## What to test first
+
+- Run `index atlas` on a workspace where the architecture currently lives in someone's head.
+- Open the generated map and ask whether a new contributor or agent could find the right repo, doc, and dependency edge without a handoff call.
+- Report any missing edge, noisy context packet, or stale evidence pointer. The target is not a prettier graph; it is a map another run can re-check.
+
 ## Current status
 
 - **Release:** `index-graph 2.8.0`; command `index`; Python 3.11+; zero runtime dependencies.
