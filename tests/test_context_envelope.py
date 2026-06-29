@@ -5,6 +5,7 @@ import json
 
 from index_graph.cli import main
 from index_graph.context.envelope import build_context_envelope
+from index_graph.freshness import workspace_fingerprint
 from index_graph.graph.build import build_graph
 
 from test_bench import _repo
@@ -91,6 +92,31 @@ def test_context_envelope_marks_budget_omissions(tmp_path):
     assert env["omitted"]
     assert any(item["reason"] == "budget_exceeded" for item in env["omitted"])
     assert env["failure_codes"] == ["budget_exceeded"]
+
+
+def test_context_envelope_carries_selection_and_freshness_receipts(tmp_path):
+    repo_paths = _workspace(tmp_path)
+    graph = build_graph(repo_paths)
+
+    env = build_context_envelope(graph, root=tmp_path, token_budget=500, focus="app", hops=1)
+    stamp = workspace_fingerprint(repo_paths)
+
+    assert env["selection"] == {
+        "mode": "focused",
+        "candidate_repos": 3,
+        "selected_repos": 2,
+        "retained_repos": 2,
+        "omitted_repos": 1,
+        "retained_names": ["app", "lib"],
+        "omitted_failure_codes": ["outside_focus_or_budget"],
+    }
+    assert env["freshness"]["schema"] == "index.context-envelope-freshness/v1"
+    assert env["freshness"]["source_schema"] == "index.freshness/1"
+    assert env["freshness"]["workspace_root_sha256"] == stamp["root"]
+    assert env["freshness"]["repo_count"] == 3
+    assert set(env["freshness"]["retained_repo_sha256"]) == {"app", "lib"}
+    assert "docs" not in env["freshness"]["retained_repo_sha256"]
+    assert env["recheck"]["freshness_root_sha256"] == stamp["root"]
 
 
 def test_context_envelope_cli_json(tmp_path, capsys):

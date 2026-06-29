@@ -5,7 +5,9 @@
 - Context envelopes: adds `index context-envelope --budget N [--focus REPO] [--hops N] --json` and
   the `index.context.envelope` MCP tool for budgeted, receipt-backed, source-ref-only context packets.
   The envelope records retained repos, omitted repos, token budget pressure, graph-pack receipts, and
-  privacy boundaries without exporting raw source.
+  privacy boundaries without exporting raw source. It now also carries a compact `selection` summary
+  and `index.context-envelope-freshness/v1` root plus retained-repo hashes for re-checkable
+  large-workspace handoffs.
 - Context source refs: retained entries now carry structured `project-telos.source-ref/v1` handles with
   workspace-relative path, repo path, source hash, optional line, signal kind, and a `gather.docs`
   expansion command. Omissions carry normalized `failure_code` fields such as `budget_exceeded`, so
@@ -14,6 +16,8 @@
   dependency string can be cheaply mapped back to the manifest.
 - Enterprise readiness: adds `docs/ENTERPRISE-READINESS.md` for context envelopes, action receipts, readability gates, and host-neutral operation.
 - Operator surface: the status payload now advertises shared Project Telos CLI/MCP/plugin/IDE/TUI/app contracts for enterprise, research, creative, scientific, and education workflows.
+- CLI compatibility: `python -m index_graph.cli` now dispatches the normal CLI instead of only importing
+  the module, so module-mode hosts and harnesses get the same behavior as the installed `index` command.
 
 Presentation and operator-surface housekeeping for Project Telos parity.
 
