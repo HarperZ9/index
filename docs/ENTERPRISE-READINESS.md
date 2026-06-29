@@ -24,10 +24,15 @@ This guide aligns the flagship with Project Telos context envelopes and action r
 
 - Context envelopes start from the graph pack and include a graph-pack receipt, source refs, retained
   repo records, omitted repo records, budget accounting, and recheck fields.
+- Each source ref is a `project-telos.source-ref/v1` handle: repo, repo path, workspace-relative path,
+  SHA-256, signal kind, optional line number, and a `gather.docs` expansion command.
 - Summaries must point to evidence like `pyproject.toml:12` or a symbol/file range, not memory of the repo.
 - A large codebase should be routed through focused packs and on-demand expansion instead of raw full-tree dumps.
 - Raw source remains outside the envelope; hosts receive source refs and hashes, then request
   expansion only for the exact files or repos needed for the next action.
+- Self-improving daemons should treat envelope omissions as control signals. A `budget_exceeded`
+  failure code means request a wider pack or narrower focus; it is not evidence that the omitted
+  repo is irrelevant.
 
 ## Action Receipt Contribution
 

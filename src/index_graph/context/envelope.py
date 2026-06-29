@@ -38,8 +38,8 @@ def build_context_envelope(
     retained: list[dict] = []
     omitted: list[dict] = []
     approx_tokens = _base_tokens(pack)
-    source_refs = _source_refs(pack)
-    for repo in _ranked_repos(pack):
+    source_refs = _source_refs(graph, Path(root).resolve())
+    for repo in _ranked_repos(pack, focus):
         item = _repo_item(repo, pack, source_refs.get(repo["name"], []))
         cost = _approx_tokens(item)
         if approx_tokens + cost <= token_budget or not retained:
@@ -48,7 +48,7 @@ def build_context_envelope(
         else:
             omitted.append(_omitted(repo["name"], "budget_exceeded", cost))
     omitted.extend(_focus_omissions(source_graph, graph))
-    failure_codes = ["context_budget_exceeded"] if any(
+    failure_codes = ["budget_exceeded"] if any(
         item["reason"] == "budget_exceeded" for item in omitted
     ) else []
     verdict = "UNVERIFIABLE" if failure_codes else "MATCH"
@@ -64,6 +64,11 @@ def build_context_envelope(
             "approx_tokens": min(approx_tokens, token_budget),
             "bytes_per_token": BYTES_PER_TOKEN,
         },
+        "context_policy": {
+            "mode": "lossless_by_reference",
+            "raw_payload_policy": "source_refs_only",
+            "omission_policy": "explicit_failure_codes",
+        },
         "retained": retained,
         "omitted": _dedupe_omitted(omitted),
         "preserved": preserved,
@@ -73,11 +78,12 @@ def build_context_envelope(
     }
 
 
-def _ranked_repos(pack: dict) -> list[dict]:
+def _ranked_repos(pack: dict, focus: str | None = None) -> list[dict]:
     sal = pack.get("salience", {})
     return sorted(
         pack.get("repos", []),
         key=lambda repo: (
+            repo["name"] != focus,
             -sal.get(repo["name"], {}).get("in_degree", 0),
             -sal.get(repo["name"], {}).get("out_degree", 0),
             repo["name"],
@@ -85,7 +91,7 @@ def _ranked_repos(pack: dict) -> list[dict]:
     )
 
 
-def _repo_item(repo: dict, pack: dict, source_refs: list[str]) -> dict:
+def _repo_item(repo: dict, pack: dict, source_refs: list[dict]) -> dict:
     sal = pack.get("salience", {}).get(repo["name"], {"in_degree": 0, "out_degree": 0})
     return {
         "name": repo["name"],
@@ -93,22 +99,71 @@ def _repo_item(repo: dict, pack: dict, source_refs: list[str]) -> dict:
         "ecosystems": repo.get("ecosystems", []),
         "description": repo.get("description", ""),
         "salience": {"in_degree": sal.get("in_degree", 0), "out_degree": sal.get("out_degree", 0)},
-        "source_refs": source_refs or ["graph:repo"],
+        "source_refs": source_refs,
     }
 
 
-def _source_refs(pack: dict) -> dict[str, list[str]]:
-    refs: dict[str, set[str]] = {}
-    for rel in pack.get("relations", []):
-        for endpoint in (rel.get("from"), rel.get("to")):
-            if endpoint:
-                refs.setdefault(str(endpoint), set())
-        for sig in rel.get("signals", []):
-            ref = sig.get("file")
-            if ref and rel.get("from"):
-                line = sig.get("line")
-                refs[str(rel["from"])].add(f"{ref}:{line}" if line else str(ref))
-    return {name: sorted(values) for name, values in refs.items()}
+def _source_refs(graph: DependencyGraph, root: Path) -> dict[str, list[dict]]:
+    repo_paths = {node.name: Path(node.path) for node in graph.repos}
+    refs: dict[str, dict[tuple[str, int | None, str], dict]] = {
+        node.name: {} for node in graph.repos
+    }
+    for edge in graph.edges:
+        for signal in edge.signals:
+            if signal.evidence_file and edge.from_repo in repo_paths:
+                ref = _source_ref(
+                    edge.from_repo,
+                    repo_paths[edge.from_repo],
+                    root,
+                    signal.evidence_file,
+                    signal.evidence_line,
+                    signal.kind,
+                )
+                refs[edge.from_repo].setdefault(
+                    (ref["path"], ref["line"], ref["kind"]), ref)
+    for repo, path in repo_paths.items():
+        if not refs[repo]:
+            fallback = _repo_ref(repo, path, root)
+            if fallback is not None:
+                refs[repo][(fallback["path"], fallback["line"], fallback["kind"])] = fallback
+    return {
+        repo: sorted(values.values(), key=lambda ref: (ref["path"], ref["line"] or 0, ref["kind"]))
+        for repo, values in refs.items()
+    }
+
+
+def _repo_ref(repo: str, repo_path: Path, root: Path) -> dict | None:
+    for name in ("pyproject.toml", "package.json", "README.md", "README.rst", "README.txt"):
+        if (repo_path / name).is_file():
+            return _source_ref(repo, repo_path, root, name, None, "repo")
+    return None
+
+
+def _source_ref(
+    repo: str,
+    repo_path: Path,
+    root: Path,
+    evidence_file: str,
+    line: int | None,
+    kind: str,
+) -> dict:
+    abs_path = (repo_path / evidence_file).resolve()
+    return {
+        "schema": "project-telos.source-ref/v1",
+        "repo": repo,
+        "repo_path": _rel(repo_path.resolve(), root),
+        "path": _rel(abs_path, root),
+        "kind": kind,
+        "line": line,
+        "sha256": _file_sha(abs_path),
+        "expand": {
+            "tool": "gather.docs",
+            "arguments": {
+                "path": _rel(abs_path, root),
+                "scope": TOOL,
+            },
+        },
+    }
 
 
 def _focus_omissions(source: DependencyGraph, focused: DependencyGraph) -> list[dict]:
@@ -118,7 +173,12 @@ def _focus_omissions(source: DependencyGraph, focused: DependencyGraph) -> list[
 
 
 def _omitted(name: str, reason: str, approx_tokens: int) -> dict:
-    return {"name": name, "reason": reason, "approx_tokens": approx_tokens}
+    return {
+        "name": name,
+        "reason": reason,
+        "failure_code": reason,
+        "approx_tokens": approx_tokens,
+    }
 
 
 def _dedupe_omitted(items: list[dict]) -> list[dict]:
@@ -144,3 +204,14 @@ def _approx_tokens(value: object) -> int:
 def _sha(value: object) -> str:
     data = json.dumps(value, sort_keys=True, separators=(",", ":")).encode("utf-8")
     return hashlib.sha256(data).hexdigest()
+
+
+def _file_sha(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _rel(path: Path, root: Path) -> str:
+    try:
+        return path.relative_to(root).as_posix()
+    except ValueError:
+        return path.as_posix()

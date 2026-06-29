@@ -6,6 +6,12 @@
   the `index.context.envelope` MCP tool for budgeted, receipt-backed, source-ref-only context packets.
   The envelope records retained repos, omitted repos, token budget pressure, graph-pack receipts, and
   privacy boundaries without exporting raw source.
+- Context source refs: retained entries now carry structured `project-telos.source-ref/v1` handles with
+  workspace-relative path, repo path, source hash, optional line, signal kind, and a `gather.docs`
+  expansion command. Omissions carry normalized `failure_code` fields such as `budget_exceeded`, so
+  unattended agents and self-improving daemons can distinguish missing context from verified denial.
+- Python resolver evidence: `pyproject.toml` dependency edges now include line numbers when the
+  dependency string can be cheaply mapped back to the manifest.
 - Enterprise readiness: adds `docs/ENTERPRISE-READINESS.md` for context envelopes, action receipts, readability gates, and host-neutral operation.
 - Operator surface: the status payload now advertises shared Project Telos CLI/MCP/plugin/IDE/TUI/app contracts for enterprise, research, creative, scientific, and education workflows.
 

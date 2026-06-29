@@ -73,7 +73,8 @@ class PythonResolver:
         pp = repo_root / "pyproject.toml"
         if pp.is_file():
             try:
-                data = tomllib.loads(pp.read_text(encoding="utf-8"))
+                text = pp.read_text(encoding="utf-8")
+                data = tomllib.loads(text)
                 proj = data.get("project", {})
                 deps = list(proj.get("dependencies", []) or [])
                 for group in (proj.get("optional-dependencies", {}) or {}).values():
@@ -81,7 +82,8 @@ class PythonResolver:
                 for spec in deps:
                     name = _dep_name(str(spec))
                     if name:
-                        out.append(RawEdge(name, "manifest", "pyproject.toml", None, str(spec)))
+                        line = _pyproject_dep_line(text, str(spec))
+                        out.append(RawEdge(name, "manifest", "pyproject.toml", line, str(spec)))
             except (tomllib.TOMLDecodeError, OSError):
                 pass
         for req in sorted(repo_root.glob("requirements*.txt")):
@@ -115,3 +117,24 @@ class PythonResolver:
                         top = node.module.split(".")[0]
                         out.append(RawEdge(top, "import", rel, node.lineno, f"from {node.module} import ..."))
         return out
+
+
+def _pyproject_dep_line(text: str, spec: str) -> int | None:
+    variants = (f'"{spec}"', f"'{spec}'")
+    in_optional = False
+    in_array = False
+    for i, line in enumerate(text.splitlines(), 1):
+        stripped = line.strip()
+        if stripped.startswith("[") and stripped.endswith("]"):
+            in_optional = stripped == "[project.optional-dependencies]"
+            in_array = False
+        starts_deps = stripped.startswith("dependencies")
+        starts_optional_group = in_optional and "=" in stripped and not stripped.startswith("#")
+        candidate = starts_deps or starts_optional_group or in_array
+        if candidate and any(v in line for v in variants):
+            return i
+        if starts_deps or starts_optional_group:
+            in_array = "[" in stripped and "]" not in stripped
+        elif in_array and "]" in stripped:
+            in_array = False
+    return None

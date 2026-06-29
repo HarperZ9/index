@@ -31,5 +31,7 @@ def test_raw_edges_manifest_and_import():
     assert ("py_lib", "import") in by
     # evidence is always populated
     assert all(e.evidence_file for e in edges)
+    manifest = next(e for e in edges if e.signal == "manifest" and e.target_name == "py-lib")
+    assert manifest.evidence_line is not None
     imp = next(e for e in edges if e.signal == "import" and e.target_name == "py_lib")
     assert imp.evidence_line is not None

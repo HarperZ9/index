@@ -166,7 +166,7 @@ A rendered sample ships with the repo at [`examples/atlas-demo.html`](examples/a
 | **JSON context manifest** | `index map` | Machine-readable inventory: remotes, branches, dirty counts, classification |
 | **Dependency graph (text/JSON)** | `index graph [--cycles]` | Repo to repo edges with evidence, and a report of dependency cycles |
 | **Context pack (prose + relations)** | `index context` | Synthesis pack: roles, relations, narrative summary |
-| **Context envelope** | `index context-envelope --budget N` | Budgeted, receipt-backed context for large-codebase agent workflows; keeps omissions explicit |
+| **Context envelope** | `index context-envelope --budget N` | Budgeted, receipt-backed context for large-codebase agent workflows; source refs are hashed expansion handles and omissions carry failure codes |
 | **Module graph (internals)** | `index internals` | The dependency graph inside one repo, with internal cycles and fan-in/out |
 | **Architecture check (certificate)** | `index check` | Measure structure against your `[architecture]` rule; emits a re-checkable verdict |
 | **Drift (certificate)** | `index snapshot` then `index drift` | Snapshot the shape, then see exactly what changed |
@@ -227,6 +227,13 @@ index mcp       (stdio JSON-RPC; an agent host connects and calls index's tools)
 `--focus REPO` narrows a `viz` or `context` render to one repo's dependency neighborhood.
 `--no-external` hides stdlib and third-party nodes, keeping the graph to your own repos.
 In the `atlas` dashboard, focus is interactive. Just double-click a node.
+
+`context-envelope` is the daemon-safe handoff surface. It keeps raw source out of the
+packet, but each retained repo carries `project-telos.source-ref/v1` handles with
+workspace-relative paths, SHA-256 hashes, signal kind, optional line number, and a
+`gather.docs` expansion command. If the budget drops material, the omission record carries
+a normalized `failure_code` such as `budget_exceeded`; the next run can ask for more context
+instead of inheriting confidence from a missing file.
 
 ---
 
