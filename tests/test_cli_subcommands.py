@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import json
+import os
 import shutil
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -26,6 +29,22 @@ def test_backward_compat_bare_invocation_writes_map(tmp_path, capsys):
     assert rc == 0
     data = json.loads(out)
     assert "repositories" in data  # the existing map shape
+
+
+def test_python_module_entrypoint_runs_version():
+    root = Path(__file__).resolve().parents[1]
+    env = {**os.environ, "PYTHONPATH": str(root / "src")}
+    result = subprocess.run(
+        [sys.executable, "-m", "index_graph.cli", "--version"],
+        cwd=root,
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=10,
+    )
+
+    assert result.returncode == 0
+    assert "index " in result.stdout
 
 
 def test_graph_subcommand_json(workspace, capsys):

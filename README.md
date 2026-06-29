@@ -36,7 +36,7 @@ Run it on a real multi-repo workspace, use the atlas for onboarding or diligence
 
 - **Release:** `index-graph 2.8.0`; command `index`; Python 3.11+; zero runtime dependencies.
 - **Operator surface:** `index status --json`, `index doctor --json`, `index demo --json`, and `index mcp` expose the Project Telos action envelope and native MCP tools: `index.map`, `index.context`, `index.context.envelope`, `index.status`, `index.doctor`, plus the existing graph, focus, verify, router, and internals tools. Generated routers now carry compact dependency evidence like `pyproject.toml:12` beside internal edges, and the status payload advertises shared CLI/MCP/plugin/IDE/TUI/app contracts for enterprise, research, creative, scientific, and education workflows.
-- **Current floor:** 2.8.0 covers atlas mapping, nine ecosystem resolvers, architecture certificates, freshness checks, token-economics benchmarking, budgeted context envelopes, and MCP-native workspace intelligence.
+- **Current floor:** 2.8.0 covers atlas mapping, nine ecosystem resolvers, architecture certificates, freshness checks, token-economics benchmarking, selection-aware context envelopes, and MCP-native workspace intelligence.
 
 - **Enterprise readiness:** [docs/ENTERPRISE-READINESS.md](docs/ENTERPRISE-READINESS.md) records the large-context, action-receipt, readability, and host-integration contract for unattended agent workflows.
 
@@ -166,7 +166,7 @@ A rendered sample ships with the repo at [`examples/atlas-demo.html`](examples/a
 | **JSON context manifest** | `index map` | Machine-readable inventory: remotes, branches, dirty counts, classification |
 | **Dependency graph (text/JSON)** | `index graph [--cycles]` | Repo to repo edges with evidence, and a report of dependency cycles |
 | **Context pack (prose + relations)** | `index context` | Synthesis pack: roles, relations, narrative summary |
-| **Context envelope** | `index context-envelope --budget N` | Budgeted, receipt-backed context for large-codebase agent workflows; source refs are hashed expansion handles and omissions carry failure codes |
+| **Context envelope** | `index context-envelope --budget N` | Budgeted, receipt-backed context for large-codebase agent workflows; source refs are hashed expansion handles, selection summaries state coverage, freshness roots make packets re-checkable, and omissions carry failure codes |
 | **Module graph (internals)** | `index internals` | The dependency graph inside one repo, with internal cycles and fan-in/out |
 | **Architecture check (certificate)** | `index check` | Measure structure against your `[architecture]` rule; emits a re-checkable verdict |
 | **Drift (certificate)** | `index snapshot` then `index drift` | Snapshot the shape, then see exactly what changed |
@@ -231,7 +231,9 @@ In the `atlas` dashboard, focus is interactive. Just double-click a node.
 `context-envelope` is the daemon-safe handoff surface. It keeps raw source out of the
 packet, but each retained repo carries `project-telos.source-ref/v1` handles with
 workspace-relative paths, SHA-256 hashes, signal kind, optional line number, and a
-`gather.docs` expansion command. If the budget drops material, the omission record carries
+`gather.docs` expansion command. It also includes a compact `selection` summary and
+`index.context-envelope-freshness/v1` root hash so a later run can see what the packet
+covered and whether the workspace view needs to be refreshed. If the budget drops material, the omission record carries
 a normalized `failure_code` such as `budget_exceeded`; the next run can ask for more context
 instead of inheriting confidence from a missing file.
 

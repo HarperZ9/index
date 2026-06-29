@@ -14,7 +14,10 @@ TELOS_CONTRACTS = {
         "project-telos.action-receipt/v1",
     ],
     "workflow_domains": ["enterprise", "research", "creative", "scientific", "education"],
-    "second_brain_role": "map codebases, assets, docs, and dormant engine parts into compact reusable context",
+    "second_brain_role": (
+        "map codebases, assets, docs, and dormant engine parts into compact reusable context "
+        "with selection summaries, freshness roots, and source-ref expansion handles"
+    ),
     "privacy_boundary": "hosts receive receipts, hashes, redacted refs, and verdicts; raw private payloads stay in local adapters",
 }
 
@@ -60,7 +63,10 @@ def status_payload() -> dict:
                 "index_router",
                 "index_internals",
             ],
-            "current_status": "2.8.0 workspace atlas, certificates, freshness, benchmarking, and MCP parity",
+            "current_status": (
+                "2.8.0 workspace atlas, certificates, freshness, benchmarking, "
+                "selection-aware context envelopes, and MCP parity"
+            ),
             "telos_contracts": TELOS_CONTRACTS,
         },
         next_actions=[_next("gather", "docs", "gather docs backing structural decisions")],

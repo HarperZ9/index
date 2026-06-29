@@ -687,3 +687,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.cmd == "mcp":
         return _cmd_mcp(args)
     return _cmd_map(args)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

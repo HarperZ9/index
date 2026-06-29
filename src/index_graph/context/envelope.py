@@ -5,12 +5,14 @@ import hashlib
 import json
 from pathlib import Path
 
+from ..freshness import SCHEMA as FRESHNESS_SCHEMA, workspace_fingerprint
 from ..graph.build import DependencyGraph
 from .pack import closure, focus_subgraph, preservation, to_json
 
 SCHEMA = "project-telos.context-envelope/v1"
 TOOL = "index.context.envelope"
 BYTES_PER_TOKEN = 4
+FRESHNESS_ENVELOPE_SCHEMA = "index.context-envelope-freshness/v1"
 
 
 def build_context_envelope(
@@ -26,6 +28,7 @@ def build_context_envelope(
         raise ValueError("token_budget must be positive")
     source_graph = graph
     preserved = None
+    candidate_repo_count = len(source_graph.repos)
     if focus:
         names = {node.name for node in graph.repos}
         if focus not in names:
@@ -48,10 +51,12 @@ def build_context_envelope(
         else:
             omitted.append(_omitted(repo["name"], "budget_exceeded", cost))
     omitted.extend(_focus_omissions(source_graph, graph))
+    omitted = _dedupe_omitted(omitted)
     failure_codes = ["budget_exceeded"] if any(
         item["reason"] == "budget_exceeded" for item in omitted
     ) else []
     verdict = "UNVERIFIABLE" if failure_codes else "MATCH"
+    fresh = _freshness(source_graph, retained)
     return {
         "schema": SCHEMA,
         "tool": TOOL,
@@ -64,17 +69,29 @@ def build_context_envelope(
             "approx_tokens": min(approx_tokens, token_budget),
             "bytes_per_token": BYTES_PER_TOKEN,
         },
+        "selection": _selection(
+            mode="focused" if focus else "workspace",
+            candidate_repo_count=candidate_repo_count,
+            selected_repo_count=len(graph.repos),
+            retained=retained,
+            omitted=omitted,
+        ),
         "context_policy": {
             "mode": "lossless_by_reference",
             "raw_payload_policy": "source_refs_only",
             "omission_policy": "explicit_failure_codes",
         },
         "retained": retained,
-        "omitted": _dedupe_omitted(omitted),
+        "omitted": omitted,
         "preserved": preserved,
+        "freshness": fresh,
         "receipts": [{"kind": "graph-pack", "sha256": pack_hash, "schema": "index.context/graph-pack"}],
         "privacy": {"raw_source_included": False, "source_refs_only": True},
-        "recheck": {"command": "index context-envelope --json", "graph_pack_sha256": pack_hash},
+        "recheck": {
+            "command": "index context-envelope --json",
+            "graph_pack_sha256": pack_hash,
+            "freshness_root_sha256": fresh["workspace_root_sha256"],
+        },
     }
 
 
@@ -186,6 +203,47 @@ def _dedupe_omitted(items: list[dict]) -> list[dict]:
     for item in items:
         out.setdefault(item["name"], item)
     return sorted(out.values(), key=lambda item: item["name"])
+
+
+def _selection(
+    *,
+    mode: str,
+    candidate_repo_count: int,
+    selected_repo_count: int,
+    retained: list[dict],
+    omitted: list[dict],
+) -> dict:
+    return {
+        "mode": mode,
+        "candidate_repos": candidate_repo_count,
+        "selected_repos": selected_repo_count,
+        "retained_repos": len(retained),
+        "omitted_repos": len(omitted),
+        "retained_names": sorted(item["name"] for item in retained),
+        "omitted_failure_codes": sorted({item["failure_code"] for item in omitted}),
+    }
+
+
+def _freshness(source_graph: DependencyGraph, retained: list[dict]) -> dict:
+    repo_paths = {node.name: Path(node.path) for node in source_graph.repos}
+    stamp = workspace_fingerprint(repo_paths)
+    retained_names = {item["name"] for item in retained}
+    retained_repo_sha256 = {
+        name: stamp["repos"][name]
+        for name in sorted(retained_names)
+        if name in stamp["repos"]
+    }
+    return {
+        "schema": FRESHNESS_ENVELOPE_SCHEMA,
+        "source_schema": FRESHNESS_SCHEMA,
+        "workspace_root_sha256": stamp["root"],
+        "repo_count": len(stamp["repos"]),
+        "retained_repo_sha256": retained_repo_sha256,
+        "recheck": {
+            "tool": "index.freshness",
+            "command": "index check --freshness; index freshness --cert CERT --root ROOT",
+        },
+    }
 
 
 def _base_tokens(pack: dict) -> int:

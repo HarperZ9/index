@@ -24,6 +24,10 @@ This guide aligns the flagship with Project Telos context envelopes and action r
 
 - Context envelopes start from the graph pack and include a graph-pack receipt, source refs, retained
   repo records, omitted repo records, budget accounting, and recheck fields.
+- The envelope includes a compact `selection` block so an unattended run can distinguish total
+  candidate repos, focused repos, retained repos, and omitted failure codes without expanding raw source.
+- The envelope includes `index.context-envelope-freshness/v1`: a workspace root hash, retained repo
+  hashes, and a recheck hint that composes with `index check --freshness` / `index freshness`.
 - Each source ref is a `project-telos.source-ref/v1` handle: repo, repo path, workspace-relative path,
   SHA-256, signal kind, optional line number, and a `gather.docs` expansion command.
 - Summaries must point to evidence like `pyproject.toml:12` or a symbol/file range, not memory of the repo.
