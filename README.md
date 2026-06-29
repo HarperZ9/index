@@ -3,11 +3,11 @@
 </p>
 <!-- Project mark: docs/brand/index-mark.svg -->
 
-# Index
+# index
 
-> Map a workspace from evidence, not memory.
+> Map a workspace from evidence an agent can re-check.
 
-[Project Telos](https://harperz9.github.io) | [Gather](https://github.com/HarperZ9/gather) | [Crucible](https://github.com/HarperZ9/crucible) | [Index](https://github.com/HarperZ9/index) | [Forum](https://github.com/HarperZ9/forum) | [Telos](https://github.com/HarperZ9/telos)
+[Project Telos](https://harperz9.github.io) | [gather](https://github.com/HarperZ9/gather) | [crucible](https://github.com/HarperZ9/crucible) | [index](https://github.com/HarperZ9/index) | [forum](https://github.com/HarperZ9/forum) | [telos](https://github.com/HarperZ9/telos)
 
 [![CI](https://github.com/HarperZ9/index/actions/workflows/ci.yml/badge.svg)](https://github.com/HarperZ9/index/actions/workflows/ci.yml)
 ![version: 2.8](https://img.shields.io/badge/version-2.8-informational.svg)
@@ -26,17 +26,18 @@ Open the visual atlas sample at [`examples/atlas-demo.html`](examples/atlas-demo
 
 ## Why it matters
 
-A workspace becomes risky when nobody can hold its shape. index gives teams and agents a map built from imports, manifests, docs, and evidence instead of memory.
+A workspace becomes risky when nobody can hold its shape. index gives teams and agents a map built from imports, manifests, docs, and evidence instead of memory, so context packets can cite the structure they rely on.
 
 ## Work with it
 
-Run it on a real multi-repo workspace, use the atlas for onboarding or diligence, or fund deeper language and documentation resolvers.
+Run it on a real multi-repo workspace, use the atlas for onboarding, diligence, or agent handoffs, and test whether the context envelopes preserve enough structure for another person to resume the work.
 
 ## Current status
 
 - **Release:** `index-graph 2.8.0`; command `index`; Python 3.11+; zero runtime dependencies.
 - **Operator surface:** `index status --json`, `index doctor --json`, `index demo --json`, and `index mcp` expose the Project Telos action envelope and native MCP tools: `index.map`, `index.context`, `index.context.envelope`, `index.status`, `index.doctor`, plus the existing graph, focus, verify, router, and internals tools. Generated routers now carry compact dependency evidence like `pyproject.toml:12` beside internal edges, and the status payload advertises shared CLI/MCP/plugin/IDE/TUI/app contracts for enterprise, research, creative, scientific, and education workflows.
 - **Current floor:** 2.8.0 covers atlas mapping, nine ecosystem resolvers, architecture certificates, freshness checks, token-economics benchmarking, selection-aware context envelopes, and MCP-native workspace intelligence.
+- **Public role:** workspace map and context-envelope layer for Project Telos: index gives gather, forum, crucible, and telos a shared view of what code, docs, and dependency evidence exist now.
 
 - **Enterprise readiness:** [docs/ENTERPRISE-READINESS.md](docs/ENTERPRISE-READINESS.md) records the large-context, action-receipt, readability, and host-integration contract for unattended agent workflows.
 
@@ -86,7 +87,7 @@ Each command writes one HTML file. Open it in any browser, offline. Nothing to h
 - **Clinical or regulated software teams:** preserve architecture evidence around the systems that touch policy, records, or review workflows.
 - **Media / research teams:** keep source repos, notes, and project docs in one rerunnable atlas instead of rebuilding the map from memory.
 
-Project Telos: <https://harperz9.github.io>. GitHub: <https://github.com/HarperZ9>. Peer flagships: [Gather](https://github.com/HarperZ9/gather), [Crucible](https://github.com/HarperZ9/crucible), [Forum](https://github.com/HarperZ9/forum), and [the Telos engine](https://github.com/HarperZ9/telos).
+Project Telos: <https://harperz9.github.io>. GitHub: <https://github.com/HarperZ9>. Peer flagships: [gather](https://github.com/HarperZ9/gather), [crucible](https://github.com/HarperZ9/crucible), [forum](https://github.com/HarperZ9/forum), and [the telos engine](https://github.com/HarperZ9/telos).
 
 I am looking for verification, testing against real workspaces, early traction from people willing to inspect the certificates, and possibly modest grassroots research funding or pointers.
 
