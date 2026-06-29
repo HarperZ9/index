@@ -1,11 +1,11 @@
 <p align="center">
-  <img src="docs/brand/index-hero.png" alt="Index, a Project Telos flagship for workspace atlas mapping">
+  <img src="docs/brand/index-hero.png" alt="Index, map large codebases and docs for agents and teams">
 </p>
 <!-- Project mark: docs/brand/index-mark.svg -->
 
 # index
 
-> Map a workspace from evidence an agent can re-check.
+> Map large workspaces so people and agents can find the right context.
 
 [Project Telos](https://harperz9.github.io) | [gather](https://github.com/HarperZ9/gather) | [crucible](https://github.com/HarperZ9/crucible) | [index](https://github.com/HarperZ9/index) | [forum](https://github.com/HarperZ9/forum) | [telos](https://github.com/HarperZ9/telos)
 
