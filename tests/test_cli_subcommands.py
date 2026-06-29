@@ -47,6 +47,23 @@ def test_python_module_entrypoint_runs_version():
     assert "index " in result.stdout
 
 
+def test_source_checkout_index_module_entrypoint_runs_without_pythonpath():
+    root = Path(__file__).resolve().parents[1]
+    env = os.environ.copy()
+    env.pop("PYTHONPATH", None)
+    result = subprocess.run(
+        [sys.executable, "-m", "index", "--version"],
+        cwd=root,
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=10,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "index " in result.stdout
+
+
 def test_graph_subcommand_json(workspace, capsys):
     rc = main(["graph", "--root", str(workspace), "--json"])
     out = capsys.readouterr().out

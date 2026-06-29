@@ -34,6 +34,9 @@ Issues = "https://github.com/HarperZ9/index/issues"
 [tool.hatch.version]
 path = "src/index_graph/__init__.py"
 
+[tool.hatch.build.targets.wheel]
+packages = ["src/index_graph"]
+
 [tool.pytest.ini_options]
 addopts = "-q"
 pythonpath = ["src"]

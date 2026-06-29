@@ -20,6 +20,9 @@
 ```bash
 pip install index-graph
 index atlas --root /path/to/your/workspace --format html --out atlas.html
+
+# from a source checkout
+python -m index status --json
 ```
 
 Open the visual atlas sample at [`examples/atlas-demo.html`](examples/atlas-demo.html) or the static proof surface at [`examples/index-demo.html`](examples/index-demo.html).
