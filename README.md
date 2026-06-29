@@ -331,3 +331,12 @@ Python 3.11+. That is the entire dependency list.
 
 Zain Dana Harper. [Portfolio](https://harperz9.github.io), [GitHub](https://github.com/HarperZ9).
 Built with Claude Code. Reviewed, tested, and owned by me.
+
+## For developers
+
+Keep the public README, package metadata, and examples aligned with current behavior. Before opening a PR or pushing a release, run the local package verification path.
+
+```bash
+python -m pip install -e ".[test]"
+python -m pytest
+```
