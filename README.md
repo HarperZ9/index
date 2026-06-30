@@ -7,7 +7,7 @@
 
 > Map large workspaces so people and agents can find the right context.
 
-[Project Telos](https://harperz9.github.io) | [gather](https://github.com/HarperZ9/gather) | [crucible](https://github.com/HarperZ9/crucible) | [index](https://github.com/HarperZ9/index) | [forum](https://github.com/HarperZ9/forum) | [telos](https://github.com/HarperZ9/telos) | [emet](https://github.com/HarperZ9/emet) | [buildlang](https://github.com/HarperZ9/quantalang)
+[Project Telos](https://harperz9.github.io) | [gather](https://github.com/HarperZ9/gather) | [crucible](https://github.com/HarperZ9/crucible) | [index](https://github.com/HarperZ9/index) | [forum](https://github.com/HarperZ9/forum) | [telos](https://github.com/HarperZ9/telos) | [emet](https://github.com/HarperZ9/emet) | [buildlang](https://github.com/HarperZ9/buildlang)
 
 [![CI](https://github.com/HarperZ9/index/actions/workflows/ci.yml/badge.svg)](https://github.com/HarperZ9/index/actions/workflows/ci.yml)
 ![version: 2.8](https://img.shields.io/badge/version-2.8-informational.svg)
