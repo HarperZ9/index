@@ -1,10 +1,10 @@
-# Repo-level Dependency Graph + Context Engine Implementation Plan
+﻿# Repo-level Dependency Graph + Context Engine Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Add an inference engine to `workspace-repo-map` that derives a repo-level dependency graph from real code (Python + JS/TS), assigns topology-derived structural roles, and renders a synthesis context pack — every edge carrying its evidence.
+**Goal:** Add an inference engine to `workspace-repo-map` that derives a repo-level dependency graph from real code (Python + JS/TS), assigns topology-derived structural roles, and renders a synthesis context pack -- every edge carrying its evidence.
 
-**Architecture:** Two new internally-isolated module groups inside the existing package — `graph/` (resolvers → edges → roles → build) and `context/` (pack renderer) — plus two new CLI subcommands (`graph`, `context`). The sensor is untouched; the default bare invocation still writes the map.
+**Architecture:** Two new internally-isolated module groups inside the existing package -- `graph/` (resolvers → edges → roles → build) and `context/` (pack renderer) -- plus two new CLI subcommands (`graph`, `context`). The sensor is untouched; the default bare invocation still writes the map.
 
 **Tech Stack:** Python 3.11+, stdlib only (`tomllib`, `json`, `ast`, `re`, `configparser`, `argparse`, `pathlib`, `dataclasses`, `typing`). `pytest` for tests.
 
@@ -12,9 +12,9 @@
 
 - Python floor: **3.11** (use `tomllib`, PEP 604 `X | None`).
 - **Zero new runtime dependencies.** `pip install workspace-repo-map` must still pull nothing. `pytest>=8` stays the only optional test dep.
-- **No edge may exist with an empty `signals` tuple** — every dependency edge is witnessed.
-- **No editorializing** — the pack renderer emits only data fields and evidence; no hardcoded interpretive sentences.
-- **Fail-closed, never fabricate** — malformed manifests / unreadable files produce a warning and omission, never a crash and never an invented edge.
+- **No edge may exist with an empty `signals` tuple** -- every dependency edge is witnessed.
+- **No editorializing** -- the pack renderer emits only data fields and evidence; no hardcoded interpretive sentences.
+- **Fail-closed, never fabricate** -- malformed manifests / unreadable files produce a warning and omission, never a crash and never an invented edge.
 - Follow existing repo conventions: `from __future__ import annotations`, frozen dataclasses for pure data, `src/` layout, `pytest -q`, tests under `tests/`.
 - Commit message style: `feat:` / `test:` / `docs:` prefixes; end commits with the `Co-Authored-By` trailer used in this repo.
 
@@ -27,14 +27,14 @@
 | `src/workspace_repo_map/graph/__init__.py` | Package marker; re-export `build_graph`, `DependencyGraph`. |
 | `src/workspace_repo_map/graph/resolvers/__init__.py` | Package marker; `ALL_RESOLVERS` registry. |
 | `src/workspace_repo_map/graph/resolvers/base.py` | `RawEdge` dataclass, `Resolver` Protocol, `normalize_name`. |
-| `src/workspace_repo_map/graph/resolvers/python.py` | `PythonResolver` — pyproject/requirements/setup.cfg + `.py` import scan. |
-| `src/workspace_repo_map/graph/resolvers/javascript.py` | `JavaScriptResolver` — package.json + JS/TS import scan. |
+| `src/workspace_repo_map/graph/resolvers/python.py` | `PythonResolver` -- pyproject/requirements/setup.cfg + `.py` import scan. |
+| `src/workspace_repo_map/graph/resolvers/javascript.py` | `JavaScriptResolver` -- package.json + JS/TS import scan. |
 | `src/workspace_repo_map/graph/edges.py` | `Signal`, `Edge`, `build_index`, `resolve_edges`. |
 | `src/workspace_repo_map/graph/roles.py` | `structural_salience`, `salience_audit`, `derive_roles`. |
 | `src/workspace_repo_map/graph/build.py` | `RepoNode`, `DependencyGraph`, `detect_markers`, `build_graph`. |
 | `src/workspace_repo_map/context/__init__.py` | Package marker. |
 | `src/workspace_repo_map/context/pack.py` | `render_text`, `to_json`, `closure`, `subgraph`. |
-| `src/workspace_repo_map/cli.py` | MODIFY — `map`/`graph`/`context` subcommands + backward compat. |
+| `src/workspace_repo_map/cli.py` | MODIFY -- `map`/`graph`/`context` subcommands + backward compat. |
 | `tests/fixtures/` | Synthetic Python + JS/TS repo trees. |
 | `tests/test_resolver_python.py` … `tests/test_cli_subcommands.py` | One test module per task. |
 
@@ -483,8 +483,8 @@ git commit -m "feat: JavaScript/TypeScript resolver + resolver registry"
 - Produces:
   - `Signal(kind: str, evidence_file: str, evidence_line: int | None, raw_spec: str)` (frozen).
   - `Edge(from_repo: str, to_repo: str | None, target_name: str, external: bool, confidence: str, signals: tuple[Signal, ...])` (frozen).
-  - `build_index(exposed: dict[str, set[str]]) -> dict[str, list[str]]` — normalized name → list of repos exposing it.
-  - `resolve_edges(repo_raw: dict[str, list[RawEdge]], index: dict[str, list[str]], short_len: int = 2) -> tuple[list[Edge], list[str]]` — returns (edges, warnings).
+  - `build_index(exposed: dict[str, set[str]]) -> dict[str, list[str]]` -- normalized name → list of repos exposing it.
+  - `resolve_edges(repo_raw: dict[str, list[RawEdge]], index: dict[str, list[str]], short_len: int = 2) -> tuple[list[Edge], list[str]]` -- returns (edges, warnings).
 
 - [ ] **Step 1: Write the failing test**
 
@@ -650,9 +650,9 @@ git commit -m "feat: evidence-carrying edge resolution with confidence grading"
 **Interfaces:**
 - Consumes: `Edge` from Task 3.
 - Produces:
-  - `structural_salience(edges: list[Edge]) -> dict[str, dict]` — per node `{in_degree, out_degree, hub: bool}` over internal edges only.
-  - `salience_audit(salience: dict, marked: dict[str, list[str]]) -> list[dict]` — `decorative-non-hub` / `unmarked-hub` warnings.
-  - `derive_roles(repo_names: set[str], edges: list[Edge], markers: dict[str, set[str]]) -> dict[str, tuple[str, ...]]` — repo → roles.
+  - `structural_salience(edges: list[Edge]) -> dict[str, dict]` -- per node `{in_degree, out_degree, hub: bool}` over internal edges only.
+  - `salience_audit(salience: dict, marked: dict[str, list[str]]) -> list[dict]` -- `decorative-non-hub` / `unmarked-hub` warnings.
+  - `derive_roles(repo_names: set[str], edges: list[Edge], markers: dict[str, set[str]]) -> dict[str, tuple[str, ...]]` -- repo → roles.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -795,7 +795,7 @@ git commit -m "feat: topology-derived structural roles + salience audit"
 - Produces:
   - `RepoNode(name: str, path: str, ecosystems: tuple[str, ...], exposed_names: frozenset[str], description: str, markers: frozenset[str])` (frozen).
   - `DependencyGraph(repos: tuple[RepoNode, ...], edges: tuple[Edge, ...], roles: dict[str, tuple[str, ...]], warnings: tuple[str, ...])` (frozen).
-  - `detect_markers(repo_root: Path, exposed: set[str]) -> set[str]` — `{"published"?, "entry"?}`.
+  - `detect_markers(repo_root: Path, exposed: set[str]) -> set[str]` -- `{"published"?, "entry"?}`.
   - `build_graph(repo_paths: dict[str, Path], resolvers=ALL_RESOLVERS) -> DependencyGraph`.
 
 - [ ] **Step 1: Write the failing test**
@@ -1085,12 +1085,12 @@ def _marker_list(node: RepoNode) -> list[str]:
 
 def render_text(graph: DependencyGraph, title: str) -> str:
     L = [f"# Context pack: {title}", ""]
-    L.append("## Roles (project: roles — in/out degree)")
+    L.append("## Roles (project: roles -- in/out degree)")
     sal = structural_salience(list(graph.edges))
     for node in sorted(graph.repos, key=lambda n: n.name):
         rs = ", ".join(graph.roles.get(node.name, ())) or "(none)"
         s = sal.get(node.name, {"in_degree": 0, "out_degree": 0})
-        L.append(f"- {node.name}: {rs} — in={s['in_degree']} out={s['out_degree']}")
+        L.append(f"- {node.name}: {rs} -- in={s['in_degree']} out={s['out_degree']}")
     L.append("")
     L.append("## Relations (A -> B: signals [confidence])")
     for e in graph.edges:
@@ -1104,7 +1104,7 @@ def render_text(graph: DependencyGraph, title: str) -> str:
         if e.external:
             L.append(f"- {e.from_repo} -> {e.target_name}")
     L.append("")
-    L.append("## Inventory (all projects — extracted description)")
+    L.append("## Inventory (all projects -- extracted description)")
     for node in sorted(graph.repos, key=lambda n: n.name):
         eco = "/".join(node.ecosystems) or "none"
         L.append(f"- {node.name} [{eco}]: {node.description}")
@@ -1326,13 +1326,13 @@ def _cmd_context(args) -> int:
         data = to_json(graph)
         print(f"salience-faithfulness warnings: {len(data['salience_audit'])}")
         for w in data["salience_audit"]:
-            print(f"  [{w['kind']}] {w['node']} (in={w['in_degree']}) — {w['note']}")
+            print(f"  [{w['kind']}] {w['node']} (in={w['in_degree']}) -- {w['note']}")
         return 0
     if args.focus:
         if args.focus not in names:
             near = [n for n in names if args.focus.lower() in n.lower()]
             print(f"unknown project: {args.focus!r}"
-                  + (f" — did you mean: {', '.join(sorted(near))}?" if near else ""))
+                  + (f" -- did you mean: {', '.join(sorted(near))}?" if near else ""))
             return 2
         graph = focus_subgraph(graph, closure(list(graph.edges), args.focus))
         title = f"focus={args.focus}"
@@ -1481,8 +1481,8 @@ git commit -m "feat: dogfood recovery harness for corpus acceptance"
 - Dogfood acceptance (recovery metric) → Task 8. ✓
 - Zero new runtime deps → Global Constraints; only stdlib imports used. ✓
 
-**Placeholder scan:** No TBD/TODO; the one `Note:` in Task 7 is a verification instruction (confirm `discover_repos` signature), not a placeholder — it names the exact symbol and fallback.
+**Placeholder scan:** No TBD/TODO; the one `Note:` in Task 7 is a verification instruction (confirm `discover_repos` signature), not a placeholder -- it names the exact symbol and fallback.
 
 **Type consistency:** `RawEdge`, `Signal`, `Edge`, `RepoNode`, `DependencyGraph` field names are used identically across Tasks 1, 3, 5, 6, 7. `structural_salience(edges)`, `salience_audit(salience, marked)`, `derive_roles(repo_names, edges, markers)`, `build_graph(repo_paths)`, `closure(edges, focus)`, `focus_subgraph(graph, keep)` signatures match between definition and call sites.
 
-**Verified against source:** `discover_repos(root: Path, config: Config) -> list[Path]` returns repo-root paths (checked in `scan.py`); the plan passes a neutral `load_config(None, root)` at both call sites (`cli._repo_paths` and `scripts/dogfood_recovery.py`). One known v1 limitation: repos are keyed by basename, so two repos sharing a basename collide (last wins) — acceptable at repo-level granularity for v1; revisit if the corpus dogfood surfaces real collisions.
+**Verified against source:** `discover_repos(root: Path, config: Config) -> list[Path]` returns repo-root paths (checked in `scan.py`); the plan passes a neutral `load_config(None, root)` at both call sites (`cli._repo_paths` and `scripts/dogfood_recovery.py`). One known v1 limitation: repos are keyed by basename, so two repos sharing a basename collide (last wins) -- acceptable at repo-level granularity for v1; revisit if the corpus dogfood surfaces real collisions.

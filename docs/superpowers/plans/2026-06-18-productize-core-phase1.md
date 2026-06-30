@@ -1,12 +1,12 @@
-# Productize the Core (Phase 1) Implementation Plan
+﻿# Productize the Core (Phase 1) Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Rebuild `workspace-repo-map` from a single personal-workspace module into a config-driven, parallel, schema-versioned tool installable by anyone.
 
-**Architecture:** Split `map.py` into focused modules — `model` (data), `config` (.repomap.toml + neutral defaults), `classify` (ordered glob rules + remote-host fallback), `gitmeta` (subprocess + credential redaction), `scan` (discovery + parallel fan-out + assembly), `cli` (single parser). Classification is data-driven; output is schema v1 with a portable (default) / local mode switch.
+**Architecture:** Split `map.py` into focused modules -- `model` (data), `config` (.repomap.toml + neutral defaults), `classify` (ordered glob rules + remote-host fallback), `gitmeta` (subprocess + credential redaction), `scan` (discovery + parallel fan-out + assembly), `cli` (single parser). Classification is data-driven; output is schema v1 with a portable (default) / local mode switch.
 
-**Tech Stack:** Python ≥3.11 (stdlib only — `tomllib`, `concurrent.futures`, `argparse`, `subprocess`, `re`, `hashlib`), hatchling build, pytest.
+**Tech Stack:** Python ≥3.11 (stdlib only -- `tomllib`, `concurrent.futures`, `argparse`, `subprocess`, `re`, `hashlib`), hatchling build, pytest.
 
 **Spec:** `docs/superpowers/specs/2026-06-18-productize-core-design.md`
 
@@ -45,7 +45,7 @@ example.repomap.toml           # generic example                  (Task 8)
 
 ---
 
-### Task 1: Project setup — Python 3.11, dynamic version
+### Task 1: Project setup -- Python 3.11, dynamic version
 
 **Files:**
 - Modify: `pyproject.toml`
@@ -69,7 +69,7 @@ def test_version_is_0_2_0():
 - [ ] **Step 2: Run it to verify it fails**
 
 Run: `python -m pytest tests/test_version.py -v`
-Expected: FAIL — current `__init__.py` does `from .map import *` and defines no `__version__` (AttributeError).
+Expected: FAIL -- current `__init__.py` does `from .map import *` and defines no `__version__` (AttributeError).
 
 - [ ] **Step 3: Replace `__init__.py` with a minimal version stub**
 
@@ -103,7 +103,7 @@ git commit -m "build: target Python 3.11 and single-source the version"
 
 ---
 
-### Task 2: `model.py` — data classes and schema
+### Task 2: `model.py` -- data classes and schema
 
 **Files:**
 - Create: `src/workspace_repo_map/model.py`
@@ -164,7 +164,7 @@ def test_map_to_json_local_includes_root_and_annotations():
 - [ ] **Step 2: Run it to verify it fails**
 
 Run: `python -m pytest tests/test_model.py -v`
-Expected: FAIL — `ModuleNotFoundError: workspace_repo_map.model`.
+Expected: FAIL -- `ModuleNotFoundError: workspace_repo_map.model`.
 
 - [ ] **Step 3: Write the implementation**
 
@@ -253,7 +253,7 @@ git commit -m "feat: add versioned data model (RepoRow, Map, schema v1)"
 
 ---
 
-### Task 3: `config.py` — `.repomap.toml`, defaults, glob translation
+### Task 3: `config.py` -- `.repomap.toml`, defaults, glob translation
 
 **Files:**
 - Create: `src/workspace_repo_map/config.py`
@@ -261,7 +261,7 @@ git commit -m "feat: add versioned data model (RepoRow, Map, schema v1)"
 
 **Interfaces:**
 - Produces:
-  - `glob_to_regex(pattern: str) -> str` — `*`→`[^/]*`, `**`→`.*`, `/**`→`(/.*)?`, literals escaped, anchored.
+  - `glob_to_regex(pattern: str) -> str` -- `*`→`[^/]*`, `**`→`.*`, `/**`→`(/.*)?`, literals escaped, anchored.
   - `Rule(pattern: str, class_: str)` (frozen) with compiled `.regex` (built in `__post_init__`).
   - `Config(rules, extra_prune, markers, jobs, omit_origin_classes, portable, annotations)` (frozen) with `.prune` property = `DEFAULT_PRUNE_DIRS | extra_prune`.
   - `default_config() -> Config`; `load_config(path: Path | None, root: Path) -> Config`.
@@ -358,7 +358,7 @@ def test_unknown_key_warns_not_fatal(tmp_path, capsys):
 - [ ] **Step 2: Run to verify it fails**
 
 Run: `python -m pytest tests/test_config.py -v`
-Expected: FAIL — `ModuleNotFoundError: workspace_repo_map.config`.
+Expected: FAIL -- `ModuleNotFoundError: workspace_repo_map.config`.
 
 - [ ] **Step 3: Write the implementation**
 
@@ -504,7 +504,7 @@ git commit -m "feat: add config-driven classification rules and neutral defaults
 
 ---
 
-### Task 4: `classify.py` — ordered rules + remote-host fallback
+### Task 4: `classify.py` -- ordered rules + remote-host fallback
 
 **Files:**
 - Create: `src/workspace_repo_map/classify.py`
@@ -545,7 +545,7 @@ def test_root_entry_fallback():
 - [ ] **Step 2: Run to verify it fails**
 
 Run: `python -m pytest tests/test_classify.py -v`
-Expected: FAIL — `ModuleNotFoundError: workspace_repo_map.classify`.
+Expected: FAIL -- `ModuleNotFoundError: workspace_repo_map.classify`.
 
 - [ ] **Step 3: Write the implementation**
 
@@ -596,7 +596,7 @@ git commit -m "feat: add ordered-rule classifier with remote-host fallback"
 
 ---
 
-### Task 5: `gitmeta.py` — subprocess layer + always-on redaction
+### Task 5: `gitmeta.py` -- subprocess layer + always-on redaction
 
 **Files:**
 - Create: `src/workspace_repo_map/gitmeta.py`
@@ -604,9 +604,9 @@ git commit -m "feat: add ordered-rule classifier with remote-host fallback"
 
 **Interfaces:**
 - Produces:
-  - `run_git(repo: Path, args: list[str]) -> str` — `timeout=20`, `check=False`, returns stripped stdout or `""`.
-  - `sanitize_credentials(origin: str) -> str` — redacts `https://user@`→`https://<redacted>@` and `token=…`/`password=…`/`secret=…`/`api_key=…` query material. Host-preserving.
-  - `repo_metadata(repo: Path) -> dict` — keys `branch`, `head`, `origin` (credential-redacted), `dirty_count`, `untracked_count`. A repo with no git output degrades to `branch`/`head` = `"unknown"`.
+  - `run_git(repo: Path, args: list[str]) -> str` -- `timeout=20`, `check=False`, returns stripped stdout or `""`.
+  - `sanitize_credentials(origin: str) -> str` -- redacts `https://user@`→`https://<redacted>@` and `token=…`/`password=…`/`secret=…`/`api_key=…` query material. Host-preserving.
+  - `repo_metadata(repo: Path) -> dict` -- keys `branch`, `head`, `origin` (credential-redacted), `dirty_count`, `untracked_count`. A repo with no git output degrades to `branch`/`head` = `"unknown"`.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -658,7 +658,7 @@ def test_repo_metadata_reads_real_repo(tmp_path: Path):
 - [ ] **Step 2: Run to verify it fails**
 
 Run: `python -m pytest tests/test_gitmeta.py -v`
-Expected: FAIL — `ModuleNotFoundError: workspace_repo_map.gitmeta`.
+Expected: FAIL -- `ModuleNotFoundError: workspace_repo_map.gitmeta`.
 
 - [ ] **Step 3: Write the implementation**
 
@@ -724,7 +724,7 @@ git commit -m "feat: add git metadata layer with always-on credential redaction"
 
 ---
 
-### Task 6: `scan.py` — discovery, parallel fan-out, assembly
+### Task 6: `scan.py` -- discovery, parallel fan-out, assembly
 
 **Files:**
 - Create: `src/workspace_repo_map/scan.py`
@@ -733,8 +733,8 @@ git commit -m "feat: add git metadata layer with always-on credential redaction"
 **Interfaces:**
 - Consumes: `Config` (Task 3), `classify` (Task 4), `repo_metadata` (Task 5), `Map`/`RepoRow`/`SCHEMA_VERSION` (Task 2).
 - Produces:
-  - `discover_repos(root: Path, config: Config) -> list[Path]` — `os.walk`, prunes `config.prune`, sorted by relative POSIX path.
-  - `build_map(root: Path, config: Config, tool_version: str) -> Map` — parallel `repo_metadata`, applies `classify`, applies portability (relative + sha256 root vs absolute + `root`), applies `omit_origin_classes`, assembles `class_counts` and `top_level`. A per-repo failure degrades to an `"unknown"` row (spec §9), never crashes the scan.
+  - `discover_repos(root: Path, config: Config) -> list[Path]` -- `os.walk`, prunes `config.prune`, sorted by relative POSIX path.
+  - `build_map(root: Path, config: Config, tool_version: str) -> Map` -- parallel `repo_metadata`, applies `classify`, applies portability (relative + sha256 root vs absolute + `root`), applies `omit_origin_classes`, assembles `class_counts` and `top_level`. A per-repo failure degrades to an `"unknown"` row (spec §9), never crashes the scan.
   - `write_map(root, config, tool_version, output: Path) -> Map`.
 
 - [ ] **Step 1: Write the failing tests**
@@ -802,7 +802,7 @@ def test_build_map_degrades_when_a_repo_errors(tmp_path: Path, monkeypatch, caps
 - [ ] **Step 2: Run to verify it fails**
 
 Run: `python -m pytest tests/test_scan.py -v`
-Expected: FAIL — `ModuleNotFoundError: workspace_repo_map.scan`.
+Expected: FAIL -- `ModuleNotFoundError: workspace_repo_map.scan`.
 
 - [ ] **Step 3: Write the implementation**
 
@@ -893,7 +893,7 @@ def build_map(root: Path, config: Config, tool_version: str) -> Map:
     root = root.resolve()
     repo_paths = discover_repos(root, config)
     # Executor.map preserves submission order, so rows stay in discovery (sorted) order
-    # regardless of thread completion order — output is deterministic.
+    # regardless of thread completion order -- output is deterministic.
     with ThreadPoolExecutor(max_workers=config.jobs) as pool:
         rows = list(pool.map(lambda p: _safe_repo_row(p, root, config), repo_paths))
     class_counts: dict[str, int] = {}
@@ -995,7 +995,7 @@ def test_public_api_surface():
 - [ ] **Step 2: Run to verify it fails**
 
 Run: `python -m pytest tests/test_cli.py -v`
-Expected: FAIL — `ModuleNotFoundError: workspace_repo_map.cli`.
+Expected: FAIL -- `ModuleNotFoundError: workspace_repo_map.cli`.
 
 - [ ] **Step 3: Write `cli.py`**
 
@@ -1093,7 +1093,7 @@ git rm src/workspace_repo_map/map.py tests/test_workspace_repo_map.py
 - [ ] **Step 7: Run the full suite to verify everything passes**
 
 Run: `python -m pytest -v`
-Expected: PASS — all of `test_version`, `test_model`, `test_config`, `test_classify`, `test_gitmeta`, `test_scan`, `test_cli`. No import of the deleted `map` module remains.
+Expected: PASS -- all of `test_version`, `test_model`, `test_config`, `test_classify`, `test_gitmeta`, `test_scan`, `test_cli`. No import of the deleted `map` module remains.
 
 - [ ] **Step 8: Verify the CLI end-to-end**
 
@@ -1141,7 +1141,7 @@ def test_example_config_parses():
 - [ ] **Step 2: Run to verify it fails**
 
 Run: `python -m pytest tests/test_example_config.py -v`
-Expected: FAIL — `SystemExit: config not found` (file does not exist yet).
+Expected: FAIL -- `SystemExit: config not found` (file does not exist yet).
 
 - [ ] **Step 3: Create `example.repomap.toml` (generic, non-personal)**
 
@@ -1177,7 +1177,7 @@ Expected: PASS.
 
 - [ ] **Step 5: Update `README.md`**
 
-Bump the version badge from `version-0.1.0` to `version-0.2.0` (the python badge already reads `3.11%2B` — leave it). Replace the "Usage" section with:
+Bump the version badge from `version-0.1.0` to `version-0.2.0` (the python badge already reads `3.11%2B` -- leave it). Replace the "Usage" section with:
 ````markdown
 ## Usage
 
@@ -1189,7 +1189,7 @@ workspace-repo-map --json
 Classification is driven by an optional `.repomap.toml` at the workspace root (see
 `example.repomap.toml`). With no config, repos are classified by a neutral remote-host
 heuristic: `local` (no remote), `public` (origin on a public host), or `private`. Here
-`public` means "origin is on a public code-hosting platform" — a heuristic, not a
+`public` means "origin is on a public code-hosting platform" -- a heuristic, not a
 guarantee of visibility.
 ````
 
@@ -1228,7 +1228,7 @@ git commit -m "docs: ship example config and document 0.2.0"
 
 Run after completing all tasks (or before execution, to validate the plan):
 
-**1. Spec coverage** — every spec section maps to a task:
+**1. Spec coverage** -- every spec section maps to a task:
 - §4 modules → Tasks 2–7 (one module each). §4.3 concurrency → Task 6.
 - §5 config/classification → Tasks 3–4; §5.8 portable/local → Task 6 (build/assembly) + Task 3 (parsing).
 - §6 schema v1 → Task 2 + Task 6. §7 CLI → Task 7. §8 public API → Task 7.
@@ -1236,9 +1236,9 @@ Run after completing all tasks (or before execution, to validate the plan):
 - §10 testing → per-task test files. §12 versioning/docs → Tasks 1 + 8.
 - §1 `_skip_generated_tree` removal → Task 6 (`discover_repos` has no scratch/venvs special-case).
 
-**2. Placeholder scan** — no "TBD"/"add error handling"/"similar to Task N"; every code step shows complete code.
+**2. Placeholder scan** -- no "TBD"/"add error handling"/"similar to Task N"; every code step shows complete code.
 
-**3. Type consistency** — `classify(path, is_repo, origin, config)` is defined in Task 4 and called identically in Task 6. `build_map(root, config, tool_version)` defined in Task 6, called in Task 7. `Config`/`Rule`/`Map`/`RepoRow` field names match across Tasks 2–7.
+**3. Type consistency** -- `classify(path, is_repo, origin, config)` is defined in Task 4 and called identically in Task 6. `build_map(root, config, tool_version)` defined in Task 6, called in Task 7. `Config`/`Rule`/`Map`/`RepoRow` field names match across Tasks 2–7.
 
 ---
 

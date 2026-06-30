@@ -1,33 +1,33 @@
-# index atlas — Engine (Plan 1 of 2) Implementation Plan
+﻿# index atlas -- Engine (Plan 1 of 2) Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build the atlas *engine* — discover the workspace's markdown as `doc` nodes and assemble a two-layer code+knowledge graph (repos + docs + the four edge types) — exposed as `index atlas --json`.
+**Goal:** Build the atlas *engine* -- discover the workspace's markdown as `doc` nodes and assemble a two-layer code+knowledge graph (repos + docs + the four edge types) -- exposed as `index atlas --json`.
 
-**Architecture:** A new pure-stdlib `knowledge/` subpackage. `docs.py` discovers+parses markdown (title, `[[links]]`, body) via the existing `walk_files`. `atlas.py` takes the index `DependencyGraph` + the docs and emits a pack that is a **superset of the context pack** (`to_json` output) — adding `docs` nodes + `knowledge_edges` (describes/links-to/mentions) — leaving all existing keys untouched. The HTML dashboard that renders this pack is **Plan 2**.
+**Architecture:** A new pure-stdlib `knowledge/` subpackage. `docs.py` discovers+parses markdown (title, `[[links]]`, body) via the existing `walk_files`. `atlas.py` takes the index `DependencyGraph` + the docs and emits a pack that is a **superset of the context pack** (`to_json` output) -- adding `docs` nodes + `knowledge_edges` (describes/links-to/mentions) -- leaving all existing keys untouched. The HTML dashboard that renders this pack is **Plan 2**.
 
 **Tech Stack:** Python 3.11+ stdlib only (`re`, `pathlib`, `dataclasses`); pytest.
 
 ## Global Constraints
 
-- **Zero runtime dependencies** — pure Python 3.11+ stdlib only.
-- **Deterministic** — docs sorted by `rel_path`; edges sorted; `[[link]]` resolution is first-match by normalized name with a recorded warning.
-- **Backward compatible** — the atlas pack is a SUPERSET of `to_json(graph)`: every existing key/field preserved; `docs` + `knowledge_edges` + `knowledge_warnings` are ADDED. `map`/`graph`/`context`/`viz` and their JSON are unchanged; `atlas` is a new subcommand.
-- **No regression** — the v1.1 suite (was 140) stays green; this plan adds its own tests.
-- **`atlas` ∈ `index`** — a new `index atlas` subcommand (this plan: `--json`; Plan 2 adds `--format html`).
-- **Privacy/no external** — pure local computation; no network.
-- **Repo/branch** — `c:/dev/worktrees/wrm-rename`, branch `feat/v1.1-enhancements` (builds on the dashboard core @ `8ca9f0e`). Run tests: `python -m pytest tests/ --color=no -q | tail -2`.
+- **Zero runtime dependencies** -- pure Python 3.11+ stdlib only.
+- **Deterministic** -- docs sorted by `rel_path`; edges sorted; `[[link]]` resolution is first-match by normalized name with a recorded warning.
+- **Backward compatible** -- the atlas pack is a SUPERSET of `to_json(graph)`: every existing key/field preserved; `docs` + `knowledge_edges` + `knowledge_warnings` are ADDED. `map`/`graph`/`context`/`viz` and their JSON are unchanged; `atlas` is a new subcommand.
+- **No regression** -- the v1.1 suite (was 140) stays green; this plan adds its own tests.
+- **`atlas` ∈ `index`** -- a new `index atlas` subcommand (this plan: `--json`; Plan 2 adds `--format html`).
+- **Privacy/no external** -- pure local computation; no network.
+- **Repo/branch** -- `c:/dev/worktrees/wrm-rename`, branch `feat/v1.1-enhancements` (builds on the dashboard core @ `8ca9f0e`). Run tests: `python -m pytest tests/ --color=no -q | tail -2`.
 
 ## File structure
 
-- Create `src/index_graph/knowledge/__init__.py` — empty package marker.
-- Create `src/index_graph/knowledge/docs.py` — `Doc` dataclass + `discover_docs(root) -> list[Doc]`. Test `tests/test_docs.py`.
-- Create `src/index_graph/knowledge/atlas.py` — `build_atlas_pack(graph, docs, repo_dirs) -> dict`. Test `tests/test_atlas.py`.
-- Modify `src/index_graph/cli.py` — `index atlas --json`. Test `tests/test_cli_subcommands.py`.
+- Create `src/index_graph/knowledge/__init__.py` -- empty package marker.
+- Create `src/index_graph/knowledge/docs.py` -- `Doc` dataclass + `discover_docs(root) -> list[Doc]`. Test `tests/test_docs.py`.
+- Create `src/index_graph/knowledge/atlas.py` -- `build_atlas_pack(graph, docs, repo_dirs) -> dict`. Test `tests/test_atlas.py`.
+- Modify `src/index_graph/cli.py` -- `index atlas --json`. Test `tests/test_cli_subcommands.py`.
 
 ---
 
-### Task 1: `knowledge/docs.py` — discover + parse markdown
+### Task 1: `knowledge/docs.py` -- discover + parse markdown
 
 **Files:** Create `src/index_graph/knowledge/__init__.py` (empty), `src/index_graph/knowledge/docs.py`; Test `tests/test_docs.py`.
 
@@ -35,7 +35,7 @@
 - Consumes: `index_graph.graph.walk.walk_files(root, suffixes=(...))`.
 - Produces: `Doc(rel_path, title, body, link_targets, dir_rel)` (frozen) and `discover_docs(root: Path) -> list[Doc]` (sorted by `rel_path`, deterministic). `link_targets` is a sorted tuple of **normalized** `[[wiki-link]]` targets.
 
-- [ ] **Step 1: Write the failing tests** — `tests/test_docs.py`:
+- [ ] **Step 1: Write the failing tests** -- `tests/test_docs.py`:
 
 ```python
 from pathlib import Path
@@ -76,9 +76,9 @@ def test_wikilink_alias_and_dedup(tmp_path):
     assert d.link_targets == ("core", "other")       # alias stripped, deduped, normalized, sorted
 ```
 
-- [ ] **Step 2: Run, verify fail** — `python -m pytest tests/test_docs.py -q` → FAIL (module missing).
+- [ ] **Step 2: Run, verify fail** -- `python -m pytest tests/test_docs.py -q` → FAIL (module missing).
 
-- [ ] **Step 3: Implement** — `src/index_graph/knowledge/__init__.py` (empty file), then `src/index_graph/knowledge/docs.py`:
+- [ ] **Step 3: Implement** -- `src/index_graph/knowledge/__init__.py` (empty file), then `src/index_graph/knowledge/docs.py`:
 
 ```python
 """Discover + parse workspace markdown into Doc nodes for the atlas."""
@@ -92,7 +92,7 @@ from ..graph.walk import walk_files
 
 _MD_SUFFIXES = (".md", ".markdown")
 _H1 = re.compile(r"^#\s+(.+?)\s*$", re.MULTILINE)
-# [[target]] or [[target|alias]] — capture target only
+# [[target]] or [[target|alias]] -- capture target only
 _WIKILINK = re.compile(r"\[\[\s*([^\]|]+?)\s*(?:\|[^\]]*)?\]\]")
 
 
@@ -130,21 +130,21 @@ def discover_docs(root: Path) -> list[Doc]:
     return out
 ```
 
-- [ ] **Step 4: Run, verify pass** — `python -m pytest tests/test_docs.py -q` → 3 passed.
+- [ ] **Step 4: Run, verify pass** -- `python -m pytest tests/test_docs.py -q` → 3 passed.
 
-- [ ] **Step 5: Commit** — `git add src/index_graph/knowledge/__init__.py src/index_graph/knowledge/docs.py tests/test_docs.py && git commit -m "feat(atlas): discover + parse workspace markdown into Doc nodes"`
+- [ ] **Step 5: Commit** -- `git add src/index_graph/knowledge/__init__.py src/index_graph/knowledge/docs.py tests/test_docs.py && git commit -m "feat(atlas): discover + parse workspace markdown into Doc nodes"`
 
 ---
 
-### Task 2: `knowledge/atlas.py` — two-layer pack (nodes + describes + links-to)
+### Task 2: `knowledge/atlas.py` -- two-layer pack (nodes + describes + links-to)
 
 **Files:** Create `src/index_graph/knowledge/atlas.py`; Test `tests/test_atlas.py`.
 
 **Interfaces:**
-- Consumes: `Doc` + `_norm` (Task 1's `knowledge/docs.py` — the shared atlas normalizer: space/underscore→dash, lowercased); `index_graph.context.pack.to_json(graph) -> dict` (has `repos`/`relations`/…); `index_graph.graph.build.DependencyGraph`.
-- Produces: `build_atlas_pack(graph: DependencyGraph, docs: list[Doc], repo_dirs: dict[str, str]) -> dict` — `to_json(graph)` plus `pack["docs"]` (list of `{"id","title","dir"}`), `pack["knowledge_edges"]` (sorted list of `{"type","from","to","to_kind"}`), and `pack["knowledge_warnings"]` (list[str]). `repo_dirs` maps repo name → workspace-relative dir. This task implements `describes` (by location) + `links-to` (`[[link]]` resolution); Task 3 adds `mentions`.
+- Consumes: `Doc` + `_norm` (Task 1's `knowledge/docs.py` -- the shared atlas normalizer: space/underscore→dash, lowercased); `index_graph.context.pack.to_json(graph) -> dict` (has `repos`/`relations`/…); `index_graph.graph.build.DependencyGraph`.
+- Produces: `build_atlas_pack(graph: DependencyGraph, docs: list[Doc], repo_dirs: dict[str, str]) -> dict` -- `to_json(graph)` plus `pack["docs"]` (list of `{"id","title","dir"}`), `pack["knowledge_edges"]` (sorted list of `{"type","from","to","to_kind"}`), and `pack["knowledge_warnings"]` (list[str]). `repo_dirs` maps repo name → workspace-relative dir. This task implements `describes` (by location) + `links-to` (`[[link]]` resolution); Task 3 adds `mentions`.
 
-- [ ] **Step 1: Write the failing tests** — `tests/test_atlas.py`:
+- [ ] **Step 1: Write the failing tests** -- `tests/test_atlas.py`:
 
 ```python
 from index_graph.graph.build import DependencyGraph, RepoNode
@@ -187,7 +187,7 @@ def test_links_to_resolves_wikilink_to_repo_and_doc():
 
 def test_multiword_wikilink_resolves_to_titled_doc():
     g = _graph("api")
-    # [[Auth Design]] (space) must resolve to the doc titled "Auth Design" — proves
+    # [[Auth Design]] (space) must resolve to the doc titled "Auth Design" -- proves
     # the target index uses docs.py's _norm (space->dash), not the bare normalize_name
     a = Doc("a.md", "A", "[[Auth Design]]", ("auth-design",), "")
     design = Doc("design.md", "Auth Design", "# Auth Design\n", (), "")
@@ -212,9 +212,9 @@ def test_knowledge_edges_sorted_deterministic():
     assert p1["knowledge_edges"] == sorted(p1["knowledge_edges"], key=lambda e: (e["from"], e["type"], e["to_kind"], e["to"]))
 ```
 
-- [ ] **Step 2: Run, verify fail** — `python -m pytest tests/test_atlas.py -q` → FAIL.
+- [ ] **Step 2: Run, verify fail** -- `python -m pytest tests/test_atlas.py -q` → FAIL.
 
-- [ ] **Step 3: Implement** — `src/index_graph/knowledge/atlas.py`:
+- [ ] **Step 3: Implement** -- `src/index_graph/knowledge/atlas.py`:
 
 ```python
 """Assemble repos (index) + docs into the two-layer atlas pack."""
@@ -232,8 +232,8 @@ _EDGE_SORT = lambda e: (e["from"], e["type"], e["to_kind"], e["to"])
 def _target_index(repo_names, docs):
     """normalized name -> (to_kind, id); repos win over docs on collision; first doc wins.
 
-    Uses `_norm` (space/underscore -> dash, lowercased) — the SAME normalization
-    docs.py applied to `[[link]]` targets — so multi-word links like [[Auth Design]]
+    Uses `_norm` (space/underscore -> dash, lowercased) -- the SAME normalization
+    docs.py applied to `[[link]]` targets -- so multi-word links like [[Auth Design]]
     resolve to a doc titled "Auth Design"."""
     idx: dict[str, tuple[str, str]] = {}
     for r in sorted(repo_names):
@@ -267,7 +267,7 @@ def build_atlas_pack(graph: DependencyGraph, docs: list[Doc],
     pack["docs"] = [{"id": d.rel_path, "title": d.title, "dir": d.dir_rel} for d in docs]
     edges: list[dict] = []
     warnings: list[str] = []
-    seen: set[tuple[str, str, str]] = set()      # (from, to_kind, to) — strongest wins
+    seen: set[tuple[str, str, str]] = set()      # (from, to_kind, to) -- strongest wins
 
     def add(etype: str, frm: str, to_kind: str, to: str) -> None:
         key = (frm, to_kind, to)
@@ -276,7 +276,7 @@ def build_atlas_pack(graph: DependencyGraph, docs: list[Doc],
         seen.add(key)
         edges.append({"type": etype, "from": frm, "to": to, "to_kind": to_kind})
 
-    # describes (by location) — strongest
+    # describes (by location) -- strongest
     for d in docs:
         repo = _describes(d, repo_dirs)
         if repo is not None:
@@ -298,21 +298,21 @@ def build_atlas_pack(graph: DependencyGraph, docs: list[Doc],
     return pack
 ```
 
-- [ ] **Step 4: Run, verify pass** — `python -m pytest tests/test_atlas.py -q` → 5 passed. (If `test_describes_edge_by_location` fails on the root-repo guard, re-read `_describes`: a doc at `api/docs` with `repo_dirs={"api":"api"}` matches via `startswith("api/")`.)
+- [ ] **Step 4: Run, verify pass** -- `python -m pytest tests/test_atlas.py -q` → 5 passed. (If `test_describes_edge_by_location` fails on the root-repo guard, re-read `_describes`: a doc at `api/docs` with `repo_dirs={"api":"api"}` matches via `startswith("api/")`.)
 
-- [ ] **Step 5: Commit** — `git add src/index_graph/knowledge/atlas.py tests/test_atlas.py && git commit -m "feat(atlas): two-layer pack — doc nodes + describes + links-to edges"`
+- [ ] **Step 5: Commit** -- `git add src/index_graph/knowledge/atlas.py tests/test_atlas.py && git commit -m "feat(atlas): two-layer pack -- doc nodes + describes + links-to edges"`
 
 ---
 
-### Task 3: `knowledge/atlas.py` — `mentions` edges (deduped)
+### Task 3: `knowledge/atlas.py` -- `mentions` edges (deduped)
 
 **Files:** Modify `src/index_graph/knowledge/atlas.py`; Test `tests/test_atlas.py`.
 
 **Interfaces:**
 - Consumes: the `build_atlas_pack` internals from Task 2 (the `add`/`seen` dedup, `idx`).
-- Produces: `mentions` edges — doc→repo/doc when the target's name/title appears as a word in the doc body AND no stronger (`describes`/`links-to`) edge already connects the pair (the `seen` set enforces this).
+- Produces: `mentions` edges -- doc→repo/doc when the target's name/title appears as a word in the doc body AND no stronger (`describes`/`links-to`) edge already connects the pair (the `seen` set enforces this).
 
-- [ ] **Step 1: Write the failing tests** — append to `tests/test_atlas.py`:
+- [ ] **Step 1: Write the failing tests** -- append to `tests/test_atlas.py`:
 
 ```python
 import re as _re
@@ -343,9 +343,9 @@ def test_mention_requires_word_boundary():
     assert not any(e["type"] == "mentions" for e in pack["knowledge_edges"])
 ```
 
-- [ ] **Step 2: Run, verify fail** — `python -m pytest tests/test_atlas.py -k mention -q` → FAIL.
+- [ ] **Step 2: Run, verify fail** -- `python -m pytest tests/test_atlas.py -k mention -q` → FAIL.
 
-- [ ] **Step 3: Implement** — in `atlas.py`, add the import `import re` at the top, a helper, and a `mentions` pass after the `links-to` loop (before the `pack["knowledge_edges"] = …` line):
+- [ ] **Step 3: Implement** -- in `atlas.py`, add the import `import re` at the top, a helper, and a `mentions` pass after the `links-to` loop (before the `pack["knowledge_edges"] = …` line):
 
 ```python
 def _mentions_name(body: str, name: str) -> bool:
@@ -357,7 +357,7 @@ def _mentions_name(body: str, name: str) -> bool:
 and the pass:
 
 ```python
-    # mentions (prose name-drops) — weakest; deduped via `seen` against describes/links-to
+    # mentions (prose name-drops) -- weakest; deduped via `seen` against describes/links-to
     name_of = {("repo", r): r for r in repo_names}
     name_of.update({("doc", d.rel_path): d.title for d in docs})
     for d in docs:
@@ -372,9 +372,9 @@ and the pass:
 
 (Keep the `pack["knowledge_edges"] = sorted(edges, key=_EDGE_SORT)` line after this pass.)
 
-- [ ] **Step 4: Run, verify pass** — `python -m pytest tests/test_atlas.py -q` → 8 passed (5 + 3).
+- [ ] **Step 4: Run, verify pass** -- `python -m pytest tests/test_atlas.py -q` → 8 passed (5 + 3).
 
-- [ ] **Step 5: Commit** — `git add src/index_graph/knowledge/atlas.py tests/test_atlas.py && git commit -m "feat(atlas): mentions edges (word-boundary, deduped against stronger edges)"`
+- [ ] **Step 5: Commit** -- `git add src/index_graph/knowledge/atlas.py tests/test_atlas.py && git commit -m "feat(atlas): mentions edges (word-boundary, deduped against stronger edges)"`
 
 ---
 
@@ -384,9 +384,9 @@ and the pass:
 
 **Interfaces:**
 - Consumes: `build_atlas_pack` (Tasks 2–3), `discover_docs` (Task 1), the existing `_repo_paths(root)` + `build_graph`.
-- Produces: `index atlas --root R [--json]` — builds the two-layer pack and prints it as JSON (this plan supports `--json`; without it, prints a one-line summary. `--format html` arrives in Plan 2).
+- Produces: `index atlas --root R [--json]` -- builds the two-layer pack and prints it as JSON (this plan supports `--json`; without it, prints a one-line summary. `--format html` arrives in Plan 2).
 
-- [ ] **Step 1: Write the failing test** — append to `tests/test_cli_subcommands.py`:
+- [ ] **Step 1: Write the failing test** -- append to `tests/test_cli_subcommands.py`:
 
 ```python
 def test_atlas_json_emits_two_layer_pack(tmp_path, capsys):
@@ -410,9 +410,9 @@ def test_atlas_json_emits_two_layer_pack(tmp_path, capsys):
     assert "relations" in pack  # superset of the context pack
 ```
 
-- [ ] **Step 2: Run, verify fail** — `python -m pytest tests/test_cli_subcommands.py::test_atlas_json_emits_two_layer_pack -q` → FAIL.
+- [ ] **Step 2: Run, verify fail** -- `python -m pytest tests/test_cli_subcommands.py::test_atlas_json_emits_two_layer_pack -q` → FAIL.
 
-- [ ] **Step 3: Implement** — in `cli.py`:
+- [ ] **Step 3: Implement** -- in `cli.py`:
   1. add `"atlas"` to `_SUBCOMMANDS`:
      ```python
      _SUBCOMMANDS = {"map", "graph", "context", "viz", "diff", "atlas"}
@@ -453,15 +453,15 @@ def test_atlas_json_emits_two_layer_pack(tmp_path, capsys):
          return _cmd_atlas(args)
      ```
 
-- [ ] **Step 4: Run, verify pass** — `python -m pytest tests/test_cli_subcommands.py -q` → pass. Then FULL suite `python -m pytest tests/ --color=no -q | tail -2` → all green.
+- [ ] **Step 4: Run, verify pass** -- `python -m pytest tests/test_cli_subcommands.py -q` → pass. Then FULL suite `python -m pytest tests/ --color=no -q | tail -2` → all green.
 
-- [ ] **Step 5: Commit** — `git add -A && git commit -m "feat(atlas): index atlas --json emits the two-layer code+knowledge pack"`
+- [ ] **Step 5: Commit** -- `git add -A && git commit -m "feat(atlas): index atlas --json emits the two-layer code+knowledge pack"`
 
 ---
 
 ## Self-review notes
 
-- **Spec coverage (engine portion):** doc nodes (Task 1), the four edge types — depends-on (inherited from `to_json`), describes/links-to (Task 2), mentions deduped (Task 3) — and the `index atlas` subcommand (Task 4). The markdown RENDERER, the HTML dashboard, clustering layout, pan/zoom, the contextualizing panel, and the synthetic demo are **Plan 2** (written against this engine's concrete pack).
+- **Spec coverage (engine portion):** doc nodes (Task 1), the four edge types -- depends-on (inherited from `to_json`), describes/links-to (Task 2), mentions deduped (Task 3) -- and the `index atlas` subcommand (Task 4). The markdown RENDERER, the HTML dashboard, clustering layout, pan/zoom, the contextualizing panel, and the synthetic demo are **Plan 2** (written against this engine's concrete pack).
 - **Determinism:** docs sorted by path; `knowledge_edges` sorted by `_EDGE_SORT`; `mentions` iterate a `sorted(name_of.items())`; tests assert byte-stability.
 - **Backward compat:** `build_atlas_pack` starts from `to_json(graph)` and only ADDS keys.
 

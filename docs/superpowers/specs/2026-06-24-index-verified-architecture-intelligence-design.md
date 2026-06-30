@@ -1,4 +1,4 @@
-# Design: Index 2.0 — Verified Architecture Intelligence
+﻿# Design: Index 2.0 -- Verified Architecture Intelligence
 
 > Date: 2026-06-24
 > Status: Brainstormed and scoped. Spec recorded; plan next.
@@ -124,26 +124,26 @@ The pack and the certificate are specified in a new `docs/PROTOCOL.md` and versi
 
 New subsystems under `src/index_graph/`, each independently testable, each composing the existing primitives rather than editing them in place:
 
-- `internals/` — module discovery and the intra-repo graph (reuses `graph/cycles.py` over the internal edge set).
-- `arch/` — `criteria.py` (parse `[architecture]`) and `check.py` (evaluate, produce findings).
-- `drift/` — `snapshot.py` (canonical serialize and load) and `diff.py` (two-snapshot diff).
-- `certify/` — `certificate.py` (build and serialize the verdict certificate; the canonical hashing helper).
-- `config.py` — extended to parse the `[architecture]` block (additive, optional).
-- `cli.py` — new subcommands `internals`, `check`, `snapshot`, `drift`. Existing subcommands untouched.
-- `docs/PROTOCOL.md` — the seam specification.
+- `internals/` -- module discovery and the intra-repo graph (reuses `graph/cycles.py` over the internal edge set).
+- `arch/` -- `criteria.py` (parse `[architecture]`) and `check.py` (evaluate, produce findings).
+- `drift/` -- `snapshot.py` (canonical serialize and load) and `diff.py` (two-snapshot diff).
+- `certify/` -- `certificate.py` (build and serialize the verdict certificate; the canonical hashing helper).
+- `config.py` -- extended to parse the `[architecture]` block (additive, optional).
+- `cli.py` -- new subcommands `internals`, `check`, `snapshot`, `drift`. Existing subcommands untouched.
+- `docs/PROTOCOL.md` -- the seam specification.
 
 The exact module boundaries are fixed in the implementation plan. The existing `viz` output stays byte-identical and its determinism tests stay green.
 
 ## Phasing (one plan, in order; each phase ends green and reviewable)
 
-1. **Module graph foundation** — `internals/` module discovery and the intra-repo edge build for Python (AST). Internal cycles and fan-in/out. Tests.
-2. **Module graph reach** — best-effort file-level edges for JS/TS, Rust, Go from the existing import scans. Honest per-language bounds. Tests.
-3. **Criteria** — parse `[architecture]` (layers, forbid, max_cycles, ownership) in `config.py`. Tests including malformed config.
-4. **Check** — evaluate repo-level and module-level graphs against criteria; findings with evidence; non-zero exit. Tests including the UNVERIFIABLE paths.
-5. **Snapshot and drift** — canonical snapshot; two-snapshot diff; the drift report. Determinism tests.
-6. **Certificate** — the verdict certificate for `check` and `drift`; canonical hashing; the re-check round-trip proven in a test (re-run reproduces the verdict and the hashes).
-7. **CLI and protocol** — wire the four subcommands; write `docs/PROTOCOL.md`; README and USAGE sections; CHANGELOG; version bump.
-8. **Release prep** — full suite green; dogfood over `c:/dev`; tag-ready. The PyPI publish itself waits for explicit human go (no auto-deploy).
+1. **Module graph foundation** -- `internals/` module discovery and the intra-repo edge build for Python (AST). Internal cycles and fan-in/out. Tests.
+2. **Module graph reach** -- best-effort file-level edges for JS/TS, Rust, Go from the existing import scans. Honest per-language bounds. Tests.
+3. **Criteria** -- parse `[architecture]` (layers, forbid, max_cycles, ownership) in `config.py`. Tests including malformed config.
+4. **Check** -- evaluate repo-level and module-level graphs against criteria; findings with evidence; non-zero exit. Tests including the UNVERIFIABLE paths.
+5. **Snapshot and drift** -- canonical snapshot; two-snapshot diff; the drift report. Determinism tests.
+6. **Certificate** -- the verdict certificate for `check` and `drift`; canonical hashing; the re-check round-trip proven in a test (re-run reproduces the verdict and the hashes).
+7. **CLI and protocol** -- wire the four subcommands; write `docs/PROTOCOL.md`; README and USAGE sections; CHANGELOG; version bump.
+8. **Release prep** -- full suite green; dogfood over `c:/dev`; tag-ready. The PyPI publish itself waits for explicit human go (no auto-deploy).
 
 Stretch, only if the spine lands clean and time allows, explicitly optional and not part of the committed scope: a TypeScript-proper resolver (tsconfig paths) or a C/C++ resolver (`#include` plus CMake), and promoting external dependencies to first-class graph nodes.
 

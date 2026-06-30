@@ -1,4 +1,4 @@
-# index Ecosystem Resolvers (Rust, Go, Java) Implementation Plan
+﻿# index Ecosystem Resolvers (Rust, Go, Java) Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -27,22 +27,22 @@ Every task's requirements implicitly include this section. Values from `docs/sup
 ## File Structure
 
 **New source:**
-- `src/index_graph/graph/resolvers/rust.py` — `RustResolver` (Cargo.toml + use/extern-crate scan). (Task 2)
-- `src/index_graph/graph/resolvers/go.py` — `GoResolver` (go.mod + import scan). (Task 3)
-- `src/index_graph/graph/resolvers/java.py` — `JavaResolver` (Maven pom.xml + best-effort Gradle, manifest-only). (Task 4)
+- `src/index_graph/graph/resolvers/rust.py` -- `RustResolver` (Cargo.toml + use/extern-crate scan). (Task 2)
+- `src/index_graph/graph/resolvers/go.py` -- `GoResolver` (go.mod + import scan). (Task 3)
+- `src/index_graph/graph/resolvers/java.py` -- `JavaResolver` (Maven pom.xml + best-effort Gradle, manifest-only). (Task 4)
 
 **Modified source:**
-- `src/index_graph/graph/edges.py` — add the longest-prefix fallback to `resolve_edges`. (Task 1)
-- `src/index_graph/graph/resolvers/__init__.py` — register each new resolver in `ALL_RESOLVERS`. (Tasks 2-4)
-- `src/index_graph/__init__.py` — version bump to 1.2.0. (Task 5)
-- `CHANGELOG.md` — add 1.1.0 and 1.2.0 entries. (Task 5)
+- `src/index_graph/graph/edges.py` -- add the longest-prefix fallback to `resolve_edges`. (Task 1)
+- `src/index_graph/graph/resolvers/__init__.py` -- register each new resolver in `ALL_RESOLVERS`. (Tasks 2-4)
+- `src/index_graph/__init__.py` -- version bump to 1.2.0. (Task 5)
+- `CHANGELOG.md` -- add 1.1.0 and 1.2.0 entries. (Task 5)
 
 **New tests + fixtures:**
-- `tests/test_edges.py` — prefix-fallback unit tests (modify). (Task 1)
+- `tests/test_edges.py` -- prefix-fallback unit tests (modify). (Task 1)
 - `tests/test_resolver_rust.py` + `tests/fixtures/rust-app/`, `rust-lib/`. (Task 2)
 - `tests/test_resolver_go.py` + `tests/fixtures/go-app/`, `go-lib/`. (Task 3)
 - `tests/test_resolver_java.py` + `tests/fixtures/java-app/`, `java-lib/`, `gradle-app/`. (Task 4)
-- `tests/test_version.py`, `tests/test_cli.py`, `tests/test_viz_cli.py` — version 1.1.0 to 1.2.0 (modify). (Task 5)
+- `tests/test_version.py`, `tests/test_cli.py`, `tests/test_viz_cli.py` -- version 1.1.0 to 1.2.0 (modify). (Task 5)
 
 ---
 
@@ -58,7 +58,7 @@ The enabling core change. Today `resolve_edges` matches a dependency name to a r
 - Consumes: `build_index`, `normalize_name`, `RawEdge` (existing).
 - Produces: `resolve_edges` unchanged in signature; internally resolves slash-targets by longest prefix and keys edges by the canonical (matched) exposed name. Adds module-private `_resolve_target(index, norm_target) -> tuple[str, list[str]]`.
 
-- [ ] **Step 1: Write the failing tests** — append to `tests/test_edges.py`:
+- [ ] **Step 1: Write the failing tests** -- append to `tests/test_edges.py`:
 
 ```python
 def test_path_prefix_fallback_resolves_import_to_module():
@@ -103,12 +103,12 @@ def test_prefix_fallback_does_not_touch_slashless_names():
     assert len(internal) == 1 and internal[0].to_repo == "b"
 ```
 
-- [ ] **Step 2: Run them, expect 1 FAIL** — `test_path_prefix_fallback_resolves_import_to_module` fails (the two signals do not merge yet; the import is external).
+- [ ] **Step 2: Run them, expect 1 FAIL** -- `test_path_prefix_fallback_resolves_import_to_module` fails (the two signals do not merge yet; the import is external).
 
 Run: `python -m pytest tests/test_edges.py -q`
 Expected: the new prefix-merge test FAILS; the other three may already pass.
 
-- [ ] **Step 3: Add the fallback** — in `src/index_graph/graph/edges.py`, add this helper above `resolve_edges`:
+- [ ] **Step 3: Add the fallback** -- in `src/index_graph/graph/edges.py`, add this helper above `resolve_edges`:
 
 ```python
 def _resolve_target(index: dict[str, list[str]], norm_target: str) -> tuple[str, list[str]]:
@@ -156,7 +156,7 @@ Then in `resolve_edges`, replace the candidate lookup and key construction. Chan
 
 (Only the lookup and the three keys change; the grading loop and sort below are untouched. `target` in the grading loop is now the canonical name, which is correct.)
 
-- [ ] **Step 4: Run the edges tests, then the full suite** — both green.
+- [ ] **Step 4: Run the edges tests, then the full suite** -- both green.
 
 Run: `python -m pytest tests/test_edges.py -v && python -m pytest tests/ --color=no -q`
 Expected: all PASS, including the pre-existing edges tests (exact-match behavior is unchanged).
@@ -226,7 +226,7 @@ fn main() {
 pub fn run() {}
 ```
 
-- [ ] **Step 2: Write the failing tests** — create `tests/test_resolver_rust.py`:
+- [ ] **Step 2: Write the failing tests** -- create `tests/test_resolver_rust.py`:
 
 ```python
 from __future__ import annotations
@@ -273,11 +273,11 @@ def test_rust_registered():
     assert "rust" in {r.name for r in ALL_RESOLVERS}
 ```
 
-- [ ] **Step 3: Run, expect FAIL** — `ModuleNotFoundError: index_graph.graph.resolvers.rust`.
+- [ ] **Step 3: Run, expect FAIL** -- `ModuleNotFoundError: index_graph.graph.resolvers.rust`.
 
 Run: `python -m pytest tests/test_resolver_rust.py -q`
 
-- [ ] **Step 4: Implement the resolver** — create `src/index_graph/graph/resolvers/rust.py`:
+- [ ] **Step 4: Implement the resolver** -- create `src/index_graph/graph/resolvers/rust.py`:
 
 ```python
 """Rust ecosystem resolver: Cargo.toml manifests + a use/extern-crate scan."""
@@ -344,7 +344,7 @@ class RustResolver:
         return edges
 ```
 
-- [ ] **Step 5: Register it** — in `src/index_graph/graph/resolvers/__init__.py`, add the import and extend `ALL_RESOLVERS`:
+- [ ] **Step 5: Register it** -- in `src/index_graph/graph/resolvers/__init__.py`, add the import and extend `ALL_RESOLVERS`:
 
 ```python
 """Per-ecosystem dependency resolvers."""
@@ -355,7 +355,7 @@ from .rust import RustResolver
 ALL_RESOLVERS = (PythonResolver(), JavaScriptResolver(), RustResolver())
 ```
 
-- [ ] **Step 6: Run the Rust tests + the full suite** — all green.
+- [ ] **Step 6: Run the Rust tests + the full suite** -- all green.
 
 Run: `python -m pytest tests/test_resolver_rust.py -v && python -m pytest tests/ --color=no -q`
 Expected: all PASS.
@@ -426,7 +426,7 @@ func main() {
 }
 ```
 
-- [ ] **Step 2: Write the failing tests** — create `tests/test_resolver_go.py`:
+- [ ] **Step 2: Write the failing tests** -- create `tests/test_resolver_go.py`:
 
 ```python
 from __future__ import annotations
@@ -466,11 +466,11 @@ def test_go_registered():
     assert "go" in {r.name for r in ALL_RESOLVERS}
 ```
 
-- [ ] **Step 3: Run, expect FAIL** — `ModuleNotFoundError: index_graph.graph.resolvers.go`.
+- [ ] **Step 3: Run, expect FAIL** -- `ModuleNotFoundError: index_graph.graph.resolvers.go`.
 
 Run: `python -m pytest tests/test_resolver_go.py -q`
 
-- [ ] **Step 4: Implement the resolver** — create `src/index_graph/graph/resolvers/go.py`:
+- [ ] **Step 4: Implement the resolver** -- create `src/index_graph/graph/resolvers/go.py`:
 
 ```python
 """Go ecosystem resolver: go.mod requires + an import-path scan."""
@@ -559,13 +559,13 @@ class GoResolver:
         return edges
 ```
 
-- [ ] **Step 5: Register it** — in `src/index_graph/graph/resolvers/__init__.py`, add `from .go import GoResolver` and append `GoResolver()` to `ALL_RESOLVERS`:
+- [ ] **Step 5: Register it** -- in `src/index_graph/graph/resolvers/__init__.py`, add `from .go import GoResolver` and append `GoResolver()` to `ALL_RESOLVERS`:
 
 ```python
 ALL_RESOLVERS = (PythonResolver(), JavaScriptResolver(), RustResolver(), GoResolver())
 ```
 
-- [ ] **Step 6: Run the Go tests + the full suite** — all green.
+- [ ] **Step 6: Run the Go tests + the full suite** -- all green.
 
 Run: `python -m pytest tests/test_resolver_go.py -v && python -m pytest tests/ --color=no -q`
 
@@ -633,7 +633,7 @@ dependencies {
 }
 ```
 
-- [ ] **Step 2: Write the failing tests** — create `tests/test_resolver_java.py`:
+- [ ] **Step 2: Write the failing tests** -- create `tests/test_resolver_java.py`:
 
 ```python
 from __future__ import annotations
@@ -677,11 +677,11 @@ def test_java_registered():
     assert "java" in {r.name for r in ALL_RESOLVERS}
 ```
 
-- [ ] **Step 3: Run, expect FAIL** — `ModuleNotFoundError: index_graph.graph.resolvers.java`.
+- [ ] **Step 3: Run, expect FAIL** -- `ModuleNotFoundError: index_graph.graph.resolvers.java`.
 
 Run: `python -m pytest tests/test_resolver_java.py -q`
 
-- [ ] **Step 4: Implement the resolver** — create `src/index_graph/graph/resolvers/java.py`:
+- [ ] **Step 4: Implement the resolver** -- create `src/index_graph/graph/resolvers/java.py`:
 
 ```python
 """Java ecosystem resolver: Maven pom.xml + best-effort Gradle. Manifest-only."""
@@ -776,13 +776,13 @@ class JavaResolver:
         return edges
 ```
 
-- [ ] **Step 5: Register it** — in `src/index_graph/graph/resolvers/__init__.py`, add `from .java import JavaResolver` and append `JavaResolver()`:
+- [ ] **Step 5: Register it** -- in `src/index_graph/graph/resolvers/__init__.py`, add `from .java import JavaResolver` and append `JavaResolver()`:
 
 ```python
 ALL_RESOLVERS = (PythonResolver(), JavaScriptResolver(), RustResolver(), GoResolver(), JavaResolver())
 ```
 
-- [ ] **Step 6: Run the Java tests + the full suite + the boundary test** — all green.
+- [ ] **Step 6: Run the Java tests + the full suite + the boundary test** -- all green.
 
 Run: `python -m pytest tests/test_resolver_java.py tests/test_viz_boundary.py -v && python -m pytest tests/ --color=no -q`
 Expected: all PASS (the boundary test confirms the new resolvers import only stdlib + `index_graph`).
@@ -833,12 +833,12 @@ def test_version_is_1_2_0():
 Run: `python -m pytest tests/test_version.py tests/test_cli.py::test_version_flag_exits_zero tests/test_viz_cli.py -q`
 Expected: the three version assertions FAIL.
 
-- [ ] **Step 3: Bump the version** — in `src/index_graph/__init__.py`, change `__version__ = "1.1.0"` to:
+- [ ] **Step 3: Bump the version** -- in `src/index_graph/__init__.py`, change `__version__ = "1.1.0"` to:
 ```python
 __version__ = "1.2.0"
 ```
 
-- [ ] **Step 4: Add the CHANGELOG entries** — in `CHANGELOG.md`, insert these two sections directly below the top `# Changelog` line and above `## 1.0.0`:
+- [ ] **Step 4: Add the CHANGELOG entries** -- in `CHANGELOG.md`, insert these two sections directly below the top `# Changelog` line and above `## 1.0.0`:
 
 ```markdown
 ## 1.2.0
@@ -869,7 +869,7 @@ __version__ = "1.2.0"
   restriction, converting to MIT two years after each release. 1.0.0 remains MIT.
 ```
 
-- [ ] **Step 5: Run the full suite** — all green.
+- [ ] **Step 5: Run the full suite** -- all green.
 
 Run: `python -m pytest tests/ --color=no -q`
 Expected: all PASS, version now 1.2.0.
@@ -887,7 +887,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 ## Final verification (after Task 5)
 
-- [ ] **Full suite green:** `python -m pytest tests/ --color=no -q` — the prior 197 plus the new resolver/edges tests, zero failures.
-- [ ] **Boundary intact:** `python -m pytest tests/test_viz_boundary.py -v` — the new resolvers add no third-party imports.
-- [ ] **Existing ecosystems unchanged:** `python -m pytest tests/test_resolver_python.py tests/test_resolver_javascript.py tests/test_edges.py -v` — Python and JS resolution and the pre-existing edge tests still pass.
+- [ ] **Full suite green:** `python -m pytest tests/ --color=no -q` -- the prior 197 plus the new resolver/edges tests, zero failures.
+- [ ] **Boundary intact:** `python -m pytest tests/test_viz_boundary.py -v` -- the new resolvers add no third-party imports.
+- [ ] **Existing ecosystems unchanged:** `python -m pytest tests/test_resolver_python.py tests/test_resolver_javascript.py tests/test_edges.py -v` -- Python and JS resolution and the pre-existing edge tests still pass.
 - [ ] **Whole-branch review:** dispatch the opus final review per the subagent-driven cadence before declaring the sprint done. Publish stays operator-gated (the operator bumps nothing further; 1.2.0 is set, and the tag/publish is theirs).

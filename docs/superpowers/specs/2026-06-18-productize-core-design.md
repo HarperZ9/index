@@ -1,9 +1,9 @@
-# Productize the Core — Design Spec
+﻿# Productize the Core -- Design Spec
 
 - **Date:** 2026-06-18
 - **Status:** Approved (design); pending implementation plan
 - **Target version:** 0.2.0
-- **Scope:** Track A of the productization roadmap — make `workspace-repo-map`
+- **Scope:** Track A of the productization roadmap -- make `workspace-repo-map`
   a tool installable and usable by people other than its author.
 
 ---
@@ -18,8 +18,8 @@ block it from being a general tool:
 1. **Hardcoded personal taxonomy.** `ROOT_CLASSES`, `ROOT_BOOTSTRAP_FILES`, and
    `repo_class`/`root_class` (`map.py:41-60, 178-214`) encode one operator's lane
    conventions. Commit `0a2e182` began scrubbing these for public release; this work
-   finishes it. A related operator-specific hardcode — the `scratch/venvs` prune
-   special-case (`_skip_generated_tree`, `map.py:241-247`) — is removed as well; pruning
+   finishes it. A related operator-specific hardcode -- the `scratch/venvs` prune
+   special-case (`_skip_generated_tree`, `map.py:241-247`) -- is removed as well; pruning
    becomes the universal safety set plus `[scan] prune` config only.
 2. **Two competing CLIs.** `map.py:build_parser` and `cli.py:build_parser` both exist;
    the entry point reconstructs an argv list and re-dispatches (`cli.py:16-19`), with a
@@ -28,7 +28,7 @@ block it from being a general tool:
    leaking stdlib imports; there is no `__version__` and the output JSON has no
    `schema_version`.
 4. **Serial git fan-out.** `repo_row` makes ~4–5 `git` subprocess calls per repo
-   (`map.py:155-175`), all repos processed serially — the dominant cost at workspace scale.
+   (`map.py:155-175`), all repos processed serially -- the dominant cost at workspace scale.
 
 "Productize the core" addresses all four in one refactor.
 
@@ -41,7 +41,7 @@ block it from being a general tool:
 - A stable, explicit public API (`__all__`, `__version__`) and a versioned output schema
   (`schema_version: 1`).
 - Per-repo git calls run in parallel, output remains deterministic.
-- Output portability is configurable — shareable/sanitized by default, opt-in local mode.
+- Output portability is configurable -- shareable/sanitized by default, opt-in local mode.
 - Zero runtime dependencies preserved.
 
 **Non-goals (YAGNI for this spec)**
@@ -56,7 +56,7 @@ The module seams below are placed so Tracks B and C attach without rework.
 
 | Decision | Choice | Rationale |
 |---|---|---|
-| Default classification (no config) | **Neutral** — generic fallback ladder; personal taxonomy ships as example config | Required for "installable by others"; finishes the `0a2e182` scrub |
+| Default classification (no config) | **Neutral** -- generic fallback ladder; personal taxonomy ships as example config | Required for "installable by others"; finishes the `0a2e182` scrub |
 | Rule model | **Ordered path-glob rules, first match wins**, then a built-in remote-host fallback | Familiar `.gitignore`/CODEOWNERS semantics; covers lane layouts directly |
 | Output schema | **Deliberate `schema_version: 1`, free to restructure** | Nothing pins the schema yet; cheapest moment to set a clean v1 |
 | Refactor scope | **Modular split** of `map.py` into focused units | Right-sized isolation; respects file/function size gates; hosts later tracks |
@@ -69,18 +69,18 @@ The module seams below are placed so Tracks B and C attach without rework.
 
 | Module | Owns | Depends on |
 |---|---|---|
-| `model.py` | `RepoRow`, `Map` dataclasses, `SCHEMA_VERSION = 1`, `to_json`. Pure data — no I/O, git, or config. | stdlib |
+| `model.py` | `RepoRow`, `Map` dataclasses, `SCHEMA_VERSION = 1`, `to_json`. Pure data -- no I/O, git, or config. | stdlib |
 | `config.py` | `Rule`, `Config`, `load_config()`, `default_config()`, neutral defaults, prune/marker lists, TOML parse + validation, glob→regex translation. | `tomllib`, `re` |
 | `classify.py` | `classify(rel_path, remote, config) -> str`: ordered glob match → remote-host fallback → default. Pure; used for repos and root entries. | `config` |
 | `gitmeta.py` | `run_git()`, `repo_metadata()` (status counts, branch, head, sanitized origin). Subprocess + redaction layer. | `subprocess`, `re` |
 | `scan.py` | Orchestration: `discover_repos()` (os.walk + prune), parallel fan-out, apply classify, assemble `Map`, `write_map()`. | `gitmeta`, `classify`, `config`, `model` |
 | `cli.py` | Single argparse parser + `main()`. The one entry point. | `scan`, `config`, `model` |
-| `__init__.py` | Public API via explicit `__all__` + `__version__`. | — |
+| `__init__.py` | Public API via explicit `__all__` + `__version__`. | -- |
 | `__main__.py` | `from .cli import main`. | `cli` |
 
 Isolation win: `gitmeta` (subprocess) and `config` (parsing) never touch each other, and
-`classify` is a pure function. The parts previously untestable in isolation — discovery,
-classification, redaction — each get real unit tests.
+`classify` is a pure function. The parts previously untestable in isolation -- discovery,
+classification, redaction -- each get real unit tests.
 
 ### 4.2 Data flow
 
@@ -97,10 +97,10 @@ cli.main(argv)
 
 ### 4.3 Concurrency
 
-`ThreadPoolExecutor` (threads — the work is git-subprocess/IO-bound). Each task runs one
+`ThreadPoolExecutor` (threads -- the work is git-subprocess/IO-bound). Each task runs one
 repo's git calls; the pool replaces the serial loop. Discovery stays single-threaded
 (`os.walk`). **Determinism is preserved** by sorting results by path *after* the pool
-drains — never relying on completion order. Worker count via `--jobs`, default
+drains -- never relying on completion order. Worker count via `--jobs`, default
 `min(32, (os.cpu_count() or 4) * 5)`.
 
 ## 5. Config system
@@ -110,7 +110,7 @@ drains — never relying on completion order. Worker count via `--jobs`, default
 All sections optional; an absent file means pure neutral behavior.
 
 ```toml
-# Ordered classification rules — first match wins.
+# Ordered classification rules -- first match wins.
 # `pattern` matches each repo's workspace-relative POSIX path.
 [[rule]]
 pattern = "public/**"
@@ -142,8 +142,8 @@ Implemented as a small glob→regex translator in `config.py` (stdlib `re`); `fn
 ignores `/`, and portable `**` in `PurePath.match` only arrived in 3.13. Each rule's
 pattern compiles to a regex once at config load, not per repo.
 
-- `*` — matches within a single path segment (stops at `/`)
-- `**` — matches zero or more segments; `public/**` matches `public`, `public/demo`,
+- `*` -- matches within a single path segment (stops at `/`)
+- `**` -- matches zero or more segments; `public/**` matches `public`, `public/demo`,
   and `public/demo/sub`
 - literal segments match exactly
 - first matching rule in file order wins
@@ -165,7 +165,7 @@ Rule matching is identical for repos and root entries; only the no-match fallbac
 by kind (the ladder above for repos, `"hidden"`/`"entry"` for root entries). `classify`
 therefore takes the entry kind alongside the path and optional remote.
 
-> `"public"` here means *"origin is on a public code-hosting platform"* — a heuristic,
+> `"public"` here means *"origin is on a public code-hosting platform"* -- a heuristic,
 > **not** a guarantee of repository visibility. Documented as such in the README.
 
 ### 5.4 Discovery & precedence
@@ -188,7 +188,7 @@ defaults. No global/XDG config in v1.
 This is how the personal `protected` policy stops being hardcoded:
 
 - **Credential/userinfo redaction** in origin URLs (`token@…`, `?token=…`) stays
-  **always-on** for every repo — a security invariant, preserving today's
+  **always-on** for every repo -- a security invariant, preserving today's
   `sanitize_origin` regexes (`map.py:61-64, 109-113`).
 - **Full origin omission** now keys off `[privacy].omit_origin_classes`, default **empty**
   in the shipped neutral config. The operator's taxonomy moves into a shipped
@@ -242,7 +242,7 @@ Two invariants hold in **both** modes:
 
 - **Credential/userinfo redaction is always on** (security; §5.6). It fires only on
   credential-shaped URLs, so it is a no-op for clean origins.
-- **`omit_origin_classes` is orthogonal to `portable`** — origin omission is a class-keyed
+- **`omit_origin_classes` is orthogonal to `portable`** -- origin omission is a class-keyed
   privacy choice applied regardless of mode.
 
 `[output] annotations` (table, default empty): arbitrary operator-supplied key/values
@@ -250,7 +250,7 @@ emitted verbatim under a top-level `annotations` object, and only when non-empty
 passthrough for local context (e.g. an operating-model descriptor or a policy block)
 without the tool hardcoding any of it.
 
-There is **no CLI flag** for portability in v1 — non-portable output requires a deliberate
+There is **no CLI flag** for portability in v1 -- non-portable output requires a deliberate
 `[output] portable = false` in a config file, preserving the safe-by-default identity. The
 library API carries it on `Config`: `build_map(root, config)` honors `config.portable`, and
 programmatic callers select local mode via `Config(portable=False, ...)`.
@@ -371,7 +371,7 @@ Honors "never swallow errors silently":
 - `run_git` keeps `timeout=20`, `check=False`, empty-string fallback.
 - A repo whose git calls fail still appears as a *degraded* row
   (`branch`/`head` = `"unknown"`), but a pool-task exception is **caught and logged to
-  stderr with the repo path** — never silently dropped.
+  stderr with the repo path** -- never silently dropped.
 - Config errors are **fatal / fail-fast** (user input, not environmental).
 - An unreadable `--root` produces a clear error and non-zero exit.
 
@@ -380,18 +380,18 @@ Honors "never swallow errors silently":
 Expand from 4 tests to per-module suites with meaningful assertions, covering the
 previously-untested discovery/classification/concurrency core:
 
-- `test_config` — TOML parse, validation errors, defaults, prune-extend vs marker-replace,
+- `test_config` -- TOML parse, validation errors, defaults, prune-extend vs marker-replace,
   discovery precedence.
-- `test_classify` — `*` vs `**` segment semantics, first-match-wins ordering, the fallback
+- `test_classify` -- `*` vs `**` segment semantics, first-match-wins ordering, the fallback
   ladder (local/public/private), root-entry fallback.
-- `test_gitmeta` — `sanitize_origin` (+ always-on credential redaction), omission via
+- `test_gitmeta` -- `sanitize_origin` (+ always-on credential redaction), omission via
   `omit_origin_classes`, git-failure → degraded row.
-- `test_scan` — discovery/pruning incl. nested repos, **parallel-build determinism**
+- `test_scan` -- discovery/pruning incl. nested repos, **parallel-build determinism**
   (sorted output), absolute-path omission (migrated from today's test), `class_counts`.
-- `test_model` — `to_json` key mapping, `schema_version` present, no `relative` field.
-- `test_cli` — arg parsing, `--json` vs `--output`, `--version`, missing `--config` →
+- `test_model` -- `to_json` key mapping, `schema_version` present, no `relative` field.
+- `test_cli` -- arg parsing, `--json` vs `--output`, `--version`, missing `--config` →
   error exit.
-- `test_output_mode` — portable vs local emission (relative paths + `root_sha256_prefix`
+- `test_output_mode` -- portable vs local emission (relative paths + `root_sha256_prefix`
   vs absolute `path`s + absolute `root`), `absolute_paths_included` correctness, and
   `annotations` passthrough emitted only when set.
 

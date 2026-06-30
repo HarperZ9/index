@@ -1,4 +1,4 @@
-# index atlas — Visual Dashboard (Plan 2) Implementation Plan
+﻿# index atlas -- Visual Dashboard (Plan 2) Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -12,14 +12,14 @@
 
 Every task's requirements implicitly include this section. Values copied verbatim from `docs/superpowers/specs/2026-06-24-index-atlas-design.md`.
 
-- **Zero runtime dependencies** — pure Python 3.11+ stdlib only (incl. the markdown renderer and the pan/zoom JS). A test (`tests/test_viz_boundary.py`) enforces that every `viz/*.py` imports **only** stdlib or `index_graph`; new `viz/atlas_*.py` modules MUST obey it.
-- **Local-first, self-contained** — one HTML file, no server, no accounts, **no external resource loads**: no `<link>`, no `@import`, no `src="http…"` / `src="//…"`, no `url(http…)`, no `<script src>`. (Clickable `<a href="https://…">` *inside rendered doc content* is permitted — it navigates on click, it does not auto-load. The self-contained test targets resource-load vectors, not content links. See Task 7.)
-- **All dynamic HTML routes through escaping** — `xml.sax.saxutils.escape`/`quoteattr` (Python) or the JS `esc()` helper. The atlas renders **untrusted doc content**, so a hostile-doc test must prove no breakout (`doc.count("</script>") == 1`).
-- **Deterministic** — same workspace → byte-identical render. All collections sorted; no wall-clock, no `Math.random`, no host data in output. Determinism tests (`render(x) == render(x)`) guard every renderer.
-- **Backward compatible** — `atlas` stays additive; `map`/`graph`/`context`/`viz` and their JSON are unchanged. The atlas pack is a strict superset of the context pack. `viz`'s rendered output stays **byte-identical** (its determinism + boundary tests stay green).
-- **No regression** — the existing suite (153 tests) stays green; the atlas adds its own tests.
-- **Commit trailer** — every commit's last line: `Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>`.
-- **Publish is operator-gated** — do NOT push, tag, or publish. Commit to the branch only.
+- **Zero runtime dependencies** -- pure Python 3.11+ stdlib only (incl. the markdown renderer and the pan/zoom JS). A test (`tests/test_viz_boundary.py`) enforces that every `viz/*.py` imports **only** stdlib or `index_graph`; new `viz/atlas_*.py` modules MUST obey it.
+- **Local-first, self-contained** -- one HTML file, no server, no accounts, **no external resource loads**: no `<link>`, no `@import`, no `src="http…"` / `src="//…"`, no `url(http…)`, no `<script src>`. (Clickable `<a href="https://…">` *inside rendered doc content* is permitted -- it navigates on click, it does not auto-load. The self-contained test targets resource-load vectors, not content links. See Task 7.)
+- **All dynamic HTML routes through escaping** -- `xml.sax.saxutils.escape`/`quoteattr` (Python) or the JS `esc()` helper. The atlas renders **untrusted doc content**, so a hostile-doc test must prove no breakout (`doc.count("</script>") == 1`).
+- **Deterministic** -- same workspace → byte-identical render. All collections sorted; no wall-clock, no `Math.random`, no host data in output. Determinism tests (`render(x) == render(x)`) guard every renderer.
+- **Backward compatible** -- `atlas` stays additive; `map`/`graph`/`context`/`viz` and their JSON are unchanged. The atlas pack is a strict superset of the context pack. `viz`'s rendered output stays **byte-identical** (its determinism + boundary tests stay green).
+- **No regression** -- the existing suite (153 tests) stays green; the atlas adds its own tests.
+- **Commit trailer** -- every commit's last line: `Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>`.
+- **Publish is operator-gated** -- do NOT push, tag, or publish. Commit to the branch only.
 
 **Repo:** `c:/dev/worktrees/wrm-rename`, branch `feat/v1.1-enhancements` (base `357d012`). Run the full suite with: `python -m pytest tests/ --color=no -q`. The editable install means the `index` console script runs this worktree's code.
 
@@ -28,27 +28,27 @@ Every task's requirements implicitly include this section. Values copied verbati
 ## File Structure
 
 **New files:**
-- `src/index_graph/knowledge/markdown.py` — `render_markdown(text)` + `render_inline(text)`: GFM-lite → escaping-safe HTML. Pure, deterministic. (Tasks 2–4)
-- `src/index_graph/viz/atlas_layout.py` — `build_atlas_layout(pack, *, include_external)` → `AtlasLayout`: repo positions (via `build_layout`) + doc-satellite + knowledge-band placement. (Task 5)
-- `src/index_graph/viz/atlas_svg.py` — `render_atlas_svg(atlas)` → the two-layer SVG (repos+deps reuse `svg.py`; doc page-nodes + knowledge edges new). (Task 6)
-- `src/index_graph/viz/atlas_assets.py` — `ATLAS_CSS` + `ATLAS_JS` string constants (the dashboard's styles + behavior; accretes across Tasks 7–11). (Task 7)
-- `src/index_graph/viz/atlas_html.py` — `render_atlas_html(pack, docs, *, svg, include_external)` → the full dashboard document. (Task 7)
-- `examples/atlas_demo.py` — fabricates a synthetic workspace in a temp dir and renders `examples/atlas-demo.html`. (Task 14)
+- `src/index_graph/knowledge/markdown.py` -- `render_markdown(text)` + `render_inline(text)`: GFM-lite → escaping-safe HTML. Pure, deterministic. (Tasks 2–4)
+- `src/index_graph/viz/atlas_layout.py` -- `build_atlas_layout(pack, *, include_external)` → `AtlasLayout`: repo positions (via `build_layout`) + doc-satellite + knowledge-band placement. (Task 5)
+- `src/index_graph/viz/atlas_svg.py` -- `render_atlas_svg(atlas)` → the two-layer SVG (repos+deps reuse `svg.py`; doc page-nodes + knowledge edges new). (Task 6)
+- `src/index_graph/viz/atlas_assets.py` -- `ATLAS_CSS` + `ATLAS_JS` string constants (the dashboard's styles + behavior; accretes across Tasks 7–11). (Task 7)
+- `src/index_graph/viz/atlas_html.py` -- `render_atlas_html(pack, docs, *, svg, include_external)` → the full dashboard document. (Task 7)
+- `examples/atlas_demo.py` -- fabricates a synthetic workspace in a temp dir and renders `examples/atlas-demo.html`. (Task 14)
 - Tests: `tests/test_markdown.py`, `tests/test_atlas_layout.py`, `tests/test_atlas_svg.py`, `tests/test_atlas_html.py`, `tests/test_atlas_demo.py`.
 
 **Modified files:**
-- `src/index_graph/viz/html.py:50-57` — fix `detail()` escaping (Task 1).
-- `src/index_graph/viz/__init__.py` — export `build_atlas_layout`, `render_atlas_svg`, `render_atlas_html` (Tasks 5–7).
-- `src/index_graph/cli.py:56-58,87-107` — extend the `atlas` subparser + `_cmd_atlas` with the html path (Task 13).
-- `tests/viz_fixtures.py` — add `simple_atlas()` (pack + `Doc` list) fixture (Task 5).
-- `tests/test_viz_html.py` — add the `detail()` escaping lock test (Task 1).
-- `README.md` — atlas section (Task 14).
+- `src/index_graph/viz/html.py:50-57` -- fix `detail()` escaping (Task 1).
+- `src/index_graph/viz/__init__.py` -- export `build_atlas_layout`, `render_atlas_svg`, `render_atlas_html` (Tasks 5–7).
+- `src/index_graph/cli.py:56-58,87-107` -- extend the `atlas` subparser + `_cmd_atlas` with the html path (Task 13).
+- `tests/viz_fixtures.py` -- add `simple_atlas()` (pack + `Doc` list) fixture (Task 5).
+- `tests/test_viz_html.py` -- add the `detail()` escaping lock test (Task 1).
+- `README.md` -- atlas section (Task 14).
 
 ---
 
 ## Task 1: Fix `detail()` escaping (precondition)
 
-`viz/html.py`'s embedded `detail()` builds panel `innerHTML` with three unescaped sinks — the roles join, `${e.confidence}`, and `s.line` in `sig()`. The tooltip path already escapes these (commit `a1a9f50`); make `detail()` consistent **before** doc content flows through any panel.
+`viz/html.py`'s embedded `detail()` builds panel `innerHTML` with three unescaped sinks -- the roles join, `${e.confidence}`, and `s.line` in `sig()`. The tooltip path already escapes these (commit `a1a9f50`); make `detail()` consistent **before** doc content flows through any panel.
 
 **Files:**
 - Modify: `src/index_graph/viz/html.py:50-57`
@@ -56,9 +56,9 @@ Every task's requirements implicitly include this section. Values copied verbati
 
 **Interfaces:**
 - Consumes: nothing new.
-- Produces: no signature change — `render_html` output gains `esc(...)` around the three sinks.
+- Produces: no signature change -- `render_html` output gains `esc(...)` around the three sinks.
 
-- [ ] **Step 1: Write the failing lock test** — append to `tests/test_viz_html.py`:
+- [ ] **Step 1: Write the failing lock test** -- append to `tests/test_viz_html.py`:
 
 ```python
 def test_detail_panel_escapes_confidence_roles_and_line():
@@ -72,27 +72,27 @@ def test_detail_panel_escapes_confidence_roles_and_line():
     assert "':'+s.line:" not in doc
 ```
 
-- [ ] **Step 2: Run it — expect FAIL**
+- [ ] **Step 2: Run it -- expect FAIL**
 
 Run: `python -m pytest tests/test_viz_html.py::test_detail_panel_escapes_confidence_roles_and_line -v`
 Expected: FAIL (`esc(e.confidence)` not yet present).
 
-- [ ] **Step 3: Apply the escaping fix** — in `src/index_graph/viz/html.py`, replace the `detail`/`sig` lines (currently 50-57):
+- [ ] **Step 3: Apply the escaping fix** -- in `src/index_graph/viz/html.py`, replace the `detail`/`sig` lines (currently 50-57):
 
 ```python
  function detail(name){const r=idx[name]||{name,ecosystems:[],markers:[]};
  const outs=DATA.relations.filter(e=>e.from===name);
  const ins=DATA.relations.filter(e=>e.to===name);
  const sig=e=>(e.signals||[]).map(s=>`${esc(s.file)}${s.line?':'+esc(s.line):''} ${esc(s.kind)}`).join('; ');
- $('#detail').innerHTML=`<h3>${esc(name)}</h3><div>roles: ${esc((DATA.roles[name]||[]).join(', '))||'—'}</div>
+ $('#detail').innerHTML=`<h3>${esc(name)}</h3><div>roles: ${esc((DATA.roles[name]||[]).join(', '))||'--'}</div>
  <div>in ${ (DATA.salience[name]||{}).in_degree||0 } · out ${ (DATA.salience[name]||{}).out_degree||0 }</div>
- <h4>depends on</h4>${outs.map(e=>`<div>${esc(e.target_name)} [${esc(e.confidence)}] <small>${sig(e)}</small></div>`).join('')||'—'}
- <h4>depended on by</h4>${ins.map(e=>`<div>${esc(e.from)} [${esc(e.confidence)}]</div>`).join('')||'—'}`;}
+ <h4>depends on</h4>${outs.map(e=>`<div>${esc(e.target_name)} [${esc(e.confidence)}] <small>${sig(e)}</small></div>`).join('')||'--'}
+ <h4>depended on by</h4>${ins.map(e=>`<div>${esc(e.from)} [${esc(e.confidence)}]</div>`).join('')||'--'}`;}
 ```
 
 (Three changes only: `esc(s.line)`, `esc((DATA.roles[name]||[]).join(', '))`, and `esc(e.confidence)` in both the `outs` and `ins` maps.)
 
-- [ ] **Step 4: Run the test + the full viz_html suite — expect PASS, no regression**
+- [ ] **Step 4: Run the test + the full viz_html suite -- expect PASS, no regression**
 
 Run: `python -m pytest tests/test_viz_html.py -v`
 Expected: all PASS (the new test + the pre-existing 9).
@@ -108,7 +108,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 ---
 
-## Task 2: Markdown renderer — inline pass
+## Task 2: Markdown renderer -- inline pass
 
 Build the inline renderer first (block constructs in Task 3 call it). Handles: escaping, inline code, images→alt-text, `[[wiki-links]]`, `[text](url)` links (safe schemes only), bold, italic. Order matters: code spans are stashed first (their content is escaped, never re-parsed), then literal text is escaped, then constructs are substituted on the escaped text.
 
@@ -117,10 +117,10 @@ Build the inline renderer first (block constructs in Task 3 call it). Handles: e
 - Test: `tests/test_markdown.py`
 
 **Interfaces:**
-- Consumes: `from .docs import _norm` (the shared normalizer — `[[wiki]]` targets must normalize identically to how `atlas.py` resolved them: space/underscore→dash, lowercased).
+- Consumes: `from .docs import _norm` (the shared normalizer -- `[[wiki]]` targets must normalize identically to how `atlas.py` resolved them: space/underscore→dash, lowercased).
 - Produces: `render_inline(text: str) -> str` (escaping-safe HTML fragment, no enclosing block tag).
 
-- [ ] **Step 1: Write failing tests** — create `tests/test_markdown.py`:
+- [ ] **Step 1: Write failing tests** -- create `tests/test_markdown.py`:
 
 ```python
 from index_graph.knowledge.markdown import render_inline
@@ -160,12 +160,12 @@ def test_image_renders_alt_text_only_no_src():
     assert "evil" not in out and "http" not in out
 ```
 
-- [ ] **Step 2: Run — expect FAIL** (`ModuleNotFoundError`)
+- [ ] **Step 2: Run -- expect FAIL** (`ModuleNotFoundError`)
 
 Run: `python -m pytest tests/test_markdown.py -v`
 Expected: FAIL (module/function missing).
 
-- [ ] **Step 3: Implement the inline renderer** — create `src/index_graph/knowledge/markdown.py`:
+- [ ] **Step 3: Implement the inline renderer** -- create `src/index_graph/knowledge/markdown.py`:
 
 ```python
 """Zero-dependency GFM-lite markdown -> escaping-safe HTML for atlas docs."""
@@ -218,7 +218,7 @@ def render_inline(text: str) -> str:
     return text
 ```
 
-- [ ] **Step 4: Run — expect PASS**
+- [ ] **Step 4: Run -- expect PASS**
 
 Run: `python -m pytest tests/test_markdown.py -v`
 Expected: all 7 PASS.
@@ -234,7 +234,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 ---
 
-## Task 3: Markdown renderer — block pass
+## Task 3: Markdown renderer -- block pass
 
 Add the block-level renderer that calls `render_inline`: ATX headings, paragraphs, fenced code, blockquotes, unordered/ordered lists, and task-list items. (Tables come in Task 4.)
 
@@ -244,9 +244,9 @@ Add the block-level renderer that calls `render_inline`: ATX headings, paragraph
 
 **Interfaces:**
 - Consumes: `render_inline` (Task 2).
-- Produces: `render_markdown(text: str) -> str` — newline-joined HTML block elements.
+- Produces: `render_markdown(text: str) -> str` -- newline-joined HTML block elements.
 
-- [ ] **Step 1: Write failing tests** — append to `tests/test_markdown.py`:
+- [ ] **Step 1: Write failing tests** -- append to `tests/test_markdown.py`:
 
 ```python
 from index_graph.knowledge.markdown import render_markdown
@@ -283,12 +283,12 @@ def test_blockquote():
     assert render_markdown("> quoted **b**") == "<blockquote>quoted <strong>b</strong></blockquote>"
 ```
 
-- [ ] **Step 2: Run — expect FAIL** (`render_markdown` missing)
+- [ ] **Step 2: Run -- expect FAIL** (`render_markdown` missing)
 
 Run: `python -m pytest tests/test_markdown.py -k "render_markdown or heading or list or blockquote or fenced or paragraph or task" -v`
 Expected: FAIL.
 
-- [ ] **Step 3: Implement the block renderer** — append to `src/index_graph/knowledge/markdown.py`:
+- [ ] **Step 3: Implement the block renderer** -- append to `src/index_graph/knowledge/markdown.py`:
 
 ```python
 _HEADING = re.compile(r"(#{1,6})\s+(.*)$")
@@ -360,7 +360,7 @@ def render_markdown(text: str) -> str:
     return "\n".join(out)
 ```
 
-- [ ] **Step 4: Run — expect PASS** (whole markdown suite)
+- [ ] **Step 4: Run -- expect PASS** (whole markdown suite)
 
 Run: `python -m pytest tests/test_markdown.py -v`
 Expected: all PASS.
@@ -376,7 +376,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 ---
 
-## Task 4: Markdown renderer — tables + safety locks
+## Task 4: Markdown renderer -- tables + safety locks
 
 Add pipe tables, then lock the renderer's two load-bearing invariants: hostile content never breaks out, and the render is deterministic.
 
@@ -386,9 +386,9 @@ Add pipe tables, then lock the renderer's two load-bearing invariants: hostile c
 
 **Interfaces:**
 - Consumes: `render_inline`, `render_markdown` (Tasks 2–3).
-- Produces: no new public symbol — `render_markdown` now also handles `| a | b |` tables.
+- Produces: no new public symbol -- `render_markdown` now also handles `| a | b |` tables.
 
-- [ ] **Step 1: Write failing tests** — append to `tests/test_markdown.py`:
+- [ ] **Step 1: Write failing tests** -- append to `tests/test_markdown.py`:
 
 ```python
 def test_pipe_table():
@@ -413,12 +413,12 @@ def test_render_is_deterministic():
     assert render_markdown(md) == render_markdown(md)
 ```
 
-- [ ] **Step 2: Run — expect FAIL** (table not handled)
+- [ ] **Step 2: Run -- expect FAIL** (table not handled)
 
 Run: `python -m pytest tests/test_markdown.py -k "table or hostile or deterministic" -v`
 Expected: `test_pipe_table` FAILS.
 
-- [ ] **Step 3: Implement tables** — in `src/index_graph/knowledge/markdown.py`, add the helpers and wire them into `render_markdown` **before** the list/paragraph branches:
+- [ ] **Step 3: Implement tables** -- in `src/index_graph/knowledge/markdown.py`, add the helpers and wire them into `render_markdown` **before** the list/paragraph branches:
 
 ```python
 _TABLE_SEP = re.compile(r"^\s*\|?\s*:?-{1,}:?\s*(\|\s*:?-{1,}:?\s*)+\|?\s*$")
@@ -451,7 +451,7 @@ Then, inside `render_markdown`'s `while` loop, add this branch **immediately bef
             out.append(block); continue
 ```
 
-- [ ] **Step 4: Run — expect PASS** (whole markdown suite)
+- [ ] **Step 4: Run -- expect PASS** (whole markdown suite)
 
 Run: `python -m pytest tests/test_markdown.py -v`
 Expected: all PASS.
@@ -467,7 +467,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 ---
 
-## Task 5: Atlas layout — doc satellites + knowledge band
+## Task 5: Atlas layout -- doc satellites + knowledge band
 
 Compose `build_layout` (repo positions, unchanged) with deterministic placement of doc nodes: each doc that `describes` a repo stacks in a column under that repo; cross-cutting docs flow into a knowledge band beneath. Knowledge edges become straight connectors between placed node centers.
 
@@ -479,12 +479,12 @@ Compose `build_layout` (repo positions, unchanged) with deterministic placement 
 **Interfaces:**
 - Consumes: `build_layout(pack, *, include_external) -> LayoutModel` and `MARGIN` from `viz/layout.py`; the atlas pack (`pack["docs"]`, `pack["knowledge_edges"]`).
 - Produces:
-  - `DocNode(id, title, x, y, w, h, describes)` — `describes` is a repo name or `None` (band).
-  - `KEdge(type, frm, to, to_kind, points)` — `points = ((x1,y1),(x2,y2))`.
+  - `DocNode(id, title, x, y, w, h, describes)` -- `describes` is a repo name or `None` (band).
+  - `KEdge(type, frm, to, to_kind, points)` -- `points = ((x1,y1),(x2,y2))`.
   - `AtlasLayout(repo_layout, docs, kedges, width, height)`.
   - `build_atlas_layout(pack: dict, *, include_external: bool = True) -> AtlasLayout`.
 
-- [ ] **Step 1: Add the `simple_atlas` fixture** — append to `tests/viz_fixtures.py`:
+- [ ] **Step 1: Add the `simple_atlas` fixture** -- append to `tests/viz_fixtures.py`:
 
 ```python
 def simple_atlas():
@@ -527,7 +527,7 @@ def simple_atlas():
     return pack, docs
 ```
 
-- [ ] **Step 2: Write failing tests** — create `tests/test_atlas_layout.py`:
+- [ ] **Step 2: Write failing tests** -- create `tests/test_atlas_layout.py`:
 
 ```python
 from index_graph.viz.atlas_layout import build_atlas_layout, DocNode
@@ -577,12 +577,12 @@ def test_layout_is_deterministic():
     assert a.width == b.width and a.height == b.height
 ```
 
-- [ ] **Step 3: Run — expect FAIL** (`ModuleNotFoundError`)
+- [ ] **Step 3: Run -- expect FAIL** (`ModuleNotFoundError`)
 
 Run: `python -m pytest tests/test_atlas_layout.py -v`
 Expected: FAIL.
 
-- [ ] **Step 4: Implement the atlas layout** — create `src/index_graph/viz/atlas_layout.py`:
+- [ ] **Step 4: Implement the atlas layout** -- create `src/index_graph/viz/atlas_layout.py`:
 
 ```python
 """Two-layer atlas layout: repo positions (reused) + doc satellites + knowledge band."""
@@ -690,14 +690,14 @@ def build_atlas_layout(pack: dict, *, include_external: bool = True) -> AtlasLay
     return AtlasLayout(repo_layout, docs, tuple(kedges), width, height)
 ```
 
-- [ ] **Step 5: Export it** — in `src/index_graph/viz/__init__.py`, add the import and `__all__` entry:
+- [ ] **Step 5: Export it** -- in `src/index_graph/viz/__init__.py`, add the import and `__all__` entry:
 
 ```python
 from .atlas_layout import build_atlas_layout
 ```
 and add `"build_atlas_layout"` to `__all__`.
 
-- [ ] **Step 6: Run — expect PASS**
+- [ ] **Step 6: Run -- expect PASS**
 
 Run: `python -m pytest tests/test_atlas_layout.py -v`
 Expected: all PASS.
@@ -706,14 +706,14 @@ Expected: all PASS.
 
 ```bash
 git add src/index_graph/viz/atlas_layout.py src/index_graph/viz/__init__.py tests/test_atlas_layout.py tests/viz_fixtures.py
-git commit -m "feat(viz): atlas layout — doc satellites + knowledge band + edge connectors
+git commit -m "feat(viz): atlas layout -- doc satellites + knowledge band + edge connectors
 
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 ```
 
 ---
 
-## Task 6: Atlas SVG — two-layer render
+## Task 6: Atlas SVG -- two-layer render
 
 Render the `AtlasLayout` to one self-contained SVG: repos + dependency edges reuse `svg.py`'s helpers (so they stay identical to `viz`); doc page-nodes and knowledge-edge connectors are new. The transformable content is wrapped in `<g id="viewport">` (Task 8's pan/zoom target). `mentions` edges get the dimmest class.
 
@@ -726,7 +726,7 @@ Render the `AtlasLayout` to one self-contained SVG: repos + dependency edges reu
 - Consumes: `AtlasLayout`, `DocNode`, `KEdge` (Task 5); `_node_svg`, `_edge_svg` from `viz/svg.py`; `THEME`, `svg_style` from `viz/theme.py`.
 - Produces: `render_atlas_svg(atlas: AtlasLayout) -> str`.
 
-- [ ] **Step 1: Write failing tests** — create `tests/test_atlas_svg.py`:
+- [ ] **Step 1: Write failing tests** -- create `tests/test_atlas_svg.py`:
 
 ```python
 import xml.dom.minidom as minidom
@@ -774,12 +774,12 @@ def test_render_is_deterministic():
     assert _svg() == _svg()
 ```
 
-- [ ] **Step 2: Run — expect FAIL**
+- [ ] **Step 2: Run -- expect FAIL**
 
 Run: `python -m pytest tests/test_atlas_svg.py -v`
 Expected: FAIL (`ModuleNotFoundError`).
 
-- [ ] **Step 3: Implement the atlas SVG** — create `src/index_graph/viz/atlas_svg.py`:
+- [ ] **Step 3: Implement the atlas SVG** -- create `src/index_graph/viz/atlas_svg.py`:
 
 ```python
 """Render an AtlasLayout to a self-contained two-layer SVG (repos + docs)."""
@@ -847,9 +847,9 @@ def render_atlas_svg(atlas: AtlasLayout) -> str:
     )
 ```
 
-- [ ] **Step 4: Export it** — in `src/index_graph/viz/__init__.py`, add `from .atlas_svg import render_atlas_svg` and `"render_atlas_svg"` to `__all__`.
+- [ ] **Step 4: Export it** -- in `src/index_graph/viz/__init__.py`, add `from .atlas_svg import render_atlas_svg` and `"render_atlas_svg"` to `__all__`.
 
-- [ ] **Step 5: Run — expect PASS; also confirm `viz` SVG unchanged**
+- [ ] **Step 5: Run -- expect PASS; also confirm `viz` SVG unchanged**
 
 Run: `python -m pytest tests/test_atlas_svg.py tests/test_viz_svg.py tests/test_viz_boundary.py -v`
 Expected: all PASS (the boundary test confirms `atlas_svg.py` imports only stdlib + `index_graph`).
@@ -858,14 +858,14 @@ Expected: all PASS (the boundary test confirms `atlas_svg.py` imports only stdli
 
 ```bash
 git add src/index_graph/viz/atlas_svg.py src/index_graph/viz/__init__.py tests/test_atlas_svg.py
-git commit -m "feat(viz): atlas SVG — doc page-nodes + knowledge connectors, viewport group
+git commit -m "feat(viz): atlas SVG -- doc page-nodes + knowledge connectors, viewport group
 
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 ```
 
 ---
 
-## Task 7: Atlas dashboard — shell, panel, `[[link]]` navigation
+## Task 7: Atlas dashboard -- shell, panel, `[[link]]` navigation
 
 Assemble the full document: the SVG, a contextualizing panel (selecting a doc shows its **server-rendered markdown** + describes/links/backlinks; selecting a repo shows deps + describing docs), and base JS for selection + `[[wiki-link]]` navigation. The embedded `DATA` JSON gets the `<`→`<` treatment so rendered doc HTML can't break the `<script>`.
 
@@ -880,7 +880,7 @@ Assemble the full document: the SVG, a contextualizing panel (selecting a doc sh
   - `atlas_assets.ATLAS_CSS: str`, `atlas_assets.ATLAS_JS: str`.
   - `render_atlas_html(pack: dict, docs: list, *, svg: str, include_external: bool = True) -> str`.
 
-- [ ] **Step 1: Write failing tests** — create `tests/test_atlas_html.py`:
+- [ ] **Step 1: Write failing tests** -- create `tests/test_atlas_html.py`:
 
 ```python
 import re
@@ -950,12 +950,12 @@ def test_render_is_deterministic():
     assert _doc(*simple_atlas()) == _doc(*simple_atlas())
 ```
 
-- [ ] **Step 2: Run — expect FAIL**
+- [ ] **Step 2: Run -- expect FAIL**
 
 Run: `python -m pytest tests/test_atlas_html.py -v`
 Expected: FAIL (`ModuleNotFoundError`).
 
-- [ ] **Step 3: Create the assets** — create `src/index_graph/viz/atlas_assets.py`:
+- [ ] **Step 3: Create the assets** -- create `src/index_graph/viz/atlas_assets.py`:
 
 ```python
 """Atlas dashboard CSS + JS (string constants embedded into the self-contained HTML)."""
@@ -998,17 +998,17 @@ function detailRepo(name){selectClear();
  const outs=(DATA.relations||[]).filter(e=>e.from===name&&!e.external);
  const descBy=(DATA.knowledge_edges||[]).filter(e=>e.type==='describes'&&e.to===name);
  $('#detail').innerHTML=`<h3>${esc(name)} <small>repo</small></h3>`+
-  `<div>roles: ${esc((DATA.roles[name]||[]).join(', '))||'—'}</div>`+
-  `<h4>depends on</h4>`+(outs.map(e=>`<div>${esc(e.to)} [${esc(e.confidence)}]</div>`).join('')||'—')+
-  `<h4>documented by</h4>`+(descBy.map(e=>linkNode(e.from,'doc')).join('')||'—');
+  `<div>roles: ${esc((DATA.roles[name]||[]).join(', '))||'--'}</div>`+
+  `<h4>depends on</h4>`+(outs.map(e=>`<div>${esc(e.to)} [${esc(e.confidence)}]</div>`).join('')||'--')+
+  `<h4>documented by</h4>`+(descBy.map(e=>linkNode(e.from,'doc')).join('')||'--');
  pushTrail({kind:'repo',id:name});}
 function detailDoc(id){selectClear();
  const g=$(`.docnode[data-doc="${cssEsc(id)}"]`);if(g)g.classList.add('sel');
  const d=docs[id]||{title:id};
  const out=kedgesFrom(id);
  const desc=out.filter(e=>e.type==='describes').map(e=>esc(e.to)).join(', ');
- const links=out.filter(e=>e.type!=='describes').map(e=>linkNode(e.to,e.to_kind)).join('')||'—';
- const back=(DATA.backlinks&&DATA.backlinks[id]||[]).map(b=>linkNode(b.from,'doc')).join('')||'—';
+ const links=out.filter(e=>e.type!=='describes').map(e=>linkNode(e.to,e.to_kind)).join('')||'--';
+ const back=(DATA.backlinks&&DATA.backlinks[id]||[]).map(b=>linkNode(b.from,'doc')).join('')||'--';
  $('#detail').innerHTML=`<h3>${esc(d.title)} <small>doc</small></h3>`+
   (desc?`<div>describes <b>${desc}</b></div>`:'')+
   `<h4>links</h4>${links}<h4>linked from</h4>${back}`+
@@ -1035,7 +1035,7 @@ document.addEventListener('DOMContentLoaded',wire);
 """
 ```
 
-- [ ] **Step 4: Create the renderer** — create `src/index_graph/viz/atlas_html.py`:
+- [ ] **Step 4: Create the renderer** -- create `src/index_graph/viz/atlas_html.py`:
 
 ```python
 """Assemble the self-contained atlas dashboard document."""
@@ -1082,9 +1082,9 @@ def render_atlas_html(pack: dict, docs: list, *, svg: str, include_external: boo
     )
 ```
 
-- [ ] **Step 5: Export it** — in `src/index_graph/viz/__init__.py`, add `from .atlas_html import render_atlas_html` and `"render_atlas_html"` to `__all__`.
+- [ ] **Step 5: Export it** -- in `src/index_graph/viz/__init__.py`, add `from .atlas_html import render_atlas_html` and `"render_atlas_html"` to `__all__`.
 
-- [ ] **Step 6: Run — expect PASS** (atlas html + boundary)
+- [ ] **Step 6: Run -- expect PASS** (atlas html + boundary)
 
 Run: `python -m pytest tests/test_atlas_html.py tests/test_viz_boundary.py -v`
 Expected: all PASS.
@@ -1093,14 +1093,14 @@ Expected: all PASS.
 
 ```bash
 git add src/index_graph/viz/atlas_assets.py src/index_graph/viz/atlas_html.py src/index_graph/viz/__init__.py tests/test_atlas_html.py
-git commit -m "feat(viz): atlas dashboard — panel with rendered markdown, backlinks, [[link]] nav
+git commit -m "feat(viz): atlas dashboard -- panel with rendered markdown, backlinks, [[link]] nav
 
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 ```
 
 ---
 
-## Task 8: Navigability — pan/zoom
+## Task 8: Navigability -- pan/zoom
 
 Wheel-zoom about the cursor + drag-to-pan over the `<g id="viewport">`, with a reset control. All JS additions go into `ATLAS_JS` in `viz/atlas_assets.py`; no Python render change (so determinism holds).
 
@@ -1112,7 +1112,7 @@ Wheel-zoom about the cursor + drag-to-pan over the `<g id="viewport">`, with a r
 - Consumes: the `#viewport` group + `#stage`/`#zoom-reset` elements from Task 7.
 - Produces: in-browser pan/zoom; no signature change.
 
-- [ ] **Step 1: Write the failing wiring test** — append to `tests/test_atlas_html.py`:
+- [ ] **Step 1: Write the failing wiring test** -- append to `tests/test_atlas_html.py`:
 
 ```python
 def test_pan_zoom_is_wired():
@@ -1123,12 +1123,12 @@ def test_pan_zoom_is_wired():
     assert "wheel" in doc and "pointerdown" in doc
 ```
 
-- [ ] **Step 2: Run — expect FAIL**
+- [ ] **Step 2: Run -- expect FAIL**
 
 Run: `python -m pytest tests/test_atlas_html.py::test_pan_zoom_is_wired -v`
 Expected: FAIL.
 
-- [ ] **Step 3: Add pan/zoom JS** — in `src/index_graph/viz/atlas_assets.py`, insert this block into `ATLAS_JS` **immediately before** the line `function wire(){`:
+- [ ] **Step 3: Add pan/zoom JS** -- in `src/index_graph/viz/atlas_assets.py`, insert this block into `ATLAS_JS` **immediately before** the line `function wire(){`:
 
 ```javascript
 let view={k:1,tx:0,ty:0};
@@ -1150,7 +1150,7 @@ function wireZoom(){const stage=$('#stage'),svg=stage&&stage.querySelector('svg'
 
 Then add `wireZoom();` inside the `wire()` function body (after the existing node/docnode wiring).
 
-- [ ] **Step 4: Run — expect PASS (no determinism regression)**
+- [ ] **Step 4: Run -- expect PASS (no determinism regression)**
 
 Run: `python -m pytest tests/test_atlas_html.py -v`
 Expected: all PASS (incl. `test_render_is_deterministic`).
@@ -1159,14 +1159,14 @@ Expected: all PASS (incl. `test_render_is_deterministic`).
 
 ```bash
 git add src/index_graph/viz/atlas_assets.py tests/test_atlas_html.py
-git commit -m "feat(viz): atlas pan/zoom — wheel-zoom about cursor + drag-pan + reset
+git commit -m "feat(viz): atlas pan/zoom -- wheel-zoom about cursor + drag-pan + reset
 
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 ```
 
 ---
 
-## Task 9: Navigability — unified search + mentions toggle
+## Task 9: Navigability -- unified search + mentions toggle
 
 The search box matches **both** repo names and doc titles (dimming non-matches and their edges). The legend `mentions` chip hides/shows the dimmest edge class.
 
@@ -1178,7 +1178,7 @@ The search box matches **both** repo names and doc titles (dimming non-matches a
 - Consumes: `#search`, `#toggle-mentions`, the `.node/.docnode/.edge/.kedge` markup + their `data-*`.
 - Produces: in-browser unified search + mentions visibility toggle.
 
-- [ ] **Step 1: Write the failing test** — append to `tests/test_atlas_html.py`:
+- [ ] **Step 1: Write the failing test** -- append to `tests/test_atlas_html.py`:
 
 ```python
 def test_search_and_mentions_toggle_wired():
@@ -1188,12 +1188,12 @@ def test_search_and_mentions_toggle_wired():
     assert "toggle-mentions" in doc
 ```
 
-- [ ] **Step 2: Run — expect FAIL**
+- [ ] **Step 2: Run -- expect FAIL**
 
 Run: `python -m pytest tests/test_atlas_html.py::test_search_and_mentions_toggle_wired -v`
 Expected: FAIL.
 
-- [ ] **Step 3: Add search + toggle JS** — in `src/index_graph/viz/atlas_assets.py`, insert into `ATLAS_JS` **immediately before** `function wire(){`:
+- [ ] **Step 3: Add search + toggle JS** -- in `src/index_graph/viz/atlas_assets.py`, insert into `ATLAS_JS` **immediately before** `function wire(){`:
 
 ```javascript
 function searchApply(){const q=$('#search').value.trim().toLowerCase();const on=new Set();
@@ -1212,7 +1212,7 @@ function wireMentions(){const b=$('#toggle-mentions');b.addEventListener('click'
 
 Then add `$('#search').addEventListener('input',searchApply);` and `wireMentions();` inside `wire()`.
 
-- [ ] **Step 4: Run — expect PASS**
+- [ ] **Step 4: Run -- expect PASS**
 
 Run: `python -m pytest tests/test_atlas_html.py -v`
 Expected: all PASS.
@@ -1228,9 +1228,9 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 ---
 
-## Task 10: Navigability — focus mode
+## Task 10: Navigability -- focus mode
 
-Double-clicking a node reduces the view to its neighborhood (dependency neighbors for repos; knowledge-edge neighbors for docs); `clear focus` restores. The nav-trail breadcrumb (built in Task 7) already provides reversible step-back, so no separate Back control is needed — this task verifies it is present and adds focus.
+Double-clicking a node reduces the view to its neighborhood (dependency neighbors for repos; knowledge-edge neighbors for docs); `clear focus` restores. The nav-trail breadcrumb (built in Task 7) already provides reversible step-back, so no separate Back control is needed -- this task verifies it is present and adds focus.
 
 **Files:**
 - Modify: `src/index_graph/viz/atlas_assets.py` (ATLAS_JS)
@@ -1240,7 +1240,7 @@ Double-clicking a node reduces the view to its neighborhood (dependency neighbor
 - Consumes: `DATA.relations`, `DATA.knowledge_edges`, the node markup, `#focus-clear`, `#trail`.
 - Produces: in-browser focus/neighborhood reduction.
 
-- [ ] **Step 1: Write the failing test** — append to `tests/test_atlas_html.py`:
+- [ ] **Step 1: Write the failing test** -- append to `tests/test_atlas_html.py`:
 
 ```python
 def test_focus_and_trail_wired():
@@ -1251,12 +1251,12 @@ def test_focus_and_trail_wired():
     assert "function renderTrail" in doc      # nav-trail breadcrumb (reversible step-back)
 ```
 
-- [ ] **Step 2: Run — expect FAIL**
+- [ ] **Step 2: Run -- expect FAIL**
 
 Run: `python -m pytest tests/test_atlas_html.py::test_focus_and_trail_wired -v`
 Expected: FAIL (`focusOn` missing; `renderTrail` already present from Task 7).
 
-- [ ] **Step 3: Add focus JS** — in `src/index_graph/viz/atlas_assets.py`, insert into `ATLAS_JS` **immediately before** `function wire(){`:
+- [ ] **Step 3: Add focus JS** -- in `src/index_graph/viz/atlas_assets.py`, insert into `ATLAS_JS` **immediately before** `function wire(){`:
 
 ```javascript
 function neighborhood(kind,id){const keep=new Set([kind+':'+id]);
@@ -1283,7 +1283,7 @@ Then, inside `wire()`, add focus wiring:
  $('#focus-clear').addEventListener('click',clearFocus);
 ```
 
-- [ ] **Step 4: Run — expect PASS**
+- [ ] **Step 4: Run -- expect PASS**
 
 Run: `python -m pytest tests/test_atlas_html.py -v`
 Expected: all PASS.
@@ -1292,18 +1292,18 @@ Expected: all PASS.
 
 ```bash
 git add src/index_graph/viz/atlas_assets.py tests/test_atlas_html.py
-git commit -m "feat(viz): atlas focus mode — neighborhood reduction + clear
+git commit -m "feat(viz): atlas focus mode -- neighborhood reduction + clear
 
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 ```
 
 ---
 
-## Task 11: CLI — `index atlas --format html`
+## Task 11: CLI -- `index atlas --format html`
 
 Extend the `atlas` subcommand to render the dashboard. Keep `--json` (engine pack, shipped + tested) byte-for-byte unchanged. Add `--format html`, `--out`, `--no-external`.
 
-> **Scope note:** `--focus` / `--out-dir` from the spec's CLI line are **deferred** — the in-browser focus mode (Task 10) is the richer focus story, and a single `--out` file covers the demo. Record this as a one-line deviation when updating the spec/handoff.
+> **Scope note:** `--focus` / `--out-dir` from the spec's CLI line are **deferred** -- the in-browser focus mode (Task 10) is the richer focus story, and a single `--out` file covers the demo. Record this as a one-line deviation when updating the spec/handoff.
 
 **Files:**
 - Modify: `src/index_graph/cli.py:56-58` (subparser) and `:87-107` (`_cmd_atlas`)
@@ -1313,7 +1313,7 @@ Extend the `atlas` subcommand to render the dashboard. Keep `--json` (engine pac
 - Consumes: `viz.build_atlas_layout`, `viz.render_atlas_svg`, `viz.render_atlas_html`; `discover_docs`, `build_atlas_pack`, `build_graph`, `_repo_paths`.
 - Produces: `index atlas --format html [--out FILE] [--no-external]`.
 
-- [ ] **Step 1: Write failing tests** — create `tests/test_atlas_cli.py`:
+- [ ] **Step 1: Write failing tests** -- create `tests/test_atlas_cli.py`:
 
 ```python
 import json
@@ -1352,12 +1352,12 @@ def test_atlas_json_still_emits_engine_pack(tmp_path, capsys):
     assert "knowledge_edges" in pack and "docs" in pack
 ```
 
-- [ ] **Step 2: Run — expect FAIL**
+- [ ] **Step 2: Run -- expect FAIL**
 
 Run: `python -m pytest tests/test_atlas_cli.py -v`
 Expected: FAIL (`--format` unknown / not wired).
 
-- [ ] **Step 3: Extend the subparser** — in `src/index_graph/cli.py`, replace the `atlas` subparser block (currently lines 56-58):
+- [ ] **Step 3: Extend the subparser** -- in `src/index_graph/cli.py`, replace the `atlas` subparser block (currently lines 56-58):
 
 ```python
     a = sub.add_parser("atlas", help="Two-layer code + knowledge map (repos + docs).")
@@ -1369,7 +1369,7 @@ Expected: FAIL (`--format` unknown / not wired).
     return parser
 ```
 
-- [ ] **Step 4: Wire the html path** — in `src/index_graph/cli.py`, replace the last block of `_cmd_atlas` — from `graph = build_graph(repo_paths)` through the final `return 0` (currently lines 100-107) — with:
+- [ ] **Step 4: Wire the html path** -- in `src/index_graph/cli.py`, replace the last block of `_cmd_atlas` -- from `graph = build_graph(repo_paths)` through the final `return 0` (currently lines 100-107) -- with:
 
 ```python
     graph = build_graph(repo_paths)
@@ -1396,7 +1396,7 @@ Expected: FAIL (`--format` unknown / not wired).
 
 (The `discover_docs` import already exists at the top of `_cmd_atlas`; the function now computes `pack` once and branches on output format.)
 
-- [ ] **Step 5: Run — expect PASS; confirm no CLI regression**
+- [ ] **Step 5: Run -- expect PASS; confirm no CLI regression**
 
 Run: `python -m pytest tests/test_atlas_cli.py tests/test_cli_subcommands.py -v`
 Expected: all PASS.
@@ -1425,7 +1425,7 @@ A committed, path-independent demo (`examples/atlas_demo.py` → `examples/atlas
 - Consumes: the full pipeline (`build_graph`, `discover_docs`, `build_atlas_pack`, `viz.*`).
 - Produces: `atlas_demo.build_workspace(root)`, `atlas_demo.render(root) -> str`, `atlas_demo.main()`.
 
-- [ ] **Step 1: Write the failing smoke tests** — create `tests/test_atlas_demo.py`:
+- [ ] **Step 1: Write the failing smoke tests** -- create `tests/test_atlas_demo.py`:
 
 ```python
 import importlib.util
@@ -1460,12 +1460,12 @@ def test_demo_is_path_independent_deterministic():
     assert ha == hb
 ```
 
-- [ ] **Step 2: Run — expect FAIL**
+- [ ] **Step 2: Run -- expect FAIL**
 
 Run: `python -m pytest tests/test_atlas_demo.py -v`
 Expected: FAIL (`examples/atlas_demo.py` missing).
 
-- [ ] **Step 3: Create the demo script** — create `examples/atlas_demo.py`:
+- [ ] **Step 3: Create the demo script** -- create `examples/atlas_demo.py`:
 
 ```python
 """Fabricate a synthetic repos+docs workspace and render the atlas demo HTML.
@@ -1535,7 +1535,7 @@ if __name__ == "__main__":
     main()
 ```
 
-- [ ] **Step 4: Run — expect PASS**
+- [ ] **Step 4: Run -- expect PASS**
 
 Run: `python -m pytest tests/test_atlas_demo.py -v`
 Expected: both PASS.
@@ -1545,10 +1545,10 @@ Expected: both PASS.
 Run: `python examples/atlas_demo.py`
 Expected: `wrote …/examples/atlas-demo.html (… bytes)`.
 
-- [ ] **Step 6: Add the README section** — append to `README.md` (after the `viz` section):
+- [ ] **Step 6: Add the README section** -- append to `README.md` (after the `viz` section):
 
 ```markdown
-## `index atlas` — code + knowledge map
+## `index atlas` -- code + knowledge map
 
 `index atlas` renders a **two-layer** map: your repositories *and* their markdown
 docs (READMEs, ADRs, design notes) as one explorable graph. Docs are first-class
@@ -1562,7 +1562,7 @@ Open `atlas.html` (one self-contained file, zero dependencies, no network): pan/
 the graph, search repos + docs, click a doc to read its rendered markdown with
 clickable `[[links]]`, and double-click a node to focus its neighborhood. Edge types:
 `describes` (doc→repo by location), `links-to` (`[[wiki]]`), and `mentions` (prose,
-dimmest — toggle in the legend). `index atlas --json` emits the underlying pack.
+dimmest -- toggle in the legend). `index atlas --json` emits the underlying pack.
 
 See `examples/atlas-demo.html` for a rendered sample (`python examples/atlas_demo.py`).
 ```
@@ -1580,9 +1580,9 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 ## Final verification (after Task 12)
 
-- [ ] **Full suite green:** `python -m pytest tests/ --color=no -q` — expect the prior 153 + all atlas-dashboard tests passing, zero failures.
-- [ ] **Boundary intact:** `python -m pytest tests/test_viz_boundary.py -v` — every `viz/*.py` (incl. the new `atlas_*.py`) imports only stdlib + `index_graph`.
-- [ ] **`viz` unchanged:** `python -m pytest tests/test_viz_svg.py tests/test_viz_html.py -v` — the existing `viz` render is byte-identical (Task 1's escaping fix is the only intended change).
+- [ ] **Full suite green:** `python -m pytest tests/ --color=no -q` -- expect the prior 153 + all atlas-dashboard tests passing, zero failures.
+- [ ] **Boundary intact:** `python -m pytest tests/test_viz_boundary.py -v` -- every `viz/*.py` (incl. the new `atlas_*.py`) imports only stdlib + `index_graph`.
+- [ ] **`viz` unchanged:** `python -m pytest tests/test_viz_svg.py tests/test_viz_html.py -v` -- the existing `viz` render is byte-identical (Task 1's escaping fix is the only intended change).
 - [ ] **Manual smoke:** open `examples/atlas-demo.html` in a browser; confirm pan/zoom, search, a doc's rendered markdown with a working `[[link]]`, focus, and the mentions toggle.
 - [ ] **Whole-branch review:** dispatch the opus final-review per the handoff cadence before declaring Plan 2 done. Publish stays operator-gated (no push/tag).
 

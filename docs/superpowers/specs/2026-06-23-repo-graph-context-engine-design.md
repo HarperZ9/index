@@ -1,4 +1,4 @@
-# Design: Repo-level dependency graph + context engine
+﻿# Design: Repo-level dependency graph + context engine
 
 > Date: 2026-06-23
 > Status: Approved (brainstorming), pending implementation plan
@@ -11,7 +11,7 @@
 (remotes, branches, dirty counts, marker files, classification) and writes a compact
 JSON map. It does not infer how the repositories relate to each other.
 
-This design adds the differentiated half — an **inference engine** that derives a
+This design adds the differentiated half -- an **inference engine** that derives a
 **repo-level dependency graph from real code** (manifests + source imports), assigns
 each repo a **structural role derived from topology** (not a hand-authored ontology),
 and renders the result as a **synthesis context pack** (relations + roles + prose) in
@@ -24,15 +24,15 @@ single-command behavior is preserved. Zero new runtime dependencies.
 
 ## Why this, why now
 
-The articulated niche — *productizing / dependency-mapping sprawling multi-repo
+The articulated niche -- *productizing / dependency-mapping sprawling multi-repo
 codebases, and keeping their architecture from quietly eroding under AI-agent-driven
-development* — is a generic pain. The sensor is already generic and product-grade. The
+development* -- is a generic pain. The sensor is already generic and product-grade. The
 context engine that fills the niche currently exists only as a bespoke internal tool
 (`project-docs/tools/context_pack.py`) whose edges and roles come from a **hand-authored
 organ registry**, not from code. It cannot run on an arbitrary codebase.
 
 This design closes that gap: derive the structure automatically, generically, while
-preserving two guarantees the internal tool established —
+preserving two guarantees the internal tool established --
 
 1. **No editorializing.** Every emitted line traces to a data field or an evidence
    record. The engine never synthesizes interpretive conclusions ("X is the keystone").
@@ -42,7 +42,7 @@ preserving two guarantees the internal tool established —
 To these it adds a third guarantee that is the heart of the engineering caliber:
 
 3. **Evidence-carrying inference (proof before trust).** The engine never asserts a
-   dependency. It reports the dependency *and its witnesses* — the manifest entry and/or
+   dependency. It reports the dependency *and its witnesses* -- the manifest entry and/or
    source import that justify the edge, with file (and line where cheap) and a confidence
    grade. An edge with no evidence cannot exist.
 
@@ -85,7 +85,7 @@ src/workspace_repo_map/
     __init__.py
     resolvers/
       __init__.py
-      base.py         # Resolver protocol + RawEdge dataclass — the generic seam
+      base.py         # Resolver protocol + RawEdge dataclass -- the generic seam
       python.py       # pyproject.toml / requirements*.txt / setup.cfg|py + .py import scan
       javascript.py   # package.json + .js/.ts/.jsx/.tsx import|require scan
     edges.py          # RawEdge -> resolved repo->repo Edge, with evidence + confidence
@@ -115,7 +115,7 @@ context.pack.render(graph)                 <---+  relations + roles + prose(READ
 
 Zero new runtime dependencies. Python manifests via stdlib `tomllib` (3.11+, already the
 floor). `package.json` via stdlib `json`. Imports via `ast` (Python) and a conservative
-regex/tokenizer pass (JS/TS — no TS compiler dependency). `pytest` remains the only
+regex/tokenizer pass (JS/TS -- no TS compiler dependency). `pytest` remains the only
 (optional) test dependency.
 
 ## Component: the resolver seam (`graph/resolvers/base.py`)
@@ -138,11 +138,11 @@ class Resolver(Protocol):
     def raw_edges(self, repo_root: Path) -> list[RawEdge]: ...
 ```
 
-- `matches` — is this ecosystem present in the repo (manifest exists)?
-- `exposed_names` — the import names / package names this repo *publishes* (its
+- `matches` -- is this ecosystem present in the repo (manifest exists)?
+- `exposed_names` -- the import names / package names this repo *publishes* (its
   distribution name and top-level importable packages). Used to build the global index
   that turns a target name into an internal repo.
-- `raw_edges` — every declared dependency (from the manifest) and every observed import
+- `raw_edges` -- every declared dependency (from the manifest) and every observed import
   (from source), each as a `RawEdge` carrying its witness.
 
 A repo may match multiple resolvers (polyglot repos); all matches contribute.
@@ -232,21 +232,21 @@ layer and the salience audit agree by construction.
 
 Ports the proven renderer from `context_pack.py`, adapted to *derived* inputs.
 
-- **Roles section** — `repo: <roles> — <evidence>` (e.g. `core-lib: library, hub —
+- **Roles section** -- `repo: <roles> -- <evidence>` (e.g. `core-lib: library, hub --
   in-degree 7`).
-- **Relations section** — `A -> B: <signals summary> [confidence]`, external deps listed
+- **Relations section** -- `A -> B: <signals summary> [confidence]`, external deps listed
   separately as `A -> (external) name`.
-- **Inventory section** — per repo, prose **extracted** from the README's first paragraph
+- **Inventory section** -- per repo, prose **extracted** from the README's first paragraph
   or the manifest `description` field. Never authored. A repo with no README/description
   shows `(no description)`.
-- **JSON sidecar** — `{roles, relations, salience, salience_audit, repos}`.
+- **JSON sidecar** -- `{roles, relations, salience, salience_audit, repos}`.
 - **Guarantees ported verbatim in behavior:**
   - `structural_salience` (in/out degree + hub flag).
-  - `salience_audit` (decorative-non-hub / unmarked-hub) — markers are now *derived*
+  - `salience_audit` (decorative-non-hub / unmarked-hub) -- markers are now *derived*
     (e.g. `entrypoint`, `published`) rather than hand flagship tags.
-  - **No-editorializing structural test** — a test asserts the renderer source contains
+  - **No-editorializing structural test** -- a test asserts the renderer source contains
     no hardcoded interpretive sentences and every output line maps to a field/evidence.
-  - `--focus <repo>` — bidirectional transitive closure (cycle-safe), text or JSON.
+  - `--focus <repo>` -- bidirectional transitive closure (cycle-safe), text or JSON.
 
 ## CLI (`cli.py`)
 
@@ -277,7 +277,7 @@ workspace-repo-map context [--root .] [--map …] [--focus REPO] [--audit] [--js
 - An import that resolves to no internal repo: external edge, not an error.
 - An ambiguous name (index collision): `low` confidence + `ambiguous` note, both candidate
   repos recorded; never silently pick one.
-- All warnings are collected and surfaced (count + list) rather than dropped — the run is
+- All warnings are collected and surfaced (count + list) rather than dropped -- the run is
   honest about what it could not see.
 
 ## Testing strategy (TDD)
@@ -285,16 +285,16 @@ workspace-repo-map context [--root .] [--map …] [--focus REPO] [--audit] [--js
 Synthetic fixture repos under `tests/fixtures/` (tiny, hand-built Python and JS/TS trees
 with known manifests, imports, and expected edges).
 
-1. **Resolver unit tests** — `python.py` / `javascript.py`: given a fixture repo, assert
+1. **Resolver unit tests** -- `python.py` / `javascript.py`: given a fixture repo, assert
    exact `exposed_names` and the `RawEdge` set (target, signal, evidence file/line).
-2. **Edge resolution** — internal vs external classification; signal merge; confidence
+2. **Edge resolution** -- internal vs external classification; signal merge; confidence
    grading (high/moderate/low); ambiguity handling; the **no-empty-signals invariant**.
-3. **Role derivation** — on a synthetic topology, assert hub/library/entrypoint/
+3. **Role derivation** -- on a synthetic topology, assert hub/library/entrypoint/
    orchestrator/leaf/isolated assignments and their evidence.
-4. **Ported guarantees** — no-editorializing structural test; salience audit (decorative-
+4. **Ported guarantees** -- no-editorializing structural test; salience audit (decorative-
    non-hub, unmarked-hub); `--focus` closure + cycle safety; CLI backward-compat (bare
    invocation still writes the map).
-5. **Dogfood acceptance** (separate, opt-in, not in the default unit slice) — run `graph`
+5. **Dogfood acceptance** (separate, opt-in, not in the default unit slice) -- run `graph`
    over the author's `c:/dev` corpus and report the fraction of `organ_registry_data`'s
    hand-authored edges recovered by inference, plus false-positive edges for review. This
    is the validation metric for "derive structure from real code, not hand authoring."

@@ -1,4 +1,4 @@
-# Index 2.0 Verified Architecture Intelligence Implementation Plan
+﻿# Index 2.0 Verified Architecture Intelligence Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -24,25 +24,25 @@
 ## File Structure (the decomposition and the shared spine)
 
 **Create:**
-- `src/index_graph/internals/__init__.py` — exports `ModuleNode`, `InternalEdge`, `InternalGraph`, `build_internals`.
-- `src/index_graph/internals/modules.py` — per-language module discovery and intra-repo import extraction. One responsibility: turn a repo directory into module nodes and internal edges.
-- `src/index_graph/internals/build.py` — assemble an `InternalGraph` (modules + edges + cycles + fan-in/out). Reuses `graph.cycles.find_cycles`.
-- `src/index_graph/arch/__init__.py` — exports `ArchitectureCriteria`, `parse_architecture`, `Finding`, `check_graph`.
-- `src/index_graph/arch/criteria.py` — the `ArchitectureCriteria` dataclass and its parser from a TOML dict.
-- `src/index_graph/arch/check.py` — `Finding` and `check_graph`: evaluate a graph (and optional internal graphs) against criteria.
-- `src/index_graph/drift/__init__.py` — exports `snapshot_pack`, `load_snapshot`, `DriftReport`, `diff_snapshots`.
-- `src/index_graph/drift/snapshot.py` — canonical snapshot build and load.
-- `src/index_graph/drift/diff.py` — `DriftReport` and `diff_snapshots`.
-- `src/index_graph/certify/__init__.py` — exports `canonical_sha`, `build_certificate`.
-- `src/index_graph/certify/certificate.py` — canonical hashing and certificate assembly with the three-verdict logic.
-- `docs/PROTOCOL.md` — the consumer-agnostic seam specification.
+- `src/index_graph/internals/__init__.py` -- exports `ModuleNode`, `InternalEdge`, `InternalGraph`, `build_internals`.
+- `src/index_graph/internals/modules.py` -- per-language module discovery and intra-repo import extraction. One responsibility: turn a repo directory into module nodes and internal edges.
+- `src/index_graph/internals/build.py` -- assemble an `InternalGraph` (modules + edges + cycles + fan-in/out). Reuses `graph.cycles.find_cycles`.
+- `src/index_graph/arch/__init__.py` -- exports `ArchitectureCriteria`, `parse_architecture`, `Finding`, `check_graph`.
+- `src/index_graph/arch/criteria.py` -- the `ArchitectureCriteria` dataclass and its parser from a TOML dict.
+- `src/index_graph/arch/check.py` -- `Finding` and `check_graph`: evaluate a graph (and optional internal graphs) against criteria.
+- `src/index_graph/drift/__init__.py` -- exports `snapshot_pack`, `load_snapshot`, `DriftReport`, `diff_snapshots`.
+- `src/index_graph/drift/snapshot.py` -- canonical snapshot build and load.
+- `src/index_graph/drift/diff.py` -- `DriftReport` and `diff_snapshots`.
+- `src/index_graph/certify/__init__.py` -- exports `canonical_sha`, `build_certificate`.
+- `src/index_graph/certify/certificate.py` -- canonical hashing and certificate assembly with the three-verdict logic.
+- `docs/PROTOCOL.md` -- the consumer-agnostic seam specification.
 - Test files mirroring each module under `tests/` (named in each task).
 
 **Modify:**
-- `src/index_graph/config.py` — add `"architecture"` to `_KNOWN_TOP`; parse the block; add an `architecture` field to `Config`.
-- `src/index_graph/cli.py` — register and dispatch `internals`, `check`, `snapshot`, `drift`.
-- `src/index_graph/__init__.py` — version bump to `2.0.0`; export the new top-level helpers.
-- `README.md`, `USAGE.md`, `CHANGELOG.md` — document the new capability.
+- `src/index_graph/config.py` -- add `"architecture"` to `_KNOWN_TOP`; parse the block; add an `architecture` field to `Config`.
+- `src/index_graph/cli.py` -- register and dispatch `internals`, `check`, `snapshot`, `drift`.
+- `src/index_graph/__init__.py` -- version bump to `2.0.0`; export the new top-level helpers.
+- `README.md`, `USAGE.md`, `CHANGELOG.md` -- document the new capability.
 
 **Shared spine (exact types every task depends on):**
 

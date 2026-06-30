@@ -1,8 +1,8 @@
-# Graph Visualization Dashboard Implementation Plan
+﻿# Graph Visualization Dashboard Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Add a `viz/` subpackage that renders `workspace-repo-map`'s dependency graph (the `context.pack.to_json()` output) into Mermaid, a self-contained SVG network graph, an interactive single-file HTML dashboard, and compact charts, plus a `context-manifest.json` handoff — all pure stdlib.
+**Goal:** Add a `viz/` subpackage that renders `workspace-repo-map`'s dependency graph (the `context.pack.to_json()` output) into Mermaid, a self-contained SVG network graph, an interactive single-file HTML dashboard, and compact charts, plus a `context-manifest.json` handoff -- all pure stdlib.
 
 **Architecture:** A new `src/workspace_repo_map/viz/` subpackage consumes the existing context-pack JSON **as-is** (no change to `graph/` or `context/`). A deterministic layered-by-role layout engine (`layout.py`) produces a `LayoutModel`; `svg.py` renders it; `mermaid.py`/`charts.py`/`html.py`/`manifest.py` render from the pack JSON; `theme.py` holds shared tokens. A new `viz` CLI subcommand drives them. The hero output is the HTML dashboard, which embeds the SVG + JSON + charts and adds vanilla-JS filtering and click-to-evidence.
 
@@ -13,7 +13,7 @@
 - **Python floor:** `>=3.11` (already the project floor). Use `tomllib`-era stdlib freely.
 - **Zero new runtime dependencies.** Every `viz/` module imports only the stdlib or `workspace_repo_map` itself. Enforced by `test_viz_boundary` (Task 10).
 - **No private organ imports.** `viz/` must not import `statechain`, `provenance`, `ledger`, or `coherence_membrane`. Enforced by `test_viz_boundary` (Task 10).
-- **Determinism:** every `render_*` function is a pure function of its inputs — no wall-clock, no `random`, no host/env data, stable sorts only. Double-render must be byte-identical. (The `manifest` `generated` block is the sole exception and carries env provenance deliberately.)
+- **Determinism:** every `render_*` function is a pure function of its inputs -- no wall-clock, no `random`, no host/env data, stable sorts only. Double-render must be byte-identical. (The `manifest` `generated` block is the sole exception and carries env provenance deliberately.)
 - **Self-contained HTML:** the dashboard embeds all CSS/JS/SVG inline; **no `http://` or `https://` reference, no CDN `<link>`**. Fonts are CSS stacks with system fallbacks. Enforced by `test_viz_html` (Task 7).
 - **No editorializing:** renderers emit only values present in the pack JSON (names, roles, confidences, evidence). No interpretive sentences. Enforced by `test_viz_editorial` (Task 10).
 - **License:** MIT. Author `Zain Dana Harper`. No new file headers required beyond existing repo convention.
@@ -66,7 +66,7 @@ def test_svg_style_references_palette_and_role_classes():
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `cd c:/dev/worktrees/wrm-viz && python -m pytest tests/test_viz_theme.py -v`
-Expected: FAIL — `ModuleNotFoundError: No module named 'workspace_repo_map.viz'`.
+Expected: FAIL -- `ModuleNotFoundError: No module named 'workspace_repo_map.viz'`.
 
 - [ ] **Step 3: Write minimal implementation**
 
@@ -163,7 +163,7 @@ git -C c:/dev/worktrees/wrm-viz commit -m "feat(viz): theme tokens (Dark Serious
 
 **Interfaces:**
 - Consumes: the pack dict (Global Constraints).
-- Produces: dataclasses `LaidNode(name, role, roles, layer, x, y, w, h, external, in_degree, out_degree, hub)`, `LaidEdge(from_repo, to_repo, confidence, external, back_edge, points, signals)`, `LayoutModel(nodes, edges, layers, width, height)`; `build_layout(pack: dict, *, include_external: bool = True) -> LayoutModel`. `ROLE_PRECEDENCE = ("entrypoint","orchestrator","hub","library","leaf","isolated")`. In this task `x/y/w/h` and `points` are populated by Task 3 — here they default to `0.0`/empty and only `layer` + ordering are asserted.
+- Produces: dataclasses `LaidNode(name, role, roles, layer, x, y, w, h, external, in_degree, out_degree, hub)`, `LaidEdge(from_repo, to_repo, confidence, external, back_edge, points, signals)`, `LayoutModel(nodes, edges, layers, width, height)`; `build_layout(pack: dict, *, include_external: bool = True) -> LayoutModel`. `ROLE_PRECEDENCE = ("entrypoint","orchestrator","hub","library","leaf","isolated")`. In this task `x/y/w/h` and `points` are populated by Task 3 -- here they default to `0.0`/empty and only `layer` + ordering are asserted.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -284,7 +284,7 @@ def test_within_layer_order_is_stable_and_name_tiebroken():
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `cd c:/dev/worktrees/wrm-viz && python -m pytest tests/test_viz_layout.py -v`
-Expected: FAIL — `ModuleNotFoundError: No module named 'workspace_repo_map.viz.layout'`.
+Expected: FAIL -- `ModuleNotFoundError: No module named 'workspace_repo_map.viz.layout'`.
 
 - [ ] **Step 3: Write minimal implementation**
 
@@ -541,7 +541,7 @@ def test_empty_graph_renders_a_valid_empty_canvas():
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `cd c:/dev/worktrees/wrm-viz && python -m pytest tests/test_viz_layout_geometry.py -v`
-Expected: FAIL — `width` is `0`, `points` is empty, no `back_edge` set.
+Expected: FAIL -- `width` is `0`, `points` is empty, no `back_edge` set.
 
 - [ ] **Step 3: Write minimal implementation**
 
@@ -625,7 +625,7 @@ Replace the final assembly block of `build_layout` (everything after `nodes = _o
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `cd c:/dev/worktrees/wrm-viz && python -m pytest tests/test_viz_layout.py tests/test_viz_layout_geometry.py -v`
-Expected: PASS (10 passed — Task 2 tests still green).
+Expected: PASS (10 passed -- Task 2 tests still green).
 
 - [ ] **Step 5: Commit**
 
@@ -644,7 +644,7 @@ git -C c:/dev/worktrees/wrm-viz commit -m "feat(viz): coordinate placement + bez
 
 **Interfaces:**
 - Consumes: `LayoutModel` (Task 3), `THEME`/`svg_style` (Task 1).
-- Produces: `render_svg(layout: LayoutModel) -> str` — a complete, self-contained `<svg>` document string with one `<g class="node role-X" data-name data-role data-roles data-indeg data-outdeg data-hub>` per node and one `<path class="edge edge-CONF ...">` per edge carrying `data-from`, `data-to`, `data-signals` (JSON). No wall-clock.
+- Produces: `render_svg(layout: LayoutModel) -> str` -- a complete, self-contained `<svg>` document string with one `<g class="node role-X" data-name data-role data-roles data-indeg data-outdeg data-hub>` per node and one `<path class="edge edge-CONF ...">` per edge carrying `data-from`, `data-to`, `data-signals` (JSON). No wall-clock.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -696,7 +696,7 @@ def test_render_is_deterministic():
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `cd c:/dev/worktrees/wrm-viz && python -m pytest tests/test_viz_svg.py -v`
-Expected: FAIL — `ModuleNotFoundError: No module named 'workspace_repo_map.viz.svg'`.
+Expected: FAIL -- `ModuleNotFoundError: No module named 'workspace_repo_map.viz.svg'`.
 
 - [ ] **Step 3: Write minimal implementation**
 
@@ -750,7 +750,7 @@ def _node_svg(node) -> str:
         f'height="{node.h:.2f}" rx="6"/>'
         f'<text x="{node.x + node.w / 2:.2f}" y="{node.y + node.h / 2 + 4:.2f}" '
         f'text-anchor="middle">{label}</text>'
-        f"<title>{label} — {escape(node.role)}</title>"
+        f"<title>{label} -- {escape(node.role)}</title>"
         f"</g>"
     )
 
@@ -797,7 +797,7 @@ git -C c:/dev/worktrees/wrm-viz commit -m "feat(viz): self-contained SVG rendere
 
 **Interfaces:**
 - Consumes: the pack dict; `ROLE_COLOR` (Task 1).
-- Produces: `render_mermaid(pack: dict) -> str` — a `flowchart TD` string. Internal nodes `id["name"]`, external `id(("name"))`, `classDef` per role, edges `a -->|conf| b`. Deterministic (sorted).
+- Produces: `render_mermaid(pack: dict) -> str` -- a `flowchart TD` string. Internal nodes `id["name"]`, external `id(("name"))`, `classDef` per role, edges `a -->|conf| b`. Deterministic (sorted).
 
 - [ ] **Step 1: Write the failing test**
 
@@ -835,7 +835,7 @@ def test_render_is_deterministic():
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `cd c:/dev/worktrees/wrm-viz && python -m pytest tests/test_viz_mermaid.py -v`
-Expected: FAIL — module not found.
+Expected: FAIL -- module not found.
 
 - [ ] **Step 3: Write minimal implementation**
 
@@ -958,7 +958,7 @@ def test_charts_are_deterministic():
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `cd c:/dev/worktrees/wrm-viz && python -m pytest tests/test_viz_charts.py -v`
-Expected: FAIL — module not found.
+Expected: FAIL -- module not found.
 
 - [ ] **Step 3: Write minimal implementation**
 
@@ -1036,7 +1036,7 @@ git -C c:/dev/worktrees/wrm-viz commit -m "feat(viz): confidence/role/fan-in-out
 
 **Interfaces:**
 - Consumes: the pack dict, an SVG string (Task 4), the charts dict (Task 6), `css_variables` (Task 1).
-- Produces: `render_html(pack: dict, *, svg: str, charts: dict[str, str]) -> str` — one self-contained HTML document embedding `const DATA = <json>`, the SVG, the charts, inline CSS/JS. No external URLs except the SVG namespace literal.
+- Produces: `render_html(pack: dict, *, svg: str, charts: dict[str, str]) -> str` -- one self-contained HTML document embedding `const DATA = <json>`, the SVG, the charts, inline CSS/JS. No external URLs except the SVG namespace literal.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -1084,7 +1084,7 @@ def test_render_is_deterministic():
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `cd c:/dev/worktrees/wrm-viz && python -m pytest tests/test_viz_html.py -v`
-Expected: FAIL — module not found.
+Expected: FAIL -- module not found.
 
 - [ ] **Step 3: Write minimal implementation**
 
@@ -1133,10 +1133,10 @@ function detail(name){const r=idx[name]||{name,ecosystems:[],markers:[]};
  const outs=DATA.relations.filter(e=>e.from===name);
  const ins=DATA.relations.filter(e=>e.to===name);
  const sig=e=>(e.signals||[]).map(s=>`${s.file}${s.line?':'+s.line:''} ${s.kind}`).join('; ');
- $('#detail').innerHTML=`<h3>${name}</h3><div>roles: ${(DATA.roles[name]||[]).join(', ')||'—'}</div>
+ $('#detail').innerHTML=`<h3>${name}</h3><div>roles: ${(DATA.roles[name]||[]).join(', ')||'--'}</div>
  <div>in ${ (DATA.salience[name]||{}).in_degree||0 } · out ${ (DATA.salience[name]||{}).out_degree||0 }</div>
- <h4>depends on</h4>${outs.map(e=>`<div>${e.target_name} [${e.confidence}] <small>${sig(e)}</small></div>`).join('')||'—'}
- <h4>depended on by</h4>${ins.map(e=>`<div>${e.from} [${e.confidence}]</div>`).join('')||'—'}`;}
+ <h4>depends on</h4>${outs.map(e=>`<div>${e.target_name} [${e.confidence}] <small>${sig(e)}</small></div>`).join('')||'--'}
+ <h4>depended on by</h4>${ins.map(e=>`<div>${e.from} [${e.confidence}]</div>`).join('')||'--'}`;}
 function wire(){
  $('#search').addEventListener('input',e=>{state.q=e.target.value.toLowerCase();apply();});
  $$('.chip[data-role]').forEach(c=>c.addEventListener('click',()=>{
@@ -1197,7 +1197,7 @@ git -C c:/dev/worktrees/wrm-viz commit -m "feat(viz): self-contained interactive
 
 **Interfaces:**
 - Consumes: the pack dict.
-- Produces: `render_manifest(pack: dict, *, artifacts: dict[str, bytes], meta: dict) -> dict` — the manifest dict per the spec schema (`schema_version`, `generated`, `graph` with `snapshot_sha256`, `renders`/`context_pack` with per-artifact `sha256`, `receipts:{present:false}`). `artifacts` maps logical name (`"mermaid"`,`"svg"`,`"html"`,`"context"`) to `(path, bytes)`.
+- Produces: `render_manifest(pack: dict, *, artifacts: dict[str, bytes], meta: dict) -> dict` -- the manifest dict per the spec schema (`schema_version`, `generated`, `graph` with `snapshot_sha256`, `renders`/`context_pack` with per-artifact `sha256`, `receipts:{present:false}`). `artifacts` maps logical name (`"mermaid"`,`"svg"`,`"html"`,`"context"`) to `(path, bytes)`.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -1238,7 +1238,7 @@ def test_hashes_match_artifact_bytes():
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `cd c:/dev/worktrees/wrm-viz && python -m pytest tests/test_viz_manifest.py -v`
-Expected: FAIL — module not found.
+Expected: FAIL -- module not found.
 
 - [ ] **Step 3: Write minimal implementation**
 
@@ -1312,8 +1312,8 @@ git -C c:/dev/worktrees/wrm-viz commit -m "feat(viz): context-manifest renderer 
 - Test: `tests/test_viz_cli.py`
 
 **Interfaces:**
-- Consumes: `build_graph(_repo_paths(args.root.resolve()))` + `to_json`/`closure`/`focus_subgraph` (exactly as `_cmd_graph`/`_cmd_context` do today — all already imported at the top of `cli.py`), plus all `viz` render functions.
-- Produces: a `viz` subparser: `--root` (Path, cwd default), `--format {html,svg,mermaid,all}` (default `html`), `--focus REPO`, `--no-external`, `--out PATH`, `--out-dir DIR`. Exit `0` ok / `2` unknown focus / `1` error. (No `--map`: PR #1's graph/context scan `--root` only — match that surface.) Re-exports in `viz/__init__.py`: `build_layout, render_svg, render_mermaid, render_charts, render_html, render_manifest`.
+- Consumes: `build_graph(_repo_paths(args.root.resolve()))` + `to_json`/`closure`/`focus_subgraph` (exactly as `_cmd_graph`/`_cmd_context` do today -- all already imported at the top of `cli.py`), plus all `viz` render functions.
+- Produces: a `viz` subparser: `--root` (Path, cwd default), `--format {html,svg,mermaid,all}` (default `html`), `--focus REPO`, `--no-external`, `--out PATH`, `--out-dir DIR`. Exit `0` ok / `2` unknown focus / `1` error. (No `--map`: PR #1's graph/context scan `--root` only -- match that surface.) Re-exports in `viz/__init__.py`: `build_layout, render_svg, render_mermaid, render_charts, render_html, render_manifest`.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -1382,7 +1382,7 @@ def test_version_is_0_4_0():
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `cd c:/dev/worktrees/wrm-viz && python -m pytest tests/test_viz_cli.py -v`
-Expected: FAIL — `viz` is not a known subcommand; version is `0.3.0`.
+Expected: FAIL -- `viz` is not a known subcommand; version is `0.3.0`.
 
 - [ ] **Step 3: Write minimal implementation**
 
@@ -1430,7 +1430,7 @@ def _cmd_viz(args) -> int:
         if args.focus not in names:
             near = [n for n in names if args.focus.lower() in n.lower()]
             print(f"unknown project: {args.focus!r}"
-                  + (f" — did you mean: {', '.join(sorted(near))}?" if near else ""))
+                  + (f" -- did you mean: {', '.join(sorted(near))}?" if near else ""))
             return 2
         graph = focus_subgraph(graph, closure(list(graph.edges), args.focus))
     pack = to_json(graph)
@@ -1474,7 +1474,7 @@ def _cmd_viz(args) -> int:
     return 0
 ```
 
-Add a small `_head_commit` helper (best-effort, never fatal — keeps the run honest if git
+Add a small `_head_commit` helper (best-effort, never fatal -- keeps the run honest if git
 is absent) and route `viz` in the dispatch table next to `graph`/`context`:
 
 ```python
@@ -1491,9 +1491,9 @@ def _head_commit(root) -> str | None:
 ```
 
 `cli.py` already imports `json`, `sys`, `Path`, `__version__`, `build_graph`, `_repo_paths`,
-and `closure`/`focus_subgraph`/`to_json` at the top of the file — reuse them. Two required
+and `closure`/`focus_subgraph`/`to_json` at the top of the file -- reuse them. Two required
 wirings: **(1)** add `"viz"` to the `_SUBCOMMANDS` set (line 16): `{"map", "graph", "context", "viz"}`
-— **critical**, because `main()` prepends the implicit `map` command for any `argv[0]` not in
+-- **critical**, because `main()` prepends the implicit `map` command for any `argv[0]` not in
 that set, so without it `viz …` is parsed as `map viz …`. **(2)** In `main()`, beside the
 existing `if args.cmd == "graph"` / `"context"` branches, add
 `if args.cmd == "viz": return _cmd_viz(args)`.
@@ -1520,7 +1520,7 @@ git -C c:/dev/worktrees/wrm-viz commit -m "feat(viz): viz CLI subcommand + versi
 
 **Interfaces:**
 - Consumes: every `viz/` module (as source files + import graph).
-- Produces: enforcement of three Global Constraints. No production code — these guard the invariants.
+- Produces: enforcement of three Global Constraints. No production code -- these guard the invariants.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -1580,9 +1580,9 @@ def test_renderers_do_not_editorialize():
 - [ ] **Step 2: Run test to verify it fails (then passes immediately if clean)**
 
 Run: `cd c:/dev/worktrees/wrm-viz && python -m pytest tests/test_viz_boundary.py tests/test_viz_editorial.py -v`
-Expected: these guard already-correct code, so they should PASS on first run. If `test_viz_imports_only_stdlib_or_own_package` fails, a `viz/` module pulled in a third-party import — remove it. If `test_no_viz_module_imports_a_private_organ` fails, the boundary was violated — remove the organ import.
+Expected: these guard already-correct code, so they should PASS on first run. If `test_viz_imports_only_stdlib_or_own_package` fails, a `viz/` module pulled in a third-party import -- remove it. If `test_no_viz_module_imports_a_private_organ` fails, the boundary was violated -- remove the organ import.
 
-- [ ] **Step 3: (No implementation needed — guardrails over existing code.)**
+- [ ] **Step 3: (No implementation needed -- guardrails over existing code.)**
 
 If either test fails, fix the offending `viz/` module, not the test.
 
@@ -1606,7 +1606,7 @@ git -C c:/dev/worktrees/wrm-viz commit -m "test(viz): guard zero-dep, no-private
 - Modify: `CHANGELOG.md` (new `0.4.0` section)
 - Modify: `USAGE.md` (document the `viz` subcommand + the three formats + the manifest)
 - Modify: `README.md` (one line under features: the dashboard/graph rendering)
-- Create: `scripts/viz_dogfood.py` (opt-in corpus render — not part of the unit slice)
+- Create: `scripts/viz_dogfood.py` (opt-in corpus render -- not part of the unit slice)
 
 **Interfaces:**
 - Consumes: the `viz` CLI.
