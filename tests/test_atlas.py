@@ -1,7 +1,8 @@
 from index_graph.graph.build import DependencyGraph, RepoNode
 from index_graph.graph.edges import Edge
 from index_graph.knowledge.docs import Doc
-from index_graph.knowledge.atlas import build_atlas_pack
+import index_graph.knowledge.atlas as atlas
+from index_graph.knowledge.atlas import build_atlas_pack, build_router_pack
 
 
 def _graph(*names):
@@ -86,3 +87,45 @@ def test_mention_requires_word_boundary():
     a = Doc("a.md", "A", "the apiary is unrelated", (), "")
     pack = build_atlas_pack(g, [a], {"api": "api"})
     assert not any(e["type"] == "mentions" for e in pack["knowledge_edges"])
+
+
+def test_mention_detection_prunes_absent_candidate_tokens(monkeypatch):
+    g = _graph("target")
+    docs = [
+        Doc(
+            f"docs/{i}.md",
+            f"DocTitle{i}",
+            "ordinary filler without candidate names",
+            (),
+            "docs",
+        )
+        for i in range(80)
+    ]
+    calls = 0
+    original = atlas._mentions_name
+
+    def counted(body: str, name: str) -> bool:
+        nonlocal calls
+        calls += 1
+        return original(body, name)
+
+    monkeypatch.setattr(atlas, "_mentions_name", counted)
+    pack = build_atlas_pack(g, docs, {"target": "target"})
+
+    assert not any(edge["type"] == "mentions" for edge in pack["knowledge_edges"])
+    assert calls < 10
+
+
+def test_router_pack_keeps_describes_edges_only():
+    g = _graph("api", "core")
+    doc = Doc("api/README.md", "API", "[[core]] and core in prose", ("core",), "api")
+    pack = build_router_pack(g, [doc], {"api": "api", "core": "core"})
+
+    assert {
+        "type": "describes",
+        "from": "api/README.md",
+        "to": "api",
+        "to_kind": "repo",
+    } in pack["knowledge_edges"]
+    assert not any(edge["type"] == "links-to" for edge in pack["knowledge_edges"])
+    assert not any(edge["type"] == "mentions" for edge in pack["knowledge_edges"])

@@ -525,7 +525,7 @@ def _cmd_drift(args) -> int:
 
 
 def _cmd_router(args) -> int:
-    from .knowledge.atlas import build_atlas_pack
+    from .knowledge.atlas import build_router_pack
     from .knowledge.docs import discover_docs
     from .router import render_router
     root = args.root.resolve()
@@ -538,7 +538,7 @@ def _cmd_router(args) -> int:
         return "" if r == "." else r
 
     repo_dirs = {name: _rel(p) for name, p in repo_paths.items()}
-    pack = build_atlas_pack(build_graph(repo_paths), discover_docs(root), repo_dirs)
+    pack = build_router_pack(build_graph(repo_paths), discover_docs(root), repo_dirs)
     text = render_router(pack)
     if args.out:
         Path(args.out).write_text(text, encoding="utf-8")

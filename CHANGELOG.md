@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Router performance: `index router` and the `index_router` MCP tool now build a
+  describes-only docs pack instead of the full atlas link/mention graph. Full
+  `index atlas` output still keeps wiki-link and prose-mention edges, while
+  router generation stays responsive on large workspaces.
 - Doctor: `index doctor --json` now runs a bounded MCP `index.map` probe against a temporary one-repo workspace and reports `DRIFT` if the source/package MCP map path is stale or broken.
 - Context envelopes: adds `index context-envelope --budget N [--focus REPO] [--hops N] --json` and
   the `index.context.envelope` MCP tool for budgeted, receipt-backed, source-ref-only context packets.
