@@ -28,6 +28,15 @@ def test_doctor_human_prints_next_action(capsys):
     assert "next: forum route" in out
 
 
+def test_doctor_probes_mcp_map_surface(capsys):
+    assert main(["doctor", "--json"]) == 0
+    payload = json.loads(capsys.readouterr().out)
+    checks = {check["name"]: check for check in payload["native"]["checks"]}
+    assert checks["mcp_map_probe"]["status"] == "MATCH"
+    assert checks["mcp_map_probe"]["repo_count"] == 1
+    assert checks["mcp_map_probe"]["absolute_paths_included"] is False
+
+
 def test_demo_json_names_map_command(capsys):
     assert main(["demo", "--json"]) == 0
     payload = json.loads(capsys.readouterr().out)

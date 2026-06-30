@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Doctor: `index doctor --json` now runs a bounded MCP `index.map` probe against a temporary one-repo workspace and reports `DRIFT` if the source/package MCP map path is stale or broken.
 - Context envelopes: adds `index context-envelope --budget N [--focus REPO] [--hops N] --json` and
   the `index.context.envelope` MCP tool for budgeted, receipt-backed, source-ref-only context packets.
   The envelope records retained repos, omitted repos, token budget pressure, graph-pack receipts, and

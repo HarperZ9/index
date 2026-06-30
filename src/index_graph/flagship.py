@@ -1,6 +1,10 @@
 from __future__ import annotations
 
 import json
+import tempfile
+import time
+from pathlib import Path
+from typing import Any
 
 from index_graph import __version__
 
@@ -44,6 +48,44 @@ def _next(tool: str, action: str, reason: str) -> dict:
     return {"tool": tool, "action": action, "reason": reason, "inputs": [], "priority": "normal"}
 
 
+def _mcp_map_probe() -> dict[str, Any]:
+    start = time.perf_counter()
+    try:
+        with tempfile.TemporaryDirectory(prefix="index-doctor-") as tmp:
+            root = Path(tmp)
+            repo = root / "solo"
+            repo.mkdir()
+            (repo / ".git").mkdir()
+            (repo / "README.md").write_text("# Solo\n", encoding="utf-8")
+
+            from .mcp import call_tool
+
+            payload = json.loads(call_tool("index.map", {"root": str(root)}))
+    except Exception as exc:
+        return {
+            "name": "mcp_map_probe",
+            "status": "DRIFT",
+            "error": type(exc).__name__,
+            "elapsed_ms": round((time.perf_counter() - start) * 1000),
+            "side_effect": "temporary_workspace",
+        }
+
+    status = (
+        "MATCH"
+        if payload.get("repo_count") == 1
+        and payload.get("absolute_paths_included") is False
+        else "DRIFT"
+    )
+    return {
+        "name": "mcp_map_probe",
+        "status": status,
+        "repo_count": payload.get("repo_count"),
+        "absolute_paths_included": payload.get("absolute_paths_included"),
+        "elapsed_ms": round((time.perf_counter() - start) * 1000),
+        "side_effect": "temporary_workspace",
+    }
+
+
 def status_payload() -> dict:
     return envelope(
         "status",
@@ -74,15 +116,23 @@ def status_payload() -> dict:
 
 
 def doctor_payload() -> dict:
-    checks = [
+    checks: list[dict[str, Any]] = [
         {"name": "workspace_map", "status": "MATCH"},
         {"name": "context_pack", "status": "MATCH"},
         {"name": "structural_verification", "status": "MATCH"},
+        _mcp_map_probe(),
     ]
+    status = "MATCH" if all(check["status"] == "MATCH" for check in checks) else "DRIFT"
+    diagnostics = [] if status == "MATCH" else [{
+        "code": "mcp_map_probe_drift",
+        "message": "MCP map probe failed on a bounded temporary workspace",
+    }]
     return envelope(
         "doctor",
-        native={"checks": checks},
+        status=status,
+        native={"checks": checks, "filesystem_writes_performed": True},
         next_actions=[_next("forum", "route", "route the next workspace action")],
+        diagnostics=diagnostics,
     )
 
 
