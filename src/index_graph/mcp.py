@@ -137,7 +137,7 @@ def call_tool(name: str, args: dict) -> str:
         return json.dumps(rec, indent=2, sort_keys=True)
 
     if name == "index_router":
-        from .knowledge.atlas import build_atlas_pack
+        from .knowledge.atlas import build_router_pack
         from .knowledge.docs import discover_docs
         from .router import render_router
 
@@ -146,7 +146,7 @@ def call_tool(name: str, args: dict) -> str:
             return "" if r == "." else r
 
         repo_dirs = {nm: _rel(p) for nm, p in repo_paths.items()}
-        pack = build_atlas_pack(build_graph(repo_paths), discover_docs(root), repo_dirs)
+        pack = build_router_pack(build_graph(repo_paths), discover_docs(root), repo_dirs)
         return render_router(pack)
 
     if name == "index_internals":

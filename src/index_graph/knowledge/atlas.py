@@ -9,6 +9,7 @@ from ..graph.build import DependencyGraph
 from .docs import Doc, _norm          # reuse the SAME normalizer that built link_targets
 
 _EDGE_SORT = lambda e: (e["from"], e["type"], e["to_kind"], e["to"])
+_TOKEN = re.compile(r"[0-9a-z]+")
 
 
 def _target_index(repo_names, docs):
@@ -46,13 +47,49 @@ def _mentions_name(body: str, name: str) -> bool:
     return re.search(pattern, body.lower()) is not None
 
 
+def _mention_tokens(text: str) -> frozenset[str]:
+    return frozenset(_TOKEN.findall(text.lower()))
+
+
+def _doc_rows(docs: list[Doc]) -> list[dict]:
+    return [{"id": d.rel_path, "title": d.title, "dir": d.dir_rel} for d in docs]
+
+
+def _describes_edges(docs: list[Doc], repo_dirs: dict[str, str]) -> list[dict]:
+    edges: list[dict] = []
+    seen: set[tuple[str, str, str]] = set()
+    for d in docs:
+        repo = _describes(d, repo_dirs)
+        if repo is None:
+            continue
+        key = (d.rel_path, "repo", repo)
+        if key not in seen:
+            seen.add(key)
+            edges.append({
+                "type": "describes",
+                "from": d.rel_path,
+                "to": repo,
+                "to_kind": "repo",
+            })
+    return sorted(edges, key=_EDGE_SORT)
+
+
+def build_router_pack(graph: DependencyGraph, docs: list[Doc],
+                      repo_dirs: dict[str, str]) -> dict:
+    pack = to_json(graph)
+    pack["docs"] = _doc_rows(docs)
+    pack["knowledge_edges"] = _describes_edges(docs, repo_dirs)
+    pack["knowledge_warnings"] = []
+    return pack
+
+
 def build_atlas_pack(graph: DependencyGraph, docs: list[Doc],
                      repo_dirs: dict[str, str]) -> dict:
     pack = to_json(graph)
     repo_names = {n["name"] for n in pack["repos"]}
     idx = _target_index(repo_names, docs)
 
-    pack["docs"] = [{"id": d.rel_path, "title": d.title, "dir": d.dir_rel} for d in docs]
+    pack["docs"] = _doc_rows(docs)
     edges: list[dict] = []
     warnings: list[str] = []
     seen: set[tuple[str, str, str]] = set()      # (from, to_kind, to), strongest wins
@@ -65,10 +102,8 @@ def build_atlas_pack(graph: DependencyGraph, docs: list[Doc],
         edges.append({"type": etype, "from": frm, "to": to, "to_kind": to_kind})
 
     # describes (by location): strongest
-    for d in docs:
-        repo = _describes(d, repo_dirs)
-        if repo is not None:
-            add("describes", d.rel_path, "repo", repo)
+    for edge in _describes_edges(docs, repo_dirs):
+        add("describes", edge["from"], edge["to_kind"], edge["to"])
     # links-to (from [[wiki-links]])
     for d in docs:
         for t in d.link_targets:
@@ -84,11 +119,18 @@ def build_atlas_pack(graph: DependencyGraph, docs: list[Doc],
     # mentions (prose name-drops): weakest; deduped via `seen` against describes/links-to
     name_of = {("repo", r): r for r in repo_names}
     name_of.update({("doc", d.rel_path): d.title for d in docs})
+    mention_targets = [
+        (target, display, _mention_tokens(display))
+        for target, display in sorted(name_of.items())
+    ]
     for d in docs:
-        for (to_kind, to), display in sorted(name_of.items()):
+        body_tokens = _mention_tokens(d.body)
+        for (to_kind, to), display, display_tokens in mention_targets:
             if (d.rel_path, to_kind, to) in seen:      # already a stronger edge
                 continue
             if to_kind == "doc" and to == d.rel_path:
+                continue
+            if display_tokens and not display_tokens.issubset(body_tokens):
                 continue
             if _mentions_name(d.body, display):       # display = repo name or doc title
                 add("mentions", d.rel_path, to_kind, to)
