@@ -22,6 +22,7 @@ def build_context_envelope(
     token_budget: int,
     focus: str | None = None,
     hops: int | None = None,
+    browser_evidence_refs: list[dict] | None = None,
 ) -> dict:
     """Return a deterministic, receipt-backed context packet within ``token_budget``."""
     if token_budget < 1:
@@ -81,6 +82,7 @@ def build_context_envelope(
             "raw_payload_policy": "source_refs_only",
             "omission_policy": "explicit_failure_codes",
         },
+        "browser_evidence_refs": _browser_evidence_refs(browser_evidence_refs or []),
         "retained": retained,
         "omitted": omitted,
         "preserved": preserved,
@@ -244,6 +246,15 @@ def _freshness(source_graph: DependencyGraph, retained: list[dict]) -> dict:
             "command": "index check --freshness; index freshness --cert CERT --root ROOT",
         },
     }
+
+
+def _browser_evidence_refs(refs: list[dict]) -> list[dict]:
+    allowed = ("ref", "schema", "mode", "hash", "verification", "side_effect")
+    return [
+        {key: ref[key] for key in allowed if key in ref}
+        for ref in refs
+        if isinstance(ref, dict)
+    ]
 
 
 def _base_tokens(pack: dict) -> int:
