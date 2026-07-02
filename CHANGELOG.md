@@ -2,6 +2,31 @@
 
 ## Unreleased
 
+- Typed invalidation reports (the staleness contract): `index invalidate --root ROOT --out PIN`
+  pins the current tree (per-file hashes plus the structural snapshot, content-addressed per
+  `docs/PROTOCOL.md` hashing), and `index invalidate --root ROOT --pin PIN [--json]` diffs the
+  pin against the live tree and names exactly what the changes invalidate. The report
+  (`index.invalidation/1`) carries `pinned_ref`, `current_ref`, a FRESH or STALE verdict, and
+  splits the fingerprinted scope (the certificate, context-pack, and graph-snapshot artifacts
+  plus each pinned repo) into `invalidated`, each entry typed with a reason code from a closed
+  set (`file-changed`, `file-removed`, `dependency-edge-changed`, `doc-changed`, `unversioned`),
+  and `still_valid`. Counts must reconcile (invalidated + still_valid = scope), and
+  `reconcile_invalidation` re-derives the ledger from the report itself, so a forged count, an
+  unknown reason code, a double-booked scope, or a verdict that disagrees with its own lists
+  turns to DRIFT. A tampered pin reads as STALE with file-changed reasons, never a crash; a
+  document that is not a pin reads as UNVERIFIABLE. Exposed as the `index.invalidate` MCP tool
+  with CLI parity; the negative fixtures live in the test suite. Python API in
+  `index_graph.freshness.invalidate`.
+- Typed focus rejection: a `--focus` selector (or MCP `focus`/`repo` argument) that resolves to
+  no repo now fails typed instead of with a bare "unknown focus repo" string. The
+  `index.focus-rejection/v1` receipt names the unresolved selector, a reason code from a closed
+  set (`unresolved-focus`, `empty-workspace`), a bounded candidate list (near matches first),
+  the full candidate count, and whether the list was truncated. The `context`, `context-envelope`,
+  and `viz` CLI faces print the receipt (JSON with `--json`) and keep exit code 2; the
+  `index_focus` and `index.context.envelope` MCP tools return the receipt as a payload rather
+  than a protocol error, following the `index.select` not-found precedent. Python API in
+  `index_graph.context.focus`; `build_context_envelope` raises `FocusRejection` (a `ValueError`
+  subclass) carrying the receipt.
 - The verified wiki: `index wiki [--root REPO] [--out PATH] [--format html|json]` derives a
   multi-page, self-contained wiki for ONE repo from the internals module graph (tier 1:
   zero-dep, model-free, deterministic; no generated prose). Pages: overview (identity,

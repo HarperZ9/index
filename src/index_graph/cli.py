@@ -9,17 +9,19 @@ from pathlib import Path
 
 from . import __version__
 from .config import load_config
+from .context.focus import FocusRejection, focus_rejection, render_rejection
 from .context.pack import closure, focus_subgraph, preservation, render_text, to_json
 from .context.select import cmd_select
 from .flagship import cmd_demo, cmd_doctor, cmd_status
+from .freshness.invalidate_cli import cmd_invalidate
 from .graph.build import build_graph
 from .scan import build_map, discover_repos, write_map
 from .wiki.cli import add_wiki_parser, cmd_wiki
 
 _SUBCOMMANDS = {"map", "graph", "context", "context-envelope", "select", "viz",
                 "atlas", "wiki", "internals", "check", "snapshot", "drift",
-                "router", "verify", "freshness", "bench", "mcp", "status",
-                "doctor", "demo"}
+                "router", "verify", "freshness", "invalidate", "bench", "mcp",
+                "status", "doctor", "demo"}
 
 
 def _add_map_args(p: argparse.ArgumentParser) -> None:
@@ -138,6 +140,17 @@ def build_parser() -> argparse.ArgumentParser:
     fr.add_argument("--root", type=Path, default=Path.cwd())
     fr.add_argument("--json", action="store_true")
 
+    inv = sub.add_parser("invalidate",
+                         help="Diff the tree against a pinned fingerprint and name "
+                              "exactly what the changes invalidate (FRESH/STALE).")
+    inv.add_argument("--root", type=Path, default=Path.cwd())
+    inv.add_argument("--pin", type=Path, default=None,
+                     help="A pin JSON minted earlier with --out; emits the "
+                          "index.invalidation/1 report against it.")
+    inv.add_argument("--out", type=Path, default=None,
+                     help="Mint a pin of the current tree to this file.")
+    inv.add_argument("--json", action="store_true")
+
     bn = sub.add_parser("bench",
                         help="Token economy: index's structural pack vs reading the source it distills.")
     bn.add_argument("--root", type=Path, default=Path.cwd())
@@ -242,9 +255,9 @@ def _cmd_context(args) -> int:
     preserved = None
     if args.focus:
         if args.focus not in names:
-            near = [n for n in names if args.focus.lower() in n.lower()]
-            print(f"unknown project: {args.focus!r}"
-                  + (f". Did you mean: {', '.join(sorted(near))}?" if near else ""))
+            receipt = focus_rejection(args.focus, names)
+            print(json.dumps(receipt, indent=2, sort_keys=True) if args.json
+                  else render_rejection(receipt))
             return 2
         keep = closure(list(graph.edges), args.focus, hops=args.hops)
         preserved = preservation(list(graph.edges), keep, args.focus, args.hops)
@@ -284,6 +297,10 @@ def _cmd_context_envelope(args) -> int:
             focus=args.focus,
             hops=args.hops,
         )
+    except FocusRejection as exc:
+        print(json.dumps(exc.receipt, indent=2, sort_keys=True) if args.json
+              else render_rejection(exc.receipt))
+        return 2
     except ValueError as exc:
         print(str(exc))
         return 2
@@ -315,9 +332,7 @@ def _cmd_viz(args) -> int:
     names = {n.name for n in graph.repos}
     if args.focus:
         if args.focus not in names:
-            near = [n for n in names if args.focus.lower() in n.lower()]
-            print(f"unknown project: {args.focus!r}"
-                  + (f". Did you mean: {', '.join(sorted(near))}?" if near else ""))
+            print(render_rejection(focus_rejection(args.focus, names)))
             return 2
         graph = focus_subgraph(graph, closure(list(graph.edges), args.focus))
     pack = to_json(graph)
@@ -704,6 +719,8 @@ def main(argv: list[str] | None = None) -> int:
         return _cmd_verify(args)
     if args.cmd == "freshness":
         return _cmd_freshness(args)
+    if args.cmd == "invalidate":
+        return cmd_invalidate(args)
     if args.cmd == "bench":
         return _cmd_bench(args)
     if args.cmd == "mcp":

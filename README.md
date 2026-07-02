@@ -45,7 +45,7 @@ Run it on a real multi-repo workspace, use the atlas for onboarding, diligence, 
 ## Current status
 
 - **Release:** `index-graph 2.8.0`; command `index`; Python 3.11+; zero runtime dependencies.
-- **Operator surface:** `index status --json`, `index doctor --json`, `index demo --json`, and `index mcp` expose the Project Telos action envelope and native MCP tools: `index.map`, `index.context`, `index.context.envelope`, `index.select`, `index.wiki`, `index.status`, `index.doctor`, plus the existing graph, focus, verify, router, and internals tools. Generated routers now carry compact dependency evidence like `pyproject.toml:12` beside internal edges, use a fast describes-only docs pass for large workspaces, and the status payload advertises shared CLI/MCP/plugin/IDE/TUI/app contracts for enterprise, research, creative, scientific, and education workflows.
+- **Operator surface:** `index status --json`, `index doctor --json`, `index demo --json`, and `index mcp` expose the Project Telos action envelope and native MCP tools: `index.map`, `index.context`, `index.context.envelope`, `index.select`, `index.invalidate`, `index.wiki`, `index.status`, `index.doctor`, plus the existing graph, focus, verify, router, and internals tools. Generated routers now carry compact dependency evidence like `pyproject.toml:12` beside internal edges, use a fast describes-only docs pass for large workspaces, and the status payload advertises shared CLI/MCP/plugin/IDE/TUI/app contracts for enterprise, research, creative, scientific, and education workflows.
 - **Current floor:** 2.8.0 covers atlas mapping, nine ecosystem resolvers, architecture certificates, freshness checks, token-economics benchmarking, selection-aware context envelopes, and MCP-native workspace intelligence.
 - **Public role:** workspace map and context-envelope layer for Project Telos: index gives gather, forum, crucible, and telos a shared view of what code, docs, and dependency evidence exist now.
 
@@ -205,6 +205,7 @@ A rendered sample ships with the repo at [`examples/atlas-demo.html`](examples/a
 | **Drift (certificate)** | `index snapshot` then `index drift` | Snapshot the shape, then see exactly what changed |
 | **Claim grounding** | `index verify` | Confirm or refute a dependency or existence claim against the graph, with evidence |
 | **Freshness** | `index check --freshness`, then `index freshness` | Stamp the certificate with a content fingerprint; later, ask whether the ground truth moved |
+| **Invalidation (typed)** | `index invalidate --out PIN`, then `index invalidate --pin PIN` | Pin the tree, then get a report naming exactly which artifacts the changes invalidate, with typed reasons and reconciled counts |
 | **Token economy** | `index bench` | Measure how much smaller the structural pack is than the source it distills, on your own workspace |
 | **Agent protocol** | `index mcp` | An MCP-shaped stdio server exposing index's tools to an agent host |
 
@@ -232,6 +233,8 @@ Every check and drift returns a certificate. The verdict is one of three words, 
 
 A certificate can also know when it went stale. `index check --freshness` records a content fingerprint of the workspace at mint time, and later `index freshness --cert CERT --root ROOT` recomputes it and answers FRESH or STALE, naming exactly which repos moved. It is the mid-loop "has anything changed since I last verified?" check, so a verdict cannot quietly rot while an agent keeps trusting it. The fingerprint is conservative: it may flag a change that does not alter the graph, but it never misses one that could.
 
+When you need more than "something moved", `index invalidate` names what the movement invalidates. Pin the tree once (`index invalidate --out pin.json`), then diff it later (`index invalidate --pin pin.json`): the report splits the fingerprinted artifacts, the certificate, the context pack, the graph snapshot, and each pinned repo, into invalidated and still valid, each invalidation typed with a reason from a closed set (file-changed, file-removed, dependency-edge-changed, doc-changed, unversioned). The counts must reconcile, a bundled check re-derives them from the report itself, and a README edit invalidates the context pack while leaving the structural snapshot standing, so you refresh only what the diff actually touched.
+
 All of it runs offline. No API, no account, no model, no network. The tool reads code and writes JSON, and it does not care what wrote the code or what reads the verdict.
 
 ---
@@ -256,11 +259,15 @@ index drift     --from OLD --to NEW [--json]
 index router    [--root ROOT] [--out FILE]
 index verify    [--root ROOT] [--depends "A -> B" | --exists NAME] [--json]
 index freshness --cert CERT [--root ROOT] [--json]
+index invalidate [--root ROOT] (--out PIN | --pin PIN) [--json]
 index bench     [--root ROOT] [--json]
 index mcp       (stdio JSON-RPC; an agent host connects and calls index's tools)
 ```
 
 `--focus REPO` narrows a `viz` or `context` render to one repo's dependency neighborhood.
+A focus that resolves to no repo fails typed: an `index.focus-rejection/v1` receipt names
+the unresolved selector, a reason code from a closed set, and a bounded candidate list,
+instead of a bare error string.
 `--no-external` hides stdlib and third-party nodes, keeping the graph to your own repos.
 In the `atlas` dashboard, focus is interactive. Just double-click a node.
 

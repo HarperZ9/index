@@ -7,6 +7,7 @@ from pathlib import Path
 
 from ..freshness import SCHEMA as FRESHNESS_SCHEMA, workspace_fingerprint
 from ..graph.build import DependencyGraph
+from .focus import resolve_focus
 from .pack import closure, focus_subgraph, preservation, to_json
 
 SCHEMA = "project-telos.context-envelope/v1"
@@ -32,8 +33,9 @@ def build_context_envelope(
     candidate_repo_count = len(source_graph.repos)
     if focus:
         names = {node.name for node in graph.repos}
-        if focus not in names:
-            raise ValueError(f"unknown focus repo: {focus}")
+        # an unresolvable selector raises FocusRejection (a ValueError) whose
+        # .receipt is the typed index.focus-rejection/v1 contract
+        focus = resolve_focus(focus, names)
         keep = closure(list(graph.edges), focus, hops=hops)
         preserved = preservation(list(graph.edges), keep, focus, hops)
         graph = focus_subgraph(graph, keep)

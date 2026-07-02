@@ -45,6 +45,11 @@ def _tool_defs() -> list[dict]:
              "suffixes": {"type": "array", "items": {"type": "string"}},
              "max_files": {"type": "integer"},
          })},
+        {"name": "index.invalidate",
+         "description": "Diff the tree against a pinned fingerprint and name exactly what the changes invalidate (index.invalidation/1). Without 'pin', mints and returns a pin of the current tree, matching the `index invalidate` CLI surface.",
+         "inputSchema": _root_schema({
+             "pin": {"type": "string", "description": "path to a pin JSON minted earlier"},
+         })},
         {"name": "index.wiki",
          "description": "Single-repo verified wiki pack (pages derived from the module graph, sealed manifest, commit-pinned), matching the `index wiki --format json` CLI surface; pass verify=PATH to re-check a sealed artifact (MATCH/DRIFT/UNVERIFIABLE).",
          "inputSchema": _root_schema({
@@ -101,6 +106,7 @@ def call_tool(name: str, args: dict) -> str:
         return json.dumps(payload, indent=2, sort_keys=True)
 
     from .graph.build import build_graph
+    from .context.focus import FocusRejection, focus_rejection
     from .context.pack import to_json, closure, preservation, focus_subgraph
 
     if "root" not in args:
@@ -120,6 +126,20 @@ def call_tool(name: str, args: dict) -> str:
 
     repo_paths = _repo_paths(root)
 
+    if name == "index.invalidate":
+        # without 'pin' this mints one; with 'pin' it emits the typed report.
+        # both are payloads, matching the CLI's --out / --pin modes.
+        from .freshness.invalidate import mint_pin
+        from .freshness.invalidate_cli import run_invalidate
+        if not args.get("pin"):
+            return json.dumps(mint_pin(root), indent=2, sort_keys=True)
+        pin_path = Path(args["pin"])
+        try:
+            pin = json.loads(pin_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            raise ValueError(f"cannot read pin {pin_path}: {exc}")
+        return json.dumps(run_invalidate(root, pin), indent=2, sort_keys=True)
+
     if name == "index.map":
         from .config import load_config
         from .scan import build_map
@@ -131,20 +151,26 @@ def call_tool(name: str, args: dict) -> str:
 
     if name == "index.context.envelope":
         from .context.envelope import build_context_envelope
-        env = build_context_envelope(
-            build_graph(repo_paths),
-            root=root,
-            token_budget=int(args.get("budget", 1200)),
-            focus=args.get("focus"),
-            hops=args.get("hops"),
-        )
+        try:
+            env = build_context_envelope(
+                build_graph(repo_paths),
+                root=root,
+                token_budget=int(args.get("budget", 1200)),
+                focus=args.get("focus"),
+                hops=args.get("hops"),
+            )
+        except FocusRejection as exc:
+            # an unresolvable focus is a typed receipt, not a protocol error
+            # (the index.select not-found precedent)
+            return json.dumps(exc.receipt, indent=2, sort_keys=True)
         return json.dumps(env, indent=2, sort_keys=True)
 
     if name == "index_focus":
         graph = build_graph(repo_paths)
-        repo = args.get("repo")
-        if repo not in {n.name for n in graph.repos}:
-            raise ValueError(f"unknown repo: {repo}")
+        repo = args.get("repo") or ""
+        names = {n.name for n in graph.repos}
+        if repo not in names:
+            return json.dumps(focus_rejection(repo, names), indent=2, sort_keys=True)
         hops = args.get("hops")
         keep = closure(list(graph.edges), repo, hops=hops)
         pack = to_json(focus_subgraph(graph, keep))

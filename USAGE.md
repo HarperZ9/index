@@ -265,7 +265,29 @@ index context --root ROOT [--json] [--focus REPO] [--audit]
 Exit codes:
 
 - `0`: the context pack was written or printed successfully.
-- `2`: `--focus <repo>` names a repo not found in the workspace. A near-match hint is printed to stderr.
+- `2`: `--focus <repo>` names a repo not found in the workspace.
+
+An unresolvable focus fails typed, not with a bare error string. The command prints an
+`index.focus-rejection/v1` receipt (JSON with `--json`, one readable line otherwise) naming
+the unresolved selector, a reason code from a closed set (`unresolved-focus`, or
+`empty-workspace` when there are no repos at all), a bounded candidate list with near
+matches first, the full candidate count, and whether the list was truncated:
+
+```json
+{
+  "schema": "index.focus-rejection/v1",
+  "selector": "gathr",
+  "reason_code": "unresolved-focus",
+  "candidates": ["gather", "crucible", "forum"],
+  "candidate_count": 3,
+  "truncated": false
+}
+```
+
+The same receipt shape covers `context-envelope --focus`, `viz --focus`, and the
+`index_focus` and `index.context.envelope` MCP tools, where the receipt comes back as the
+tool payload rather than a protocol error. Python callers of `build_context_envelope` get a
+`FocusRejection` (a `ValueError` subclass) carrying the receipt on `.receipt`.
 
 The map subcommand (`index map`, or the flat `index --root ...`) is unaffected.
 
@@ -588,6 +610,28 @@ The verdict is FRESH (nothing graph-relevant changed), STALE (it lists the repos
 
 The fingerprint is conservative on purpose. It may report STALE for a content change that does not alter the resolved graph, but it never reports FRESH when a graph-relevant file changed, so FRESH is never a false assurance. The set of relevant files is declared by the resolvers, so a new ecosystem is covered without any change here.
 
+## What exactly went stale? (`invalidate`)
+
+`index freshness` tells you the workspace moved. `index invalidate` tells you what that movement invalidates, so an agent can refresh only what the diff actually touched instead of discarding everything it verified.
+
+First, pin the current tree:
+
+```text
+index invalidate --root ROOT --out pin.json
+```
+
+The pin (`index.invalidation-pin/1`) records the per-file hash of every graph-relevant file, the root docs the context pack reads, and the structural snapshot, content-addressed by a `pinned_ref`. Later, diff the live tree against it:
+
+```text
+index invalidate --root ROOT --pin pin.json [--json]
+```
+
+The report (`index.invalidation/1`) splits the fingerprinted scope, the `certificate`, `context-pack`, and `graph-snapshot` artifacts plus one `repo:NAME` scope per pinned repo, into `invalidated` and `still_valid`. Every invalidated entry carries a reason code from a closed set: `file-changed`, `file-removed`, `dependency-edge-changed`, `doc-changed`, or `unversioned` (content now in scope that the pin never versioned, like a new repo). Counts must reconcile: invalidated + still_valid = scope, always.
+
+The report is sharper than the freshness fold. A README edit invalidates the certificate and the context pack (their hashes cover repo descriptions) but leaves `graph-snapshot` still valid, because the structural projection does not read prose. The verdict is FRESH or STALE, with exit codes 0 and 1; a document that is not a pin reads as UNVERIFIABLE with exit code 2, and a tampered pin reads as STALE with `file-changed` reasons, never a crash.
+
+`--json` emits `{"report": ..., "reconciliation": ...}`. The reconciliation re-derives the ledger from the report itself and turns any gap to DRIFT (a forged count, an unknown reason code, a double-booked scope, a verdict that disagrees with its own lists), so the report is a claim you can re-check rather than trust. The importable API mirrors the CLI: `from index_graph.freshness.invalidate import mint_pin, invalidation_report, reconcile_invalidation`.
+
 ## Token economy (`bench`)
 
 A recurring claim is that a structural map is cheaper for an agent than reading the code. `index bench` lets you check that on your own workspace instead of taking it on faith.
@@ -614,7 +658,7 @@ Bytes are exact and model-agnostic. The token figures use the common ~4 bytes/to
 index mcp
 ```
 
-The tools are `index_graph`, `index_focus` (a repo's neighborhood plus the preservation manifest), `index_verify` (ground a depends or exists claim), `index_router` (the workspace map), `index_internals` (a repo's module graph), `index.select` (path selection with typed rejection receipts), and `index.wiki` (the sealed single-repo wiki pack, or a verification report when called with `verify`). Each reuses the same function its matching subcommand does, so the protocol face never disagrees with the CLI.
+The tools are `index_graph`, `index_focus` (a repo's neighborhood plus the preservation manifest), `index_verify` (ground a depends or exists claim), `index_router` (the workspace map), `index_internals` (a repo's module graph), `index.select` (path selection with typed rejection receipts), `index.invalidate` (without `pin` it mints and returns a pin of the current tree; with `pin` it emits the `index.invalidation/1` report plus its reconciliation), and `index.wiki` (the sealed single-repo wiki pack, or a verification report when called with `verify`). Each reuses the same function its matching subcommand does, so the protocol face never disagrees with the CLI. An unresolvable `focus` or `repo` argument returns an `index.focus-rejection/v1` receipt as the payload instead of a protocol error.
 
 ## Notes
 

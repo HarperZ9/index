@@ -181,6 +181,63 @@ You do not trust a certificate. You re-run it.
 If the hashes and the verdict agree, the certificate held. If they do not, the structure
 or the criterion changed, which is itself the signal.
 
+## The invalidation report: `index.invalidation/1`
+
+Freshness says that the workspace moved. The invalidation report says what that movement
+invalidates. It compares a pin, recorded earlier, against the current tree, and lands every
+fingerprinted artifact or scope in exactly one of two buckets.
+
+The pin (`index.invalidation-pin/1`) records the per-file SHA-256 of every graph-relevant
+file per repo (the same relevant-file set the freshness fingerprint walks), the root docs
+the context pack reads (the README family, which feed repo descriptions), and the
+`index.snapshot/1` of the moment. Its `pinned_ref` is the canonical hash of that state,
+computed with the hashing rule above. `index invalidate --root ROOT --out PIN` writes one.
+
+`index invalidate --root ROOT --pin PIN [--json]` recomputes the same state from the live
+tree and emits the report:
+
+```json
+{
+  "schema": "index.invalidation/1",
+  "pinned_ref": "<canonical hash of the pinned state>",
+  "current_ref": "<canonical hash of the live state>",
+  "verdict": "STALE",
+  "invalidated": [
+    {"artifact_or_scope": "certificate", "reason_code": "doc-changed", "evidence": ["README.md"]},
+    {"artifact_or_scope": "context-pack", "reason_code": "doc-changed", "evidence": ["README.md"]},
+    {"artifact_or_scope": "repo:app", "reason_code": "doc-changed", "evidence": ["README.md"]}
+  ],
+  "still_valid": ["graph-snapshot", "repo:lib"],
+  "counts": {"scope": 5, "invalidated": 3, "still_valid": 2},
+  "recheck": "index invalidate --root ROOT --pin PIN --json"
+}
+```
+
+The scope is fixed by the pin: the three derived artifacts index fingerprints
+(`certificate`, `context-pack`, `graph-snapshot`) plus one `repo:NAME` entry per pinned
+repo. The counts must reconcile: `invalidated + still_valid == scope`, always.
+
+Reason codes form a closed set, and a consumer must reject any other:
+
+| Code | Meaning |
+|------|---------|
+| `file-changed` | a pinned graph-relevant file's content moved |
+| `file-removed` | a pinned graph-relevant file is gone |
+| `dependency-edge-changed` | the structural snapshot (edges, roles, cycles) moved |
+| `doc-changed` | a pinned doc the context pack reads moved |
+| `unversioned` | content is now in scope that the pin never versioned |
+
+The report is sharper than the freshness fold on purpose. A README edit invalidates the
+certificate and the context pack (their content hashes cover repo descriptions) but leaves
+`graph-snapshot` in `still_valid`, because the structural projection does not read prose.
+The verdict is `FRESH` (nothing invalidated) or `STALE`; a document that is not a pin
+yields `UNVERIFIABLE` rather than a guess, and a tampered pin hash simply reads as a moved
+file (STALE, `file-changed`), never a crash.
+
+A consumer does not trust the ledger either. `reconcile_invalidation` re-derives it from
+the report itself and turns any gap to DRIFT: a forged count, an unknown reason code, a
+scope booked in both buckets, or a verdict that disagrees with its own lists.
+
 ## Module resolution bounds
 
 The intra-repo module graph (`index internals`, and `index check --internals`) is exact

@@ -92,13 +92,14 @@ def status_payload() -> dict:
         native={
             "role": "structure-context",
             "commands": ["map", "graph", "context", "context-envelope", "select",
-                         "atlas", "wiki", "verify"],
+                         "atlas", "wiki", "verify", "invalidate"],
             "operator_commands": ["status", "doctor", "demo", "mcp"],
             "mcp_tools": [
                 "index.map",
                 "index.context",
                 "index.context.envelope",
                 "index.select",
+                "index.invalidate",
                 "index.wiki",
                 "index.status",
                 "index.doctor",
