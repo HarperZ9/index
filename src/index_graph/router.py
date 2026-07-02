@@ -56,7 +56,23 @@ def render_router(pack: dict) -> str:
             L.append(f"- `{doc}` describes `{repo}`")
         L.append("")
 
+    L.extend(_deep_dives(pack.get("repo_dirs", {}), repos))
     return "\n".join(L).rstrip() + "\n"
+
+
+def _deep_dives(repo_dirs: dict, repos: list[str]) -> list[str]:
+    """Point an agent at the verified per-repo wiki, so the workspace map is
+    the entry to a deeper, re-checkable view rather than the whole story."""
+    if not repo_dirs:
+        return []
+    lines = ["## Per-repo deep dives",
+             "For a verified per-repo wiki (pages derived from the module graph, "
+             "sealed and commit-pinned), run:"]
+    for name in repos:
+        target = repo_dirs.get(name, name)
+        lines.append(f"- `{name}`: `index wiki --root {target}`")
+    lines.append("")
+    return lines
 
 
 def _deps_label(deps: dict[str, str]) -> str:

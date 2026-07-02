@@ -444,12 +444,15 @@ Open `atlas.html` in any browser, offline. Pan and zoom the graph, search repos 
 `index wiki` is the single-repo altitude: the atlas maps a workspace, the wiki explains one unfamiliar repo. It derives a multi-page wiki from the intra-repo module graph (the same graph `index internals` reports), joins the repo's own markdown in verbatim, and seals the result so it can be re-checked. There is no model and no generated prose; every structural statement is a projection of the graph, and every edge shown carries its file:line evidence.
 
 ```text
-index wiki [--root REPO] [--out PATH] [--format html|json]
+index wiki [SOURCE] [--root REPO] [--out PATH] [--format html|json]
 index wiki --verify PATH [--root REPO] [--json]
 ```
 
+`SOURCE` is optional: a git URL (`index wiki https://github.com/org/repo`) is shallow-cloned to a temp dir, derived, and removed, so you can point the wiki at a repo you have not cloned; a local path (`index wiki /path/to/repo`) reads in place. With no `SOURCE`, `--root` is used. A `SOURCE` that is neither a git URL nor an existing directory is rejected rather than guessed.
+
 | Flag            | Default           | Meaning                                                                 |
 | --------------- | ----------------- | ----------------------------------------------------------------------- |
+| `SOURCE`        | none              | A git URL (cloned then removed) or a local path; overrides `--root`.    |
 | `--root`        | current directory | The single repo to derive the wiki from (not a workspace).              |
 | `--out PATH`    | stdout            | Write the artifact to a file instead of printing it.                    |
 | `--format`      | html              | `html`: one self-contained file with client-side page navigation; `json`: the sealed wiki pack. |

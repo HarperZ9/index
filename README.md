@@ -73,9 +73,12 @@ A program's structure is knowledge, and knowledge that lives in one person's mem
 The atlas maps a whole workspace. `index wiki` is the other altitude, the one-unfamiliar-repo view a newcomer actually needs. Wiki generators built on models guess your architecture and write confident prose about structure that is not there; repo packers dump source without comprehending it. `index wiki` takes the third path: it derives the wiki for ONE repo from the module dependency graph index already extracts, and then seals it so the result can be re-checked instead of trusted.
 
 ```bash
+index wiki https://github.com/org/repo --out wiki.html   # clone, derive, clean up
 index wiki --root /path/to/one/repo --out wiki.html      # one self-contained file
 index wiki --verify wiki.html --root /path/to/one/repo   # MATCH / DRIFT / UNVERIFIABLE
 ```
+
+Point it at a git URL and index shallow-clones the repo to a temp dir, derives the wiki, and removes the clone, so you can read a repo you have not checked out. A local path works the same way.
 
 One command, one offline HTML file with client-side page navigation (or a JSON pack with `--format json`), four kinds of page:
 

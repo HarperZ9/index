@@ -80,6 +80,7 @@ def build_router_pack(graph: DependencyGraph, docs: list[Doc],
     pack["docs"] = _doc_rows(docs)
     pack["knowledge_edges"] = _describes_edges(docs, repo_dirs)
     pack["knowledge_warnings"] = []
+    pack["repo_dirs"] = dict(repo_dirs)
     return pack
 
 
