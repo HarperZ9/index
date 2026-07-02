@@ -276,6 +276,30 @@ Dynamic dispatch (`getattr`, a variable holding a function) and files that fail 
 recorded in the symbol coverage object, not guessed at. Only Python is symbol-exact; other
 languages keep their module-level graph and carry no symbol extraction.
 
+## LSP server: `index lsp --root ROOT`
+
+`index lsp` starts a stdio language server so the same symbol graph answers an IDE
+(VSCode/Neovim/JetBrains) directly. The transport is JSON-RPC 2.0 with `Content-Length`
+framing (one header line, a blank line, then the UTF-8 JSON body), hand-rolled with no SDK
+and no new runtime dependency. It advertises `definitionProvider` and `referencesProvider`;
+`initialized` builds the graph, `shutdown`/`exit` close cleanly.
+
+- `textDocument/definition` resolves the identifier under the cursor to a `SymbolDefinition`
+  and returns its `Location` (0-indexed line, column 0). An identifier with no definition in
+  this workspace returns `null`, never a guessed jump.
+- `textDocument/references` returns every resolved caller of the symbol under the cursor,
+  each an evidence-backed `Location` from a `SymbolCall` whose `to_symbol` is the target.
+  Unresolved references (`cross_module_unresolved`) are excluded: they are not evidence-backed
+  edges, so they are never surfaced as a caller.
+
+Three failure modes are refused, not answered wrong: a definition request for a symbol that
+lives only in a **different** repo/workspace returns `null` (the server searches only its own
+`--root`); an **unresolved** name returns `null`/`[]` rather than a false positive; and a
+**stale** workspace (a `.py` file changed, added, or removed on disk since `initialize`) is
+detected by a content fingerprint of the Python tree and returns a JSON-RPC error (code
+`-32603`, "workspace changed") instead of an answer derived from a graph that no longer
+describes the files. The IDE re-sends `initialize` to rebuild the graph and fingerprint.
+
 Per-symbol wiki pages are sealed with the same per-page hash as every other page, and
 `index wiki --verify` re-derives the symbol graph from the current tree: a resolved call a
 page claims that the real graph does not contain is DRIFT (rule `symbol-call-not-in-graph`),

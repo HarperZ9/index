@@ -258,6 +258,23 @@ def _add_serve_parser(sub) -> None:
     )
 
 
+def _add_lsp_parser(sub) -> None:
+    lsp = sub.add_parser(
+        "lsp",
+        help="Start a stdio LSP server exposing go-to-definition and "
+        "find-references over the symbol graph (VSCode/Neovim/JetBrains). "
+        "Answers are evidence-backed file:line or honestly empty; a stale "
+        "workspace is detected, never silently answered.",
+    )
+    lsp.add_argument("--root", type=Path, default=Path.cwd())
+    lsp.add_argument(
+        "--trace",
+        choices=["off", "messages", "verbose"],
+        default="off",
+        help="LSP trace verbosity (reserved; currently a no-op placeholder).",
+    )
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="index",
@@ -292,6 +309,7 @@ def build_parser() -> argparse.ArgumentParser:
     _add_invalidate_parser(sub)
     _add_bench_parser(sub)
     _add_serve_parser(sub)
+    _add_lsp_parser(sub)
     sub.add_parser(
         "mcp",
         help="Serve the MCP-shaped stdio protocol face (JSON-RPC over stdin/stdout).",
