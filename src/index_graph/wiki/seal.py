@@ -64,6 +64,22 @@ def claimed_module_edges(pages: list[dict]) -> set[tuple[str, str]]:
     return edges
 
 
+def claimed_symbol_calls(pages: list[dict]) -> set[tuple[str, str]]:
+    """Every resolved symbol-call edge (caller, callee) the wiki asserts, drawn
+    from the callers/callees of each symbol page. An unresolved reference (which
+    the pages surface separately, without a to_symbol) is never a claimed edge."""
+    edges: set[tuple[str, str]] = set()
+    for page in pages:
+        if page.get("kind") != "symbol":
+            continue
+        sym = page.get("symbol", "")
+        for callee in page.get("callees", []):
+            edges.add((sym, callee.get("to_symbol", "")))
+        for caller in page.get("callers", []):
+            edges.add((caller.get("from_symbol", ""), sym))
+    return edges
+
+
 def _structural_gap(artifact: object) -> str | None:
     if not isinstance(artifact, dict):
         return "artifact is not a JSON object"
@@ -125,6 +141,14 @@ def verify_wiki(artifact: object, root: Path | str, *, recheck: str = "") -> dic
         findings.append({"rule": "edge-not-in-graph",
                          "detail": f"wiki claims module edge {frm} -> {to} but the "
                                    "graph derived from the current tree does not contain it"})
+    from ..symbols import build_symbol_graph, symbol_graph_to_claims
+    real_symbol = symbol_graph_to_claims(build_symbol_graph(root))
+    claimed_symbol = claimed_symbol_calls(artifact["pages"])
+    for frm, to in sorted(claimed_symbol - real_symbol):
+        findings.append({"rule": "symbol-call-not-in-graph",
+                         "detail": f"wiki claims symbol call {frm} -> {to} but the "
+                                   "symbol graph derived from the current tree does "
+                                   "not contain it"})
     pinned, current = artifact["manifest"].get("commit"), head_commit(root)
     if pinned != current:
         findings.append({"rule": "commit-moved",
@@ -132,7 +156,7 @@ def verify_wiki(artifact: object, root: Path | str, *, recheck: str = "") -> dic
                                    f"but the current tree is at {current}"})
     return _report("MATCH" if not findings else "DRIFT", findings,
                    pages_checked=len(artifact["pages"]),
-                   edges_checked=len(claimed), recheck=recheck)
+                   edges_checked=len(claimed) + len(claimed_symbol), recheck=recheck)
 
 
 def extract_embedded_pack(html_text: str) -> dict:

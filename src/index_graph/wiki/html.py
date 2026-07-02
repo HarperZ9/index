@@ -116,6 +116,33 @@ def _package_section(p: dict) -> str:
             f"<h3>dependents</h3>{_via_list(p['dependents'], 'from')}")
 
 
+def _symbol_section(p: dict) -> str:
+    d = p["definition"]
+    defloc = f"{d['file']}:{d['line']}"
+    callers = "".join(
+        f"<li><code>{escape(e['from_symbol'])}</code> "
+        f"<span class=\"ev\">{escape(_loc(e))}</span></li>" for e in p["callers"])
+    callees = "".join(
+        f"<li><code>{escape(e['to_symbol'])}</code> "
+        f"<span class=\"ev\">{escape(_loc(e))}</span></li>" for e in p["callees"])
+    unresolved = "".join(
+        f"<li><code>{escape(e['to_name'])}</code> "
+        f"<span class=\"ev\">{escape(_loc(e))}</span> "
+        f"<span class=\"label\">{escape(e['reason'])}</span></li>"
+        for e in p["unresolved_calls"])
+    parent = f" in <code>{escape(p['parent'])}</code>" if p.get("parent") else ""
+    return (f"<h2>{escape(p['title'])}</h2>"
+            f"<p class=\"label\">{escape(p['symbol_kind'])} "
+            f"<code>{escape(p['symbol'])}</code>{parent}, defined at "
+            f"<code>{escape(defloc)}</code></p>"
+            f"<h3>called by ({len(p['callers'])})</h3>"
+            + (f"<ul>{callers}</ul>" if callers else "<p>none</p>")
+            + f"<h3>calls ({len(p['callees'])})</h3>"
+            + (f"<ul>{callees}</ul>" if callees else "<p>none</p>")
+            + (f"<h3>unresolved references ({len(p['unresolved_calls'])})</h3>"
+               f"<ul>{unresolved}</ul>" if unresolved else ""))
+
+
 def _architecture_section(p: dict) -> str:
     return (f"<h2>{escape(p['title'])}</h2>"
             f"<p class=\"label\">rendered from the real {escape(p['granularity'])} "
@@ -136,7 +163,7 @@ def _docs_section(p: dict) -> str:
 
 _SECTIONS = {"overview": _overview_section, "module": _module_section,
              "package": _package_section, "architecture": _architecture_section,
-             "docs": _docs_section}
+             "symbol": _symbol_section, "docs": _docs_section}
 
 
 def render_wiki_html(pack: dict) -> str:
