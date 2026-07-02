@@ -14,11 +14,15 @@ from .. import __version__
 from ..internals import InternalGraph, build_internals
 from ..knowledge.docs import discover_docs
 from ..knowledge.markdown import render_markdown
+from ..symbols import SymbolGraph, build_symbol_graph
 from ..viz import build_layout, render_mermaid, render_svg
 from .seal import WIKI_SCHEMA, build_manifest, head_commit
 
 # Above this module count the wiki collapses module pages into package pages.
 CLUSTER_THRESHOLD = 120
+# Above this symbol count the wiki omits per-symbol pages to avoid bloat; the
+# symbol graph is still derived and sealable via `index internals-symbols`.
+SYMBOL_PAGE_LIMIT = 800
 _HUB_FAN_IN = 4
 
 
@@ -177,10 +181,56 @@ def _docs_page(docs: list) -> dict:
             "boundary": _boundary(0)}
 
 
+def _symbol_boundary(evidence_count: int) -> dict:
+    return {"derived_from": "symbol-call-graph", "generated_prose": False,
+            "evidence_count": evidence_count}
+
+
+def _symbol_pages(sg: SymbolGraph) -> list[dict]:
+    """One page per symbol: definition, resolved callers/callees with evidence,
+    and any unresolved references surfaced honestly (never a guessed edge).
+
+    Skipped entirely above SYMBOL_PAGE_LIMIT so a huge repo does not bloat the
+    pack; the symbol graph itself is still derivable and sealable on the CLI.
+    """
+    if len(sg.symbols) > SYMBOL_PAGE_LIMIT:
+        return []
+    callers_by: dict[str, list[dict]] = {}
+    callees_by: dict[str, list[dict]] = {}
+    unresolved_by: dict[str, list[dict]] = {}
+    for c in sg.calls:
+        if c.to_symbol is not None:
+            callees_by.setdefault(c.from_symbol, []).append(
+                {"to_symbol": c.to_symbol, "file": c.evidence_file,
+                 "line": c.evidence_line, "raw": c.raw})
+            callers_by.setdefault(c.to_symbol, []).append(
+                {"from_symbol": c.from_symbol, "file": c.evidence_file,
+                 "line": c.evidence_line, "raw": c.raw})
+        else:
+            unresolved_by.setdefault(c.from_symbol, []).append(
+                {"to_name": c.to_name, "file": c.evidence_file,
+                 "line": c.evidence_line, "raw": c.raw,
+                 "reason": "unresolved: dynamic or cross-module target not in this repo"})
+    pages = []
+    for d in sg.symbols:
+        callers = callers_by.get(d.id, [])
+        callees = callees_by.get(d.id, [])
+        unresolved = unresolved_by.get(d.id, [])
+        pages.append({
+            "id": f"symbol/{d.id}", "kind": "symbol", "title": d.name,
+            "symbol": d.id, "symbol_kind": d.kind, "module": d.module_id,
+            "parent": d.parent, "is_public": d.is_public,
+            "definition": {"file": d.file, "line": d.line},
+            "callers": callers, "callees": callees, "unresolved_calls": unresolved,
+            "boundary": _symbol_boundary(len(callers) + len(callees))})
+    return pages
+
+
 def build_wiki_pack(root: Path | str, repo_name: str | None = None) -> dict:
     """The whole wiki as one sealed, portable, deterministic JSON pack."""
     root = Path(root).resolve()
     g = build_internals(root, repo_name)
+    sg = build_symbol_graph(root, repo_name)
     docs = discover_docs(root)
     commit = head_commit(root)
     clustered = len(g.modules) > CLUSTER_THRESHOLD
@@ -190,9 +240,12 @@ def build_wiki_pack(root: Path | str, repo_name: str | None = None) -> dict:
     else:
         body = _module_pages(g)
         arch = _architecture_page(_module_graph_pack(g), "module", len(g.edges))
-    pages = [_overview_page(g, docs, commit), arch, *body, _docs_page(docs)]
+    symbol_pages = _symbol_pages(sg)
+    pages = [_overview_page(g, docs, commit), arch, *body, *symbol_pages, _docs_page(docs)]
     inputs = {"modules": len(g.modules), "internal_edges": len(g.edges),
               "docs": len(docs), "clustered": clustered,
+              "symbols": len(sg.symbols), "symbol_pages": len(symbol_pages),
+              "resolved_symbol_calls": sg.coverage.resolved_calls,
               "coverage_complete": g.coverage.complete}
     manifest = build_manifest(pages, repo=g.repo, commit=commit,
                               inputs=inputs, tool_version=__version__)

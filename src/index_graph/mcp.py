@@ -56,6 +56,19 @@ def _tool_defs() -> list[dict]:
              "verify": {"type": "string",
                         "description": "path to a sealed wiki artifact to verify"},
          })},
+        {"name": "index.symbol-graph",
+         "description": "Symbol-level call/reference graph for one repo (root IS the repo): function/class/method definitions plus resolved (exact within-module, best-effort cross-module) and honestly-unresolved calls, matching the `index internals-symbols --json` CLI surface.",
+         "inputSchema": _root_schema()},
+        {"name": "index.symbol-definition",
+         "description": "GO-TO-DEFINITION: the file:line of every symbol whose id or bare name matches, derived (never guessed) from the AST.",
+         "inputSchema": _root_schema({"symbol": {"type": "string",
+                                                 "description": "symbol id (module::name) or bare name"}},
+                                     required=["root", "symbol"])},
+        {"name": "index.symbol-references",
+         "description": "FIND-REFERENCES: every resolved caller of a symbol, each with file:line evidence; unresolved references are reported separately, never as a caller.",
+         "inputSchema": _root_schema({"symbol": {"type": "string",
+                                                 "description": "symbol id (module::name) or bare name"}},
+                                     required=["root", "symbol"])},
         {"name": "index.status",
          "description": "Project Telos operator-spine status action envelope, matching the `index status --json` CLI surface.",
          "inputSchema": {"type": "object", "properties": {}}},
@@ -85,6 +98,36 @@ def _repo_paths(root: Path) -> dict:
     from .scan import discover_repos
     from .config import load_config
     return {p.name: p for p in discover_repos(root, load_config(None, root))}
+
+
+def _symbol_matches(sym, query: str) -> bool:
+    return sym.id == query or sym.name == query
+
+
+def _symbol_tool(name: str, root: Path, args: dict) -> str:
+    from .symbols import build_symbol_graph, symbol_graph_to_payload
+    g = build_symbol_graph(root)
+    if name == "index.symbol-graph":
+        return json.dumps(symbol_graph_to_payload(g), indent=2, sort_keys=True)
+    query = (args.get("symbol") or "").strip()
+    if not query:
+        raise ValueError("missing required argument: symbol")
+    if name == "index.symbol-definition":
+        defs = [{"id": s.id, "name": s.name, "kind": s.kind, "file": s.file,
+                 "line": s.line, "parent": s.parent}
+                for s in g.symbols if _symbol_matches(s, query)]
+        return json.dumps({"symbol": query, "definitions": defs},
+                          indent=2, sort_keys=True)
+    # index.symbol-references: resolved callers + separately, unresolved refs
+    targets = {s.id for s in g.symbols if _symbol_matches(s, query)}
+    refs = [{"from_symbol": c.from_symbol, "file": c.evidence_file,
+             "line": c.evidence_line, "raw": c.raw, "confidence": c.confidence}
+            for c in g.calls if c.to_symbol in targets]
+    unresolved = [{"from_symbol": c.from_symbol, "to_name": c.to_name,
+                   "file": c.evidence_file, "line": c.evidence_line}
+                  for c in g.calls if c.to_symbol is None and c.to_name == query]
+    return json.dumps({"symbol": query, "references": refs,
+                       "unresolved_references": unresolved}, indent=2, sort_keys=True)
 
 
 def call_tool(name: str, args: dict) -> str:
@@ -123,6 +166,9 @@ def call_tool(name: str, args: dict) -> str:
                               indent=2, sort_keys=True)
         from .wiki import build_wiki_pack
         return json.dumps(build_wiki_pack(root), indent=2, sort_keys=True)
+
+    if name in ("index.symbol-graph", "index.symbol-definition", "index.symbol-references"):
+        return _symbol_tool(name, root, args)
 
     repo_paths = _repo_paths(root)
 

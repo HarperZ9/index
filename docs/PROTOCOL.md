@@ -253,3 +253,32 @@ for some languages and best-effort for others. The bounds are stated, not hidden
 
 A consumer that needs a guarantee should treat best-effort edges as evidence, not proof,
 the same way the repo-level graph already grades its edges by confidence.
+
+## Symbol graph
+
+The symbol graph (`index internals-symbols`, and the per-symbol pages inside `index wiki`)
+extends the module graph down to functions, classes, and methods. It answers
+GO-TO-DEFINITION (where a symbol is defined) and FIND-REFERENCES (who calls it), derived
+from the Python AST, never inferred by a model, and byte-identical across runs.
+
+A `SymbolDefinition` has an `id` of `module_id::name` (or `module_id::Class::method`), a
+`kind` (`function`, `async_function`, `class`, `method`, `async_method`), and a `file:line`.
+A `SymbolCall` carries the caller id, the resolved target id (or `null`), the bare name at
+the call site, `file:line` evidence, and an honest `resolution`/`confidence` pair:
+
+| Resolution | Confidence | Meaning |
+|------------|------------|---------|
+| `exact` | `high` | the call binds to a definition in the same module (or `self.m()` to a sibling method), read from the AST |
+| `cross_module` | `moderate` | the callee is a `from <internal-module> import name` binding that names a real definition in this repo |
+| `cross_module_unresolved` | `low` | the static scan could not bind the name (undefined name, attribute on an object whose type is unknown, or an import that names no definition); surfaced as an unresolved reference, never a guessed edge |
+
+Dynamic dispatch (`getattr`, a variable holding a function) and files that fail to parse are
+recorded in the symbol coverage object, not guessed at. Only Python is symbol-exact; other
+languages keep their module-level graph and carry no symbol extraction.
+
+Per-symbol wiki pages are sealed with the same per-page hash as every other page, and
+`index wiki --verify` re-derives the symbol graph from the current tree: a resolved call a
+page claims that the real graph does not contain is DRIFT (rule `symbol-call-not-in-graph`),
+exactly as a forged module edge is. An unresolved reference is never a claimed edge, so it
+never causes a false DRIFT. Above a symbol-count threshold the wiki omits the per-symbol
+pages to avoid bloat; the symbol graph itself is still derivable and sealable on the CLI.

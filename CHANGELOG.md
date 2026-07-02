@@ -2,6 +2,23 @@
 
 ## Unreleased
 
+- Symbol-level intelligence: the AST pass now extends past module imports down to
+  functions, classes, and methods. `index internals-symbols` emits a deterministic
+  call/reference graph, GO-TO-DEFINITION and FIND-REFERENCES data derived from the
+  Python AST, and `index wiki` gains one sealed page per symbol (definition, resolved
+  callers/callees with file:line, and honestly-surfaced unresolved references). Within
+  a module, calls resolve exactly (high confidence); a call to a name imported from
+  another module in this repo resolves best-effort if it names a real definition
+  (moderate); anything the static scan cannot bind is marked unresolved, never guessed.
+  `index wiki --verify` re-derives the symbol graph and flags a claimed resolved call
+  the real graph does not contain as DRIFT (`symbol-call-not-in-graph`), the same
+  three-verdict seal the module graph uses; unresolved references are never claimed
+  edges and never cause a false DRIFT. Above a symbol-count threshold the per-symbol
+  pages are omitted to keep large-repo packs lean; the graph stays available on the
+  CLI. New MCP tools `index.symbol-graph`, `index.symbol-definition`, and
+  `index.symbol-references` expose the same graph natively. Python only; other
+  languages keep their module-level graph. Schema in `docs/PROTOCOL.md`.
+
 - On-demand wiki server: `index serve` starts a stdlib `http.server` that serves
   the verified wiki for one repo on demand. Request a repo by its forge path
   (`GET /<forge-host>/<org>/<repo>`, e.g. `http://localhost:8000/github.com/org/repo`)
