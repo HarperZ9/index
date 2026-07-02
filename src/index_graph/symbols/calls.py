@@ -147,13 +147,16 @@ def _module_maps(definitions: list[SymbolDefinition], module_id: str
     """(module-level name -> id, class id -> {method name -> id}) for one module."""
     local_defs: dict[str, str] = {}
     class_methods: dict[str, dict[str, str]] = {}
+    # Hoisted out of the loop: computing this set per definition made the whole
+    # build quadratic in total symbol count on large repos.
+    class_ids = {d.id for d in definitions
+                 if d.module_id == module_id and d.kind == "class"}
     for d in definitions:
         if d.module_id != module_id:
             continue
         if d.parent is None:
             local_defs[d.name] = d.id
-        elif d.parent in {c.id for c in definitions
-                          if c.module_id == module_id and c.kind == "class"}:
+        elif d.parent in class_ids:
             class_methods.setdefault(d.parent, {})[d.name] = d.id
     return local_defs, class_methods
 

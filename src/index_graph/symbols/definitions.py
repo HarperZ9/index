@@ -69,6 +69,23 @@ def extract_symbol_definitions(
             parse_errors.append(rel)
             continue
         _collect(tree, module_id, rel, None, in_class=False, out=definitions)
+    definitions = _dedupe_last(definitions)
     definitions.sort(key=lambda d: d.id)
     parse_errors.sort()
     return definitions, parse_errors
+
+
+def _dedupe_last(definitions: list[SymbolDefinition]) -> list[SymbolDefinition]:
+    """Collapse same-id definitions to one, keeping the last (source order).
+
+    A legal Python redefinition (two ``def foo`` at module scope, or a
+    decorator that rebinds a name) would otherwise emit two SymbolDefinitions
+    with an identical id, which silently collide in the wiki page map and make
+    resolution ambiguous. Python's runtime keeps the last binding, so the static
+    graph keeps the last definition site too. ``_collect`` appends in source
+    order, so the later dict write wins.
+    """
+    by_id: dict[str, SymbolDefinition] = {}
+    for d in definitions:
+        by_id[d.id] = d
+    return list(by_id.values())
