@@ -45,6 +45,12 @@ def _tool_defs() -> list[dict]:
              "suffixes": {"type": "array", "items": {"type": "string"}},
              "max_files": {"type": "integer"},
          })},
+        {"name": "index.wiki",
+         "description": "Single-repo verified wiki pack (pages derived from the module graph, sealed manifest, commit-pinned), matching the `index wiki --format json` CLI surface; pass verify=PATH to re-check a sealed artifact (MATCH/DRIFT/UNVERIFIABLE).",
+         "inputSchema": _root_schema({
+             "verify": {"type": "string",
+                        "description": "path to a sealed wiki artifact to verify"},
+         })},
         {"name": "index.status",
          "description": "Project Telos operator-spine status action envelope, matching the `index status --json` CLI surface.",
          "inputSchema": {"type": "object", "properties": {}}},
@@ -102,6 +108,16 @@ def call_tool(name: str, args: dict) -> str:
     root = Path(args["root"]).resolve()
     if not root.is_dir():
         raise ValueError(f"root not found: {root}")
+
+    if name == "index.wiki":
+        # single-repo altitude: the root IS the repo, no workspace scan
+        if args.get("verify"):
+            from .wiki import run_verify
+            return json.dumps(run_verify(Path(args["verify"]), root),
+                              indent=2, sort_keys=True)
+        from .wiki import build_wiki_pack
+        return json.dumps(build_wiki_pack(root), indent=2, sort_keys=True)
+
     repo_paths = _repo_paths(root)
 
     if name == "index.map":

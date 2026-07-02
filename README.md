@@ -20,6 +20,7 @@
 ```bash
 pip install index-graph
 index atlas --root /path/to/your/workspace --format html --out atlas.html
+index wiki --root /path/to/one/repo --out wiki.html   # the verified single-repo wiki
 
 # from a source checkout
 python -m index status --json
@@ -44,7 +45,7 @@ Run it on a real multi-repo workspace, use the atlas for onboarding, diligence, 
 ## Current status
 
 - **Release:** `index-graph 2.8.0`; command `index`; Python 3.11+; zero runtime dependencies.
-- **Operator surface:** `index status --json`, `index doctor --json`, `index demo --json`, and `index mcp` expose the Project Telos action envelope and native MCP tools: `index.map`, `index.context`, `index.context.envelope`, `index.select`, `index.status`, `index.doctor`, plus the existing graph, focus, verify, router, and internals tools. Generated routers now carry compact dependency evidence like `pyproject.toml:12` beside internal edges, use a fast describes-only docs pass for large workspaces, and the status payload advertises shared CLI/MCP/plugin/IDE/TUI/app contracts for enterprise, research, creative, scientific, and education workflows.
+- **Operator surface:** `index status --json`, `index doctor --json`, `index demo --json`, and `index mcp` expose the Project Telos action envelope and native MCP tools: `index.map`, `index.context`, `index.context.envelope`, `index.select`, `index.wiki`, `index.status`, `index.doctor`, plus the existing graph, focus, verify, router, and internals tools. Generated routers now carry compact dependency evidence like `pyproject.toml:12` beside internal edges, use a fast describes-only docs pass for large workspaces, and the status payload advertises shared CLI/MCP/plugin/IDE/TUI/app contracts for enterprise, research, creative, scientific, and education workflows.
 - **Current floor:** 2.8.0 covers atlas mapping, nine ecosystem resolvers, architecture certificates, freshness checks, token-economics benchmarking, selection-aware context envelopes, and MCP-native workspace intelligence.
 - **Public role:** workspace map and context-envelope layer for Project Telos: index gives gather, forum, crucible, and telos a shared view of what code, docs, and dependency evidence exist now.
 
@@ -99,6 +100,26 @@ Each command writes one HTML file. Open it in any browser, offline. Nothing to h
 Project Telos: <https://harperz9.github.io>. GitHub: <https://github.com/HarperZ9>. Peer flagships: [gather](https://github.com/HarperZ9/gather), [crucible](https://github.com/HarperZ9/crucible), [forum](https://github.com/HarperZ9/forum), and [the telos engine](https://github.com/HarperZ9/telos).
 
 I am looking for verification, testing against real workspaces, early traction from people willing to inspect the certificates, and possibly modest grassroots research funding or pointers.
+
+---
+
+## `index wiki`, the verified wiki
+
+The atlas maps a whole workspace. `index wiki` is the other altitude, the one-unfamiliar-repo view a newcomer actually needs. Wiki generators built on models guess your architecture and write confident prose about structure that is not there; repo packers dump source without comprehending it. `index wiki` takes the third path: it derives the wiki for ONE repo from the module dependency graph index already extracts, and then seals it so the result can be re-checked instead of trusted.
+
+```bash
+index wiki --root /path/to/one/repo --out wiki.html      # one self-contained file
+index wiki --verify wiki.html --root /path/to/one/repo   # MATCH / DRIFT / UNVERIFIABLE
+```
+
+One command, one offline HTML file with client-side page navigation (or a JSON pack with `--format json`), four kinds of page:
+
+- **Overview**: repo identity, detected ecosystems, graph-derived entry points, module count, doc inventory, and the commit SHA the wiki is pinned to.
+- **Module pages**: one per module (package clusters on large repos) with imports, dependents, file paths, and cycle membership, and every edge shown carries the file:line evidence the graph recorded for it. This is also the visual render `index internals` never had.
+- **Architecture**: a diagram rendered from the real dependency graph, never inferred.
+- **Docs**: your existing markdown joined in verbatim, clearly labeled as authored by humans.
+
+No model, no network, no generated prose. Every page footer states the derivation boundary, structure derived from the dependency graph plus that page's own evidence count. The artifact embeds an `index.wiki/1` manifest, the pinned commit (or "unversioned" for a non-git root), a canonical SHA-256 per page, and the generation inputs, sealed by the same hashing rule as every index certificate. `index wiki --verify` recomputes the page hashes and the graph derivation against the current tree and answers MATCH, DRIFT (a page was tampered with, a claimed edge is absent from the real graph, or the repo moved off its pinned commit), or UNVERIFIABLE, with exit codes 0/1/2. The test suite keeps the known-bad fixtures, a tampered page, a hash-consistent forged edge, hostile markdown and module names, because a verifier that cannot fail on a known-bad input is not a verifier.
 
 ---
 
@@ -178,6 +199,7 @@ A rendered sample ships with the repo at [`examples/atlas-demo.html`](examples/a
 | **Context pack (prose + relations)** | `index context` | Synthesis pack: roles, relations, narrative summary |
 | **Context envelope** | `index context-envelope --budget N` | Budgeted, receipt-backed context for large-codebase agent workflows; source refs are hashed expansion handles, selection summaries state coverage, freshness roots make packets re-checkable, and omissions carry failure codes |
 | **Path selection (receipts)** | `index select` | Split candidate files into selected and rejected; every rejection carries a typed `index.path-selection/v1` receipt, and a reconciliation check proves candidates = selected + rejected |
+| **Verified wiki (single repo)** | `index wiki` | Multi-page, self-contained wiki derived from the module graph: overview, evidence-carrying module pages, real-graph architecture diagram, human-authored docs; sealed per page, commit-pinned, re-checkable with `--verify` |
 | **Module graph (internals)** | `index internals` | The dependency graph inside one repo, with internal cycles and fan-in/out |
 | **Architecture check (certificate)** | `index check` | Measure structure against your `[architecture]` rule; emits a re-checkable verdict |
 | **Drift (certificate)** | `index snapshot` then `index drift` | Snapshot the shape, then see exactly what changed |
@@ -223,6 +245,8 @@ index graph     [--root ROOT] [--json] [--cycles]
 index context   [--root ROOT] [--focus REPO] [--hops N] [--json] [--audit]
 index context-envelope [--root ROOT] [--budget N] [--focus REPO] [--hops N] [--json]
 index select    [--root ROOT] [--suffix S ...] [--max-files N] [--json]
+index wiki      [--root REPO] [--out PATH] [--format {html,json}]
+index wiki      --verify PATH [--root REPO] [--json]
 index viz       [--root ROOT] [--format {html,svg,mermaid,all}]
                 [--focus REPO] [--no-external] [--out FILE] [--out-dir DIR]
 index internals [--root REPO] [--json] [--cycles]
