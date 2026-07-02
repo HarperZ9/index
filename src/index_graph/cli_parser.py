@@ -121,6 +121,22 @@ def _add_internals_parser(sub) -> None:
     i.add_argument("--cycles", action="store_true")
 
 
+def _add_internals_symbols_parser(sub) -> None:
+    s = sub.add_parser(
+        "internals-symbols",
+        help="Symbol-level call/reference graph for one repo (Python AST-exact "
+        "within-module; best-effort, honestly-labeled cross-module).",
+    )
+    s.add_argument("--root", type=Path, default=Path.cwd())
+    s.add_argument("--json", action="store_true")
+    s.add_argument(
+        "--coverage",
+        action="store_true",
+        help="Report only the coverage summary (symbols, resolved/unresolved "
+        "calls, parse errors, dynamic dispatch).",
+    )
+
+
 def _add_check_parser(sub) -> None:
     ck = sub.add_parser(
         "check",
@@ -266,6 +282,7 @@ def build_parser() -> argparse.ArgumentParser:
     _add_atlas_parser(sub)
     add_wiki_parser(sub)
     _add_internals_parser(sub)
+    _add_internals_symbols_parser(sub)
     _add_check_parser(sub)
     _add_snapshot_parser(sub)
     _add_drift_parser(sub)
