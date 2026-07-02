@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- Wiki from a URL: `index wiki https://github.com/org/repo` (or any git URL) now
+  shallow-clones the repo to a temp dir, derives the sealed wiki, and removes the
+  clone, giving the paste-a-repo experience without a server. A local path
+  positional works the same way (`index wiki /path/to/repo`), and a source that is
+  neither a git URL nor an existing directory is rejected rather than guessed.
+- Router deep dives: `index router` (the CLAUDE.md/AGENTS.md workspace map) now
+  ends with a per-repo pointer to the verified wiki (`index wiki --root <dir>`),
+  so an agent that opens the map is one command from a re-checkable per-repo view.
+- Packaging: the PyPI maturity classifier moves from Development Status 3 (Alpha)
+  to 4 (Beta), matching the shipped surface (2.8.0, zero runtime dependencies,
+  460 tests, sealed certificates, verified wiki, staleness contract).
 - Onboarding overhaul: the README first screen now answers what/who/problem/try-in-5-minutes
   in plain product language and leads with the single-repo wow (`index wiki` on one repo,
   producing one self-contained verified artifact; the workspace atlas comes second). The
