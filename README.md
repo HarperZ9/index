@@ -236,6 +236,7 @@ python -m index status --json
 | **On-demand wiki server** | `index serve` | Local `http.server`: request a repo by its forge path (`/github.com/org/repo`) and get its verified wiki, derived on demand from the same code path as `index wiki`; consent-clean (nothing crawled or pre-indexed, `robots.txt` disallows indexing, defers to the repo owner's docs), loopback by default |
 | **Module graph (internals)** | `index internals` | The dependency graph inside one repo, with internal cycles and fan-in/out |
 | **Symbol graph (GO-TO-DEFINITION / FIND-REFERENCES)** | `index internals-symbols` | The call/reference graph inside one repo, down to functions, classes, and methods; AST-exact within a module, best-effort and honestly-labeled across modules, deterministic and sealable in `index wiki` |
+| **LSP server (IDE go-to-definition / find-references)** | `index lsp` | A stdio language server (VSCode/Neovim/JetBrains) over the same symbol graph; every jump is evidence-backed `file:line` or honestly `null`, an unresolved reference is never a guessed jump, and a workspace changed on disk is detected, not answered from a stale graph |
 | **Architecture check (certificate)** | `index check` | Measure structure against your `[architecture]` rule; emits a re-checkable verdict |
 | **Drift (certificate)** | `index snapshot` then `index drift` | Snapshot the shape, then see exactly what changed |
 | **Claim grounding** | `index verify` | Confirm or refute a dependency or existence claim against the graph, with evidence |
@@ -290,6 +291,7 @@ index viz       [--root ROOT] [--format {html,svg,mermaid,all}]
                 [--focus REPO] [--no-external] [--out FILE] [--out-dir DIR]
 index internals [--root REPO] [--json] [--cycles]
 index internals-symbols [--root REPO] [--json] [--coverage]
+index lsp       [--root ROOT] [--trace {off,messages,verbose}]   (stdio LSP server for the IDE)
 index check     [--root ROOT] [--internals] [--json] [--config CFG]
 index snapshot  [--root ROOT] --out FILE
 index drift     --from OLD --to NEW [--json]

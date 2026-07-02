@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+- LSP server: `index lsp --root ROOT` starts a stdio language server that puts index's
+  verified symbol graph inside the IDE (VSCode/Neovim/JetBrains). It speaks JSON-RPC 2.0
+  with hand-rolled `Content-Length` framing (zero new runtime dependencies) and advertises
+  `textDocument/definition` and `textDocument/references`. Go-to-definition resolves the
+  identifier under the cursor to its AST-exact `file:line`, or returns `null` when nothing in
+  the workspace defines it, never a guessed jump; find-references returns only resolved
+  callers with `file:line` evidence and never surfaces an unresolved reference as a caller.
+  Three negatives are refused rather than answered wrong: a symbol that lives only in a
+  different repo is never returned (the server searches only its own `--root`); an unresolved
+  name returns empty, not a false positive; and a workspace that changed on disk since
+  `initialize` is detected by a fingerprint of the Python tree and returns a JSON-RPC error
+  (`-32603`, "workspace changed") instead of an answer from a stale graph. Reuses the wave-1
+  `build_symbol_graph`, symbol definitions, and call resolution wholesale. Python only.
+  Schema in `docs/PROTOCOL.md`.
+
 - Symbol-level intelligence: the AST pass now extends past module imports down to
   functions, classes, and methods. `index internals-symbols` emits a deterministic
   call/reference graph, GO-TO-DEFINITION and FIND-REFERENCES data derived from the

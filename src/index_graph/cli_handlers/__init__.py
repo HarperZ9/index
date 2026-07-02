@@ -10,6 +10,7 @@ from __future__ import annotations
 from .certify import cmd_check, cmd_drift, cmd_snapshot
 from .context import cmd_context, cmd_context_envelope
 from .graph import cmd_graph, cmd_internals, cmd_internals_symbols, cmd_viz
+from .lsp import cmd_lsp
 from .maps import cmd_atlas, cmd_router
 from .serve import cmd_serve
 from .verify import cmd_bench, cmd_freshness, cmd_mcp, cmd_verify
@@ -25,6 +26,7 @@ __all__ = [
     "cmd_graph",
     "cmd_internals",
     "cmd_internals_symbols",
+    "cmd_lsp",
     "cmd_mcp",
     "cmd_router",
     "cmd_serve",

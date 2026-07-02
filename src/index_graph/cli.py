@@ -18,6 +18,7 @@ from .cli_handlers import (
     cmd_graph,
     cmd_internals,
     cmd_internals_symbols,
+    cmd_lsp,
     cmd_mcp,
     cmd_router,
     cmd_serve,
@@ -53,6 +54,7 @@ _SUBCOMMANDS = {
     "invalidate",
     "bench",
     "serve",
+    "lsp",
     "mcp",
     "status",
     "doctor",
@@ -83,6 +85,7 @@ _DISPATCH = {
     "invalidate": cmd_invalidate,
     "bench": cmd_bench,
     "serve": cmd_serve,
+    "lsp": cmd_lsp,
     "mcp": cmd_mcp,
 }
 
