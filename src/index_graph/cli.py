@@ -10,13 +10,14 @@ from pathlib import Path
 from . import __version__
 from .config import load_config
 from .context.pack import closure, focus_subgraph, preservation, render_text, to_json
+from .context.select import cmd_select
 from .flagship import cmd_demo, cmd_doctor, cmd_status
 from .graph.build import build_graph
 from .scan import build_map, discover_repos, write_map
 
-_SUBCOMMANDS = {"map", "graph", "context", "context-envelope", "viz", "atlas",
-                "internals", "check", "snapshot", "drift", "router", "verify",
-                "freshness", "bench", "mcp", "status", "doctor", "demo"}
+_SUBCOMMANDS = {"map", "graph", "context", "context-envelope", "select", "viz",
+                "atlas", "internals", "check", "snapshot", "drift", "router",
+                "verify", "freshness", "bench", "mcp", "status", "doctor", "demo"}
 
 
 def _add_map_args(p: argparse.ArgumentParser) -> None:
@@ -25,6 +26,17 @@ def _add_map_args(p: argparse.ArgumentParser) -> None:
     p.add_argument("--json", action="store_true")
     p.add_argument("--config", type=Path, default=None)
     p.add_argument("--jobs", type=int, default=None)
+
+
+def _add_select_parser(sub) -> None:
+    se = sub.add_parser(
+        "select", help="Select files under a root; every rejection carries a typed receipt.")
+    se.add_argument("--root", type=Path, default=Path.cwd())
+    se.add_argument("--suffix", dest="suffixes", action="append", default=None,
+                    help="keep only files with this suffix (repeatable, e.g. --suffix .md)")
+    se.add_argument("--max-files", type=int, default=None,
+                    help="file budget; paths beyond it get over-budget receipts")
+    se.add_argument("--json", action="store_true")
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -65,6 +77,8 @@ def build_parser() -> argparse.ArgumentParser:
     ce.add_argument("--focus", default=None)
     ce.add_argument("--hops", type=int, default=None)
     ce.add_argument("--json", action="store_true")
+
+    _add_select_parser(sub)
 
     v = sub.add_parser("viz", help="Render the dependency graph (html/svg/mermaid).")
     v.add_argument("--root", type=Path, default=Path.cwd())
@@ -666,6 +680,8 @@ def main(argv: list[str] | None = None) -> int:
         return _cmd_context(args)
     if args.cmd == "context-envelope":
         return _cmd_context_envelope(args)
+    if args.cmd == "select":
+        return cmd_select(args)
     if args.cmd == "viz":
         return _cmd_viz(args)
     if args.cmd == "internals":
