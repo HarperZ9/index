@@ -478,6 +478,36 @@ The HTML artifact embeds the sealed pack as a JSON data island, so `--verify` ac
 
 The MCP tool `index.wiki` mirrors this surface: called with `root` it returns the JSON pack, and with `verify` it returns the verification report. Python API: `from index_graph.wiki import build_wiki_pack, render_wiki_html, verify_wiki, run_verify`.
 
+### `serve` subcommand
+
+`index serve` is the hosted, URL-swap face of `index wiki`. It runs a local `http.server` that derives a repo's verified wiki on demand: you request a repo by its forge path and the server builds and returns the self-contained wiki HTML, then discards the clone.
+
+```text
+index serve [--host HOST] [--port PORT]
+```
+
+| Flag       | Default     | Meaning                                                              |
+| ---------- | ----------- | ------------------------------------------------------------------- |
+| `--host`   | `127.0.0.1` | Interface to bind. Defaults to loopback; override only deliberately. |
+| `--port`   | `8000`      | Port to bind. `0` picks an ephemeral port.                          |
+
+The routes are:
+
+- `GET /` returns a plain landing page that explains the server in consent-clean terms.
+- `GET /<forge-host>/<org>/<repo>` reconstructs the git URL `https://<forge-host>/<org>/<repo>`, runs the same shallow-clone-derive-clean-up path as `index wiki <url>`, and serves the wiki. For example, `http://127.0.0.1:8000/github.com/org/repo`.
+- `GET /robots.txt` returns `User-agent: *` / `Disallow: /`, and every response also carries an `X-Robots-Tag: noindex, nofollow` header.
+
+The posture is consent-clean by construction, because the verified-wiki class draws fire for non-consensual generation that outranks official docs:
+
+- **On demand only.** Nothing is crawled and nothing is pre-indexed. The wiki is derived when a route is requested and the clone is removed as soon as the response is built.
+- **Honest on every page.** The landing page and every served page state that the wiki derives structure from the dependency graph, generates no prose, is commit-pinned and re-checkable with `index wiki --verify`, and defers to the repo owner's authored docs. The banner is injected into every served wiki, so it is never missing.
+- **No indexing.** The `robots.txt` disallow and the `X-Robots-Tag` header keep the on-demand pages out of search indexes.
+- **Local only.** This is the local server component. No external publishing happens here; deploying or hosting it anywhere is a separate operator decision.
+
+Only http(s) forge URLs of the shape `host/org/repo` are accepted. A malformed route (wrong number of segments, a traversal-shaped or dot-leading segment, an scp-style `git@` path, or a host with no dot) returns a typed `400` with a plain reason and no traceback. A clone that fails returns a plain `502` page, again with no stack trace. The strict route parser also refuses to reconstruct anything but an `https://` URL, so ssh and scp remotes are never cloned.
+
+There is no MCP `serve` tool. A long-running HTTP server does not fit the MCP stdio model (one request, one JSON reply), so this surface is CLI-only; the `index wiki` MCP tool remains the way an agent host consumes a single-repo wiki over the protocol. Python API: `from index_graph.wiki import make_server, parse_route, serve_forever`.
+
 ## Verified architecture intelligence
 
 Beyond drawing the shape, `index` can look inside a repo, measure the real structure against a rule you declare, watch it change over time, and hand back a verdict you can re-run. These commands are additive; the five above are unchanged. Everything here runs offline, with no API, account, or model.

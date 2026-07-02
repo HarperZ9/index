@@ -2,6 +2,25 @@
 
 ## Unreleased
 
+- On-demand wiki server: `index serve` starts a stdlib `http.server` that serves
+  the verified wiki for one repo on demand. Request a repo by its forge path
+  (`GET /<forge-host>/<org>/<repo>`, e.g. `http://localhost:8000/github.com/org/repo`)
+  and index reconstructs the git URL (`https://<host>/<org>/<repo>`), runs the
+  existing `index wiki <url>` code path (shallow clone, derive from the module
+  graph, clean up), and serves the self-contained HTML. The posture is
+  consent-clean by construction: generation is on demand only, nothing is
+  crawled or pre-indexed; the landing page and every served page state that the
+  wiki derives structure from the dependency graph, generates no prose, is
+  commit-pinned and re-checkable with `index wiki --verify`, and defers to the
+  repo owner's authored docs; a `/robots.txt` disallows indexing and every
+  response carries `X-Robots-Tag: noindex, nofollow`. Only http(s) forge URLs of
+  the shape `host/org/repo` are accepted; a malformed route returns a typed 400
+  with a plain reason and a clone failure returns a plain 502 page, never a
+  traceback. The server binds `127.0.0.1` by default; `--host`/`--port` are
+  allowed but default to loopback. This is the local server component only; no
+  external publishing happens, and deploying or hosting it anywhere is a separate
+  operator decision. There is deliberately no MCP `serve` tool: a long-running
+  server does not fit MCP stdio, so the surface stays CLI-only.
 - Wiki from a URL: `index wiki https://github.com/org/repo` (or any git URL) now
   shallow-clones the repo to a temp dir, derives the sealed wiki, and removes the
   clone, giving the paste-a-repo experience without a server. A local path
