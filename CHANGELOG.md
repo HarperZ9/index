@@ -93,6 +93,9 @@
 - Operator surface: the status payload now advertises shared Project Telos CLI/MCP/plugin/IDE/TUI/app contracts for enterprise, research, creative, scientific, and education workflows.
 - CLI compatibility: `python -m index_graph.cli` now dispatches the normal CLI instead of only importing
   the module, so module-mode hosts and harnesses get the same behavior as the installed `index` command.
+- Internal: split `cli.py` into per-subcommand handler modules (`cli_handlers/`) and parser-builder
+  helpers (`cli_parser.py`), keeping every module under the size ceiling. No behavior change; the
+  `index_graph.cli:main` entry point and all subcommand output are identical.
 
 Presentation and operator-surface housekeeping for Project Telos parity.
 
