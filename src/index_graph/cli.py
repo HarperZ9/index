@@ -14,10 +14,12 @@ from .context.select import cmd_select
 from .flagship import cmd_demo, cmd_doctor, cmd_status
 from .graph.build import build_graph
 from .scan import build_map, discover_repos, write_map
+from .wiki.cli import add_wiki_parser, cmd_wiki
 
 _SUBCOMMANDS = {"map", "graph", "context", "context-envelope", "select", "viz",
-                "atlas", "internals", "check", "snapshot", "drift", "router",
-                "verify", "freshness", "bench", "mcp", "status", "doctor", "demo"}
+                "atlas", "wiki", "internals", "check", "snapshot", "drift",
+                "router", "verify", "freshness", "bench", "mcp", "status",
+                "doctor", "demo"}
 
 
 def _add_map_args(p: argparse.ArgumentParser) -> None:
@@ -94,6 +96,8 @@ def build_parser() -> argparse.ArgumentParser:
     a.add_argument("--format", choices=["html"], default=None)
     a.add_argument("--out", default=None)
     a.add_argument("--no-external", action="store_true")
+
+    add_wiki_parser(sub)
 
     i = sub.add_parser("internals", help="Intra-repo module dependency graph.")
     i.add_argument("--root", type=Path, default=Path.cwd())
@@ -674,6 +678,8 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_demo(args)
     if args.cmd == "atlas":
         return _cmd_atlas(args)
+    if args.cmd == "wiki":
+        return cmd_wiki(args)
     if args.cmd == "graph":
         return _cmd_graph(args)
     if args.cmd == "context":

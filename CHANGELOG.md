@@ -2,6 +2,26 @@
 
 ## Unreleased
 
+- The verified wiki: `index wiki [--root REPO] [--out PATH] [--format html|json]` derives a
+  multi-page, self-contained wiki for ONE repo from the internals module graph (tier 1:
+  zero-dep, model-free, deterministic; no generated prose). Pages: overview (identity,
+  ecosystems, graph-derived entry points, module and doc inventory, pinned commit SHA),
+  module pages (imports, dependents, cycle membership, every edge with its file:line
+  evidence; package clusters above 120 modules), an architecture diagram rendered from the
+  real graph via the existing SVG/mermaid machinery, and the repo's markdown joined in
+  verbatim, labeled authored-by-humans. Every page footer states the derivation boundary
+  and its own evidence count. The artifact embeds an `index.wiki/1` manifest (commit SHA or
+  "unversioned", per-page canonical SHA-256, generation inputs), and
+  `index wiki --verify PATH` recomputes page hashes plus the graph derivation for the
+  current tree: MATCH / DRIFT (page tampered, claimed edge absent from the real graph, or
+  repo moved off the pinned commit) / UNVERIFIABLE, exit 0/1/2. The negative fixtures live
+  in the test suite: a tampered page, a hash-consistent forged edge, and hostile
+  markdown/module names must all fail the right way. MCP tool `index.wiki` and the status
+  payload advertise the same surface. Python API in `index_graph.wiki`.
+- Markdown renderer: fixed an infinite loop on a paragraph whose first line contains `|`
+  without a table separator beneath it (for example a badge or link row in a README). The
+  renderer now always consumes the line that opened the paragraph, so such prose renders
+  as a plain paragraph instead of hanging the atlas or wiki render.
 - Path selection receipts: `index select --root ROOT [--suffix .md] [--max-files N] [--json]`
   and the `index.select` MCP tool split every candidate path into selected or rejected, where
   each rejection carries a typed `index.path-selection/v1` receipt with a reason code from a

@@ -134,7 +134,12 @@ def render_markdown(text: str) -> str:
             out.append(block); continue
         if line.strip() == "":
             i += 1; continue
-        buf = []
+        # Always consume the line that opened the paragraph. It may LOOK like a
+        # block starter (a prose line containing "|" that is not a table), but
+        # every real block was dispatched above; skipping it here would loop
+        # forever on the same line.
+        buf = [line]
+        i += 1
         while i < n and lines[i].strip() != "" and not _starts_block(lines[i]):
             buf.append(lines[i]); i += 1
         out.append("<p>" + render_inline(" ".join(buf)) + "</p>")

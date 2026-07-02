@@ -94,3 +94,18 @@ def test_render_is_deterministic():
 def test_literal_null_bytes_do_not_forge_a_code_sentinel():
     # a doc body with raw NUL + digits must not IndexError on the sentinel-restore step
     assert render_inline("x\x000\x00y") == "x0y"
+
+
+def test_pipe_paragraph_that_is_not_a_table_terminates():
+    # Regression: a paragraph whose FIRST line contains "|" without a table
+    # separator beneath it used to loop forever (the paragraph branch never
+    # consumed the line). It must render as a plain paragraph and terminate.
+    md = "[a](x) | [b](y)\n\nnext para\n"
+    out = render_markdown(md)
+    assert out.count("<p>") == 2
+    assert "next para" in out
+    # the same shape mid-document, followed by a real table, keeps both
+    md2 = "prose | with pipes\n\n| A | B |\n| --- | --- |\n| 1 | 2 |"
+    out2 = render_markdown(md2)
+    assert "prose | with pipes" in out2
+    assert "<table>" in out2

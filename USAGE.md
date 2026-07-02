@@ -400,6 +400,42 @@ index atlas --root ./my-workspace --format html --out atlas.html
 
 Open `atlas.html` in any browser, offline. Pan and zoom the graph, search repos and doc titles together, click a doc to read its rendered markdown with clickable `[[links]]`, and double-click a node to focus its neighborhood. The whole file is self-contained, and the markdown is rendered server-side and escaped, so untrusted doc content cannot inject anything.
 
+### `wiki` subcommand
+
+`index wiki` is the single-repo altitude: the atlas maps a workspace, the wiki explains one unfamiliar repo. It derives a multi-page wiki from the intra-repo module graph (the same graph `index internals` reports), joins the repo's own markdown in verbatim, and seals the result so it can be re-checked. There is no model and no generated prose; every structural statement is a projection of the graph, and every edge shown carries its file:line evidence.
+
+```text
+index wiki [--root REPO] [--out PATH] [--format html|json]
+index wiki --verify PATH [--root REPO] [--json]
+```
+
+| Flag            | Default           | Meaning                                                                 |
+| --------------- | ----------------- | ----------------------------------------------------------------------- |
+| `--root`        | current directory | The single repo to derive the wiki from (not a workspace).              |
+| `--out PATH`    | stdout            | Write the artifact to a file instead of printing it.                    |
+| `--format`      | html              | `html`: one self-contained file with client-side page navigation; `json`: the sealed wiki pack. |
+| `--verify PATH` | none              | Verify a sealed wiki artifact (HTML or JSON) against the current tree.  |
+| `--json`        | off               | With `--verify`, emit the verification report (`index.wiki-verification/1`) as JSON. |
+
+The artifact carries four kinds of page:
+
+- **Overview**: repo identity, detected ecosystems, graph-derived entry points (modules with no internal importer), module count, doc inventory, graph coverage, and the commit SHA the wiki is pinned to (`git rev-parse HEAD`, or `"unversioned"` for a non-git root).
+- **Module pages**: one per module, with imports, dependents, file path, language, and cycle membership. Every edge names the file and line that witnesses it. On repos above 120 modules the wiki clusters modules into package pages; the aggregated package edges keep the module-level file:line evidence underneath.
+- **Architecture**: an SVG diagram rendered from the real module graph by the same machinery as `index viz`, with the Mermaid source alongside. Never inferred.
+- **Docs**: the repo's markdown, rendered offline by the escaping-safe renderer and labeled as authored by humans. Hostile doc content cannot break out of the page.
+
+Every page footer states the derivation boundary, structure derived from the dependency graph, no generated prose, plus that page's own evidence count.
+
+The pack embeds an `index.wiki/1` manifest: the pinned commit, a canonical SHA-256 per page (the hashing rule in `docs/PROTOCOL.md`), and the generation inputs. `--verify` recomputes the page hashes, re-derives the module graph from the current tree and requires every claimed edge to exist in it, and compares the pinned commit to the current HEAD. The verdict is one of three words:
+
+- `MATCH`: the pages match their seals, every claimed edge is in the real graph, and the tree is at the pinned commit. Exit 0.
+- `DRIFT`: a page was tampered with, the wiki claims a module edge the real graph does not contain (even if the manifest hash was re-forged to match), or the repo moved off its pinned commit. Findings name each breach. Exit 1.
+- `UNVERIFIABLE`: the artifact is not a readable wiki (missing manifest, wrong schema, unparseable file) or the root does not exist. Exit 2.
+
+The HTML artifact embeds the sealed pack as a JSON data island, so `--verify` accepts either the HTML file or the JSON pack. The test suite keeps the known-bad fixtures (a tampered page, a forged edge with a consistently re-sealed hash, hostile markdown and module names): a verifier that cannot fail on a known-bad input is not a verifier.
+
+The MCP tool `index.wiki` mirrors this surface: called with `root` it returns the JSON pack, and with `verify` it returns the verification report. Python API: `from index_graph.wiki import build_wiki_pack, render_wiki_html, verify_wiki, run_verify`.
+
 ## Verified architecture intelligence
 
 Beyond drawing the shape, `index` can look inside a repo, measure the real structure against a rule you declare, watch it change over time, and hand back a verdict you can re-run. These commands are additive; the five above are unchanged. Everything here runs offline, with no API, account, or model.
@@ -578,7 +614,7 @@ Bytes are exact and model-agnostic. The token figures use the common ~4 bytes/to
 index mcp
 ```
 
-The tools are `index_graph`, `index_focus` (a repo's neighborhood plus the preservation manifest), `index_verify` (ground a depends or exists claim), `index_router` (the workspace map), `index_internals` (a repo's module graph), and `index.select` (path selection with typed rejection receipts). Each reuses the same function its matching subcommand does, so the protocol face never disagrees with the CLI.
+The tools are `index_graph`, `index_focus` (a repo's neighborhood plus the preservation manifest), `index_verify` (ground a depends or exists claim), `index_router` (the workspace map), `index_internals` (a repo's module graph), `index.select` (path selection with typed rejection receipts), and `index.wiki` (the sealed single-repo wiki pack, or a verification report when called with `verify`). Each reuses the same function its matching subcommand does, so the protocol face never disagrees with the CLI.
 
 ## Notes
 
