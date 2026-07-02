@@ -11,6 +11,7 @@ from .certify import cmd_check, cmd_drift, cmd_snapshot
 from .context import cmd_context, cmd_context_envelope
 from .graph import cmd_graph, cmd_internals, cmd_viz
 from .maps import cmd_atlas, cmd_router
+from .serve import cmd_serve
 from .verify import cmd_bench, cmd_freshness, cmd_mcp, cmd_verify
 
 __all__ = [
@@ -25,6 +26,7 @@ __all__ = [
     "cmd_internals",
     "cmd_mcp",
     "cmd_router",
+    "cmd_serve",
     "cmd_snapshot",
     "cmd_verify",
     "cmd_viz",

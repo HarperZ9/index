@@ -93,6 +93,30 @@ A rendered sample ships with the repo at [`examples/wiki-demo.html`](examples/wi
 
 ---
 
+## `index serve`, the on-demand wiki server
+
+`index wiki <url>` derives a repo's wiki once. `index serve` puts the same thing behind a URL: a local server that derives a repo's verified wiki the moment you ask for it, and not a moment sooner.
+
+```bash
+index serve                       # http://127.0.0.1:8000/  (loopback by default)
+# then open a repo by its forge path:
+#   http://127.0.0.1:8000/github.com/org/repo
+index serve --host 127.0.0.1 --port 9000
+```
+
+A request to `GET /<forge-host>/<org>/<repo>` reconstructs the git URL `https://<forge-host>/<org>/<repo>`, runs the exact `index wiki <url>` path (shallow clone, derive from the module graph, clean up the clone), and serves the self-contained wiki HTML. The root path `/` is a plain landing page.
+
+It is consent-clean by construction, because the verified-wiki class is under fire for non-consensual generation that outranks official docs, and this surface refuses to be that:
+
+- **On demand only.** Nothing is crawled and nothing is pre-indexed. A wiki exists for exactly as long as one request takes, then the clone is removed.
+- **Honest on every page.** The landing page and every served page state that the wiki derives structure from the dependency graph, generates no prose, is commit-pinned and re-checkable with `index wiki --verify`, and defers to the repo owner's authored docs.
+- **Not for search engines.** `/robots.txt` disallows indexing, and every response carries `X-Robots-Tag: noindex, nofollow`.
+- **Local only.** This is the local server component. No external publishing happens here, and deploying or hosting it anywhere is a separate operator decision.
+
+Only http(s) forge URLs of the shape `host/org/repo` are accepted. A malformed route returns a typed 400 with a plain reason, and a clone that fails returns a plain 502 page, never a stack trace. The server binds `127.0.0.1` by default; `--host`/`--port` are available but default to loopback. There is no MCP `serve` tool: a long-running server does not fit the MCP stdio model, so this surface is CLI-only.
+
+---
+
 ## `index atlas`, the two-layer map
 
 Most dependency tools stop at the code. But code is only half of what you need to understand a system. The other half is the prose that explains it, and that prose is usually stranded somewhere the graph can't see. `index atlas` brings it back in. Every markdown file becomes a node, joined to the code it documents, and you can read it without ever leaving the map.
@@ -208,6 +232,7 @@ python -m index status --json
 | **Context envelope** | `index context-envelope --budget N` | Budgeted, receipt-backed context for large-codebase agent workflows; source refs are hashed expansion handles, selection summaries state coverage, freshness roots make packets re-checkable, and omissions carry failure codes |
 | **Path selection (receipts)** | `index select` | Split candidate files into selected and rejected; every rejection carries a typed `index.path-selection/v1` receipt, and a reconciliation check proves candidates = selected + rejected |
 | **Verified wiki (single repo)** | `index wiki` | Multi-page, self-contained wiki derived from the module graph: overview, evidence-carrying module pages, real-graph architecture diagram, human-authored docs; sealed per page, commit-pinned, re-checkable with `--verify` |
+| **On-demand wiki server** | `index serve` | Local `http.server`: request a repo by its forge path (`/github.com/org/repo`) and get its verified wiki, derived on demand from the same code path as `index wiki`; consent-clean (nothing crawled or pre-indexed, `robots.txt` disallows indexing, defers to the repo owner's docs), loopback by default |
 | **Module graph (internals)** | `index internals` | The dependency graph inside one repo, with internal cycles and fan-in/out |
 | **Architecture check (certificate)** | `index check` | Measure structure against your `[architecture]` rule; emits a re-checkable verdict |
 | **Drift (certificate)** | `index snapshot` then `index drift` | Snapshot the shape, then see exactly what changed |
@@ -258,6 +283,7 @@ index context-envelope [--root ROOT] [--budget N] [--focus REPO] [--hops N] [--j
 index select    [--root ROOT] [--suffix S ...] [--max-files N] [--json]
 index wiki      [--root REPO] [--out PATH] [--format {html,json}]
 index wiki      --verify PATH [--root REPO] [--json]
+index serve     [--host HOST] [--port PORT]   (on-demand local wiki server, loopback by default)
 index viz       [--root ROOT] [--format {html,svg,mermaid,all}]
                 [--focus REPO] [--no-external] [--out FILE] [--out-dir DIR]
 index internals [--root REPO] [--json] [--cycles]

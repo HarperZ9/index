@@ -19,6 +19,7 @@ from .cli_handlers import (
     cmd_internals,
     cmd_mcp,
     cmd_router,
+    cmd_serve,
     cmd_snapshot,
     cmd_verify,
     cmd_viz,
@@ -49,6 +50,7 @@ _SUBCOMMANDS = {
     "freshness",
     "invalidate",
     "bench",
+    "serve",
     "mcp",
     "status",
     "doctor",
@@ -77,6 +79,7 @@ _DISPATCH = {
     "freshness": cmd_freshness,
     "invalidate": cmd_invalidate,
     "bench": cmd_bench,
+    "serve": cmd_serve,
     "mcp": cmd_mcp,
 }
 

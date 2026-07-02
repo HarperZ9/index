@@ -17,6 +17,22 @@ from pathlib import Path
 _URL_SCHEMES = ("http://", "https://", "git://", "ssh://", "file://")
 
 
+class CloneError(RuntimeError):
+    """A shallow clone could not be completed. Carries a plain reason string so
+    callers (the CLI, the on-demand server) can surface it without a traceback."""
+
+
+def clone_repo(source: str, dest: Path) -> None:
+    """Shallow-clone `source` into `dest`. Raises CloneError with a plain message
+    on failure. Shared by `index wiki` and `index serve` so there is one clone
+    code path, not two."""
+    try:
+        subprocess.run(["git", "clone", "--depth", "1", source, str(dest)],
+                       check=True, capture_output=True, text=True)
+    except (subprocess.CalledProcessError, OSError) as exc:
+        raise CloneError(f"could not clone {source}: {exc}") from exc
+
+
 def add_wiki_parser(sub) -> None:
     w = sub.add_parser(
         "wiki",
@@ -55,11 +71,10 @@ def _is_url(source: str) -> bool:
 def _clone(source: str) -> Path:
     dest = Path(tempfile.mkdtemp(prefix="index-wiki-"))
     try:
-        subprocess.run(["git", "clone", "--depth", "1", source, str(dest)],
-                       check=True, capture_output=True, text=True)
-    except (subprocess.CalledProcessError, OSError) as exc:
+        clone_repo(source, dest)
+    except CloneError as exc:
         shutil.rmtree(dest, ignore_errors=True)
-        raise SystemExit(f"could not clone {source}: {exc}") from exc
+        raise SystemExit(str(exc)) from exc
     return dest
 
 

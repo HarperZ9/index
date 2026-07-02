@@ -223,6 +223,25 @@ def _add_bench_parser(sub) -> None:
     bn.add_argument("--json", action="store_true")
 
 
+def _add_serve_parser(sub) -> None:
+    sv = sub.add_parser(
+        "serve",
+        help="Local http.server that derives a repo's verified wiki on demand "
+        "from its forge path (consent-clean; robots.txt disallows indexing).",
+    )
+    sv.add_argument(
+        "--host",
+        default="127.0.0.1",
+        help="interface to bind (default 127.0.0.1, loopback only)",
+    )
+    sv.add_argument(
+        "--port",
+        type=int,
+        default=8000,
+        help="port to bind (default 8000; 0 picks an ephemeral port)",
+    )
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="index",
@@ -255,6 +274,7 @@ def build_parser() -> argparse.ArgumentParser:
     _add_freshness_parser(sub)
     _add_invalidate_parser(sub)
     _add_bench_parser(sub)
+    _add_serve_parser(sub)
     sub.add_parser(
         "mcp",
         help="Serve the MCP-shaped stdio protocol face (JSON-RPC over stdin/stdout).",
