@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- Path selection receipts: `index select --root ROOT [--suffix .md] [--max-files N] [--json]`
+  and the `index.select` MCP tool split every candidate path into selected or rejected, where
+  each rejection carries a typed `index.path-selection/v1` receipt with a reason code from a
+  closed set (`excluded-by-rule`, `suffix-mismatch`, `over-budget`, `not-found`, `unreadable`)
+  and the rule that dropped it. The counts must reconcile (candidates = selected + rejected),
+  and `reconcile_selection` re-derives the ledger from the lists themselves, so a silent drop,
+  a forged count, an unknown reason code, or a double-booked path turns the verdict to DRIFT
+  with a typed failure code. The negative fixtures live in the test suite: a reconciliation
+  that cannot fail on a tampered selection would not be a check. Python API in
+  `index_graph.context.select`.
 - Router performance: `index router` and the `index_router` MCP tool now build a
   describes-only docs pack instead of the full atlas link/mention graph. Full
   `index atlas` output still keeps wiki-link and prose-mention edges, while

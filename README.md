@@ -44,7 +44,7 @@ Run it on a real multi-repo workspace, use the atlas for onboarding, diligence, 
 ## Current status
 
 - **Release:** `index-graph 2.8.0`; command `index`; Python 3.11+; zero runtime dependencies.
-- **Operator surface:** `index status --json`, `index doctor --json`, `index demo --json`, and `index mcp` expose the Project Telos action envelope and native MCP tools: `index.map`, `index.context`, `index.context.envelope`, `index.status`, `index.doctor`, plus the existing graph, focus, verify, router, and internals tools. Generated routers now carry compact dependency evidence like `pyproject.toml:12` beside internal edges, use a fast describes-only docs pass for large workspaces, and the status payload advertises shared CLI/MCP/plugin/IDE/TUI/app contracts for enterprise, research, creative, scientific, and education workflows.
+- **Operator surface:** `index status --json`, `index doctor --json`, `index demo --json`, and `index mcp` expose the Project Telos action envelope and native MCP tools: `index.map`, `index.context`, `index.context.envelope`, `index.select`, `index.status`, `index.doctor`, plus the existing graph, focus, verify, router, and internals tools. Generated routers now carry compact dependency evidence like `pyproject.toml:12` beside internal edges, use a fast describes-only docs pass for large workspaces, and the status payload advertises shared CLI/MCP/plugin/IDE/TUI/app contracts for enterprise, research, creative, scientific, and education workflows.
 - **Current floor:** 2.8.0 covers atlas mapping, nine ecosystem resolvers, architecture certificates, freshness checks, token-economics benchmarking, selection-aware context envelopes, and MCP-native workspace intelligence.
 - **Public role:** workspace map and context-envelope layer for Project Telos: index gives gather, forum, crucible, and telos a shared view of what code, docs, and dependency evidence exist now.
 
@@ -177,6 +177,7 @@ A rendered sample ships with the repo at [`examples/atlas-demo.html`](examples/a
 | **Dependency graph (text/JSON)** | `index graph [--cycles]` | Repo to repo edges with evidence, and a report of dependency cycles |
 | **Context pack (prose + relations)** | `index context` | Synthesis pack: roles, relations, narrative summary |
 | **Context envelope** | `index context-envelope --budget N` | Budgeted, receipt-backed context for large-codebase agent workflows; source refs are hashed expansion handles, selection summaries state coverage, freshness roots make packets re-checkable, and omissions carry failure codes |
+| **Path selection (receipts)** | `index select` | Split candidate files into selected and rejected; every rejection carries a typed `index.path-selection/v1` receipt, and a reconciliation check proves candidates = selected + rejected |
 | **Module graph (internals)** | `index internals` | The dependency graph inside one repo, with internal cycles and fan-in/out |
 | **Architecture check (certificate)** | `index check` | Measure structure against your `[architecture]` rule; emits a re-checkable verdict |
 | **Drift (certificate)** | `index snapshot` then `index drift` | Snapshot the shape, then see exactly what changed |
@@ -221,6 +222,7 @@ index map       [--root ROOT] [--output FILE] [--json] [--config CFG]
 index graph     [--root ROOT] [--json] [--cycles]
 index context   [--root ROOT] [--focus REPO] [--hops N] [--json] [--audit]
 index context-envelope [--root ROOT] [--budget N] [--focus REPO] [--hops N] [--json]
+index select    [--root ROOT] [--suffix S ...] [--max-files N] [--json]
 index viz       [--root ROOT] [--format {html,svg,mermaid,all}]
                 [--focus REPO] [--no-external] [--out FILE] [--out-dir DIR]
 index internals [--root REPO] [--json] [--cycles]
@@ -246,6 +248,14 @@ workspace-relative paths, SHA-256 hashes, signal kind, optional line number, and
 covered and whether the workspace view needs to be refreshed. If the budget drops material, the omission record carries
 a normalized `failure_code` such as `budget_exceeded`; the next run can ask for more context
 instead of inheriting confidence from a missing file.
+
+`select` is the path-level counterpart. It splits every candidate file under a root into
+selected or rejected, and every rejection carries a typed `index.path-selection/v1` receipt
+naming a reason code from a closed set (`excluded-by-rule`, `suffix-mismatch`, `over-budget`,
+`not-found`, `unreadable`) plus the rule that dropped it. The counts must reconcile
+(candidates = selected + rejected), and the bundled reconciliation report turns to DRIFT on a
+silent drop, a forged count, or an unknown reason code, so "the file was skipped" is always a
+claim you can re-check rather than trust.
 
 ---
 

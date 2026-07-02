@@ -39,6 +39,12 @@ def _tool_defs() -> list[dict]:
              "focus": {"type": "string"},
              "hops": {"type": "integer"},
          })},
+        {"name": "index.select",
+         "description": "Path selection with typed rejection receipts; candidates reconcile to selected + rejected, matching the `index select --json` CLI surface.",
+         "inputSchema": _root_schema({
+             "suffixes": {"type": "array", "items": {"type": "string"}},
+             "max_files": {"type": "integer"},
+         })},
         {"name": "index.status",
          "description": "Project Telos operator-spine status action envelope, matching the `index status --json` CLI surface.",
          "inputSchema": {"type": "object", "properties": {}}},
@@ -78,6 +84,15 @@ def call_tool(name: str, args: dict) -> str:
     if name == "index.doctor":
         from .flagship import doctor_payload
         return json.dumps(doctor_payload(), indent=2, sort_keys=True)
+
+    if name == "index.select":
+        # a missing root yields a not-found receipt (CLI parity), not an error
+        from .context.select import run_select
+        if "root" not in args:
+            raise ValueError("missing required argument: root")
+        suffixes = tuple(args["suffixes"]) if args.get("suffixes") else None
+        payload = run_select(Path(args["root"]), suffixes, args.get("max_files"))
+        return json.dumps(payload, indent=2, sort_keys=True)
 
     from .graph.build import build_graph
     from .context.pack import to_json, closure, preservation, focus_subgraph

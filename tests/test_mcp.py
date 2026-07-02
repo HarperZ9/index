@@ -98,6 +98,26 @@ def test_context_envelope_tool_returns_budgeted_packet(tmp_path):
     assert rec["retained"][0]["name"] == "solo"
 
 
+def test_select_tool_reconciles_and_missing_root_is_a_receipt(tmp_path):
+    (tmp_path / "README.md").write_text("# top\n", encoding="utf-8")
+    (tmp_path / "main.py").write_text("x = 1\n", encoding="utf-8")
+    r = handle_request({"jsonrpc": "2.0", "id": 14, "method": "tools/call",
+                        "params": {"name": "index.select",
+                                   "arguments": {"root": str(tmp_path),
+                                                 "suffixes": [".md"]}}})
+    assert r["result"]["isError"] is False
+    rec = json.loads(r["result"]["content"][0]["text"])
+    assert rec["selection"]["selected"] == ["README.md"]
+    assert rec["reconciliation"]["verdict"] == "MATCH"
+    # a missing root is a not-found receipt, not a protocol error
+    missing = handle_request({"jsonrpc": "2.0", "id": 15, "method": "tools/call",
+                              "params": {"name": "index.select",
+                                         "arguments": {"root": str(tmp_path / "nope")}}})
+    assert missing["result"]["isError"] is False
+    body = json.loads(missing["result"]["content"][0]["text"])
+    assert [x["reason_code"] for x in body["selection"]["rejected"]] == ["not-found"]
+
+
 def test_tools_call_error_is_flagged(tmp_path):
     r = handle_request({"jsonrpc": "2.0", "id": 4, "method": "tools/call",
                         "params": {"name": "index_verify",

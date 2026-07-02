@@ -269,6 +269,41 @@ Exit codes:
 
 The map subcommand (`index map`, or the flat `index --root ...`) is unaffected.
 
+### `select` subcommand
+
+```text
+index select --root ROOT [--suffix S ...] [--max-files N] [--json]
+```
+
+| Flag            | Default           | Meaning                                                      |
+| --------------- | ----------------- | ------------------------------------------------------------ |
+| `--root`        | current directory | Root to select files under.                                   |
+| `--suffix S`    | none (all files)  | Keep only files ending in this suffix; repeatable (`--suffix .md --suffix .py`). |
+| `--max-files N` | none              | File budget. Files beyond it are rejected with `over-budget` receipts, never silently dropped. |
+| `--json`        | off               | Emit `{"selection": ..., "reconciliation": ...}` as JSON.     |
+
+Every candidate path lands in exactly one of two buckets: `selected`, or `rejected` with a typed receipt.
+
+```json
+{
+  "schema": "index.path-selection/v1",
+  "path": "node_modules",
+  "reason_code": "excluded-by-rule",
+  "rule_ref": "index_graph.graph.walk.EXCLUDE_DIRS"
+}
+```
+
+`reason_code` is drawn from a closed set: `excluded-by-rule` (a directory pruned by the shared exclude rule; nothing beneath it is walked, so one receipt covers the subtree), `suffix-mismatch`, `over-budget`, `not-found` (the root itself does not exist), and `unreadable` (a selected file that failed the read probe). The receipt validator rejects an unknown reason code, a wrong schema id, a missing field, or extra fields.
+
+The result carries a `counts` ledger, and the reconciliation report re-derives it from the lists themselves: `candidates` must equal `selected + rejected`, declared counts must match list lengths, every receipt must validate, and no path may be booked in both buckets. Any gap turns the verdict to `DRIFT` with a typed failure code (`result-schema`, `counts-mismatch`, `selected-count-mismatch`, `rejected-count-mismatch`, `invalid-receipt`, `duplicate-path`). A reconciliation that cannot fail on a tampered selection would not be a check, so the test suite keeps known-bad fixtures (a forged count, a silently dropped receipt, an invented reason code, a double-booked path) that must turn the verdict to `DRIFT`.
+
+Exit codes:
+
+- `0`: the reconciliation verdict is `MATCH`.
+- `1`: the reconciliation verdict is `DRIFT`.
+
+The importable API mirrors the CLI: `from index_graph.context.select import select_paths, probe_readable, reconcile_selection, reject_selected, validate_receipt`.
+
 ### `viz` subcommand
 
 ```text
@@ -543,7 +578,7 @@ Bytes are exact and model-agnostic. The token figures use the common ~4 bytes/to
 index mcp
 ```
 
-The tools are `index_graph`, `index_focus` (a repo's neighborhood plus the preservation manifest), `index_verify` (ground a depends or exists claim), `index_router` (the workspace map), and `index_internals` (a repo's module graph). Each reuses the same function its matching subcommand does, so the protocol face never disagrees with the CLI.
+The tools are `index_graph`, `index_focus` (a repo's neighborhood plus the preservation manifest), `index_verify` (ground a depends or exists claim), `index_router` (the workspace map), `index_internals` (a repo's module graph), and `index.select` (path selection with typed rejection receipts). Each reuses the same function its matching subcommand does, so the protocol face never disagrees with the CLI.
 
 ## Notes
 
