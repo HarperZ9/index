@@ -84,6 +84,7 @@ One command, one offline HTML file with client-side page navigation (or a JSON p
 
 - **Overview**: repo identity, detected ecosystems, graph-derived entry points, module count, doc inventory, and the commit SHA the wiki is pinned to.
 - **Module pages**: one per module (package clusters on large repos) with imports, dependents, file paths, and cycle membership, and every edge shown carries the file:line evidence the graph recorded for it. This is also the visual render `index internals` never had.
+- **Symbol pages**: one per function, class, and method (Python), each with the definition's file:line, who calls it (FIND-REFERENCES), what it calls (GO-TO-DEFINITION), and any references the static scan could not resolve, surfaced honestly rather than guessed. Within-module calls are AST-exact; cross-module calls that bind to a real definition are best-effort and labeled moderate; the rest are marked unresolved, never invented. Above a symbol-count threshold these pages are omitted to avoid bloat and the graph stays available on the CLI.
 - **Architecture**: a diagram rendered from the real dependency graph, never inferred.
 - **Docs**: your existing markdown joined in verbatim, clearly labeled as authored by humans.
 
@@ -234,6 +235,7 @@ python -m index status --json
 | **Verified wiki (single repo)** | `index wiki` | Multi-page, self-contained wiki derived from the module graph: overview, evidence-carrying module pages, real-graph architecture diagram, human-authored docs; sealed per page, commit-pinned, re-checkable with `--verify` |
 | **On-demand wiki server** | `index serve` | Local `http.server`: request a repo by its forge path (`/github.com/org/repo`) and get its verified wiki, derived on demand from the same code path as `index wiki`; consent-clean (nothing crawled or pre-indexed, `robots.txt` disallows indexing, defers to the repo owner's docs), loopback by default |
 | **Module graph (internals)** | `index internals` | The dependency graph inside one repo, with internal cycles and fan-in/out |
+| **Symbol graph (GO-TO-DEFINITION / FIND-REFERENCES)** | `index internals-symbols` | The call/reference graph inside one repo, down to functions, classes, and methods; AST-exact within a module, best-effort and honestly-labeled across modules, deterministic and sealable in `index wiki` |
 | **Architecture check (certificate)** | `index check` | Measure structure against your `[architecture]` rule; emits a re-checkable verdict |
 | **Drift (certificate)** | `index snapshot` then `index drift` | Snapshot the shape, then see exactly what changed |
 | **Claim grounding** | `index verify` | Confirm or refute a dependency or existence claim against the graph, with evidence |
@@ -287,6 +289,7 @@ index serve     [--host HOST] [--port PORT]   (on-demand local wiki server, loop
 index viz       [--root ROOT] [--format {html,svg,mermaid,all}]
                 [--focus REPO] [--no-external] [--out FILE] [--out-dir DIR]
 index internals [--root REPO] [--json] [--cycles]
+index internals-symbols [--root REPO] [--json] [--coverage]
 index check     [--root ROOT] [--internals] [--json] [--config CFG]
 index snapshot  [--root ROOT] --out FILE
 index drift     --from OLD --to NEW [--json]

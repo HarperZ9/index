@@ -101,6 +101,35 @@ def _internals_payload(g) -> dict:
     }
 
 
+def cmd_internals_symbols(args) -> int:
+    from ..symbols import build_symbol_graph, symbol_graph_to_payload
+
+    root = require_dir(args.root)
+    g = build_symbol_graph(root)
+    payload = symbol_graph_to_payload(g)
+    if getattr(args, "coverage", False):
+        cov = payload["coverage"]
+        if args.json:
+            print(json.dumps(cov, indent=2, sort_keys=True))
+        else:
+            print(
+                f"symbols={cov['symbols']} resolved={cov['resolved_calls']} "
+                f"unresolved={cov['unresolved_calls']} "
+                f"parse_errors={len(cov['parse_errors'])} "
+                f"dynamic={len(cov['dynamic_calls'])}"
+            )
+        return 0
+    if args.json:
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        cov = payload["coverage"]
+        print(
+            f"symbols={len(payload['symbols'])} calls={len(payload['calls'])} "
+            f"resolved={cov['resolved_calls']} unresolved={cov['unresolved_calls']}"
+        )
+    return 0
+
+
 def cmd_viz(args) -> int:
     from .. import viz
 

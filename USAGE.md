@@ -538,6 +538,44 @@ modules=50 edges=94 cycles=0 coverage=complete
 
 The summary ends with coverage: `complete` when every file parsed and every import resolved statically, otherwise a count of the files the scan could not parse and the dynamic imports it could not follow. `--json` carries the detail under a `coverage` object, and `index check --internals` folds the same coverage into the certificate so a verdict is honest about its soundness scope.
 
+### `internals-symbols` subcommand
+
+```text
+index internals-symbols --root REPO [--json] [--coverage]
+```
+
+| Flag         | Default           | Meaning                                                            |
+| ------------ | ----------------- | ------------------------------------------------------------------ |
+| `--root`     | current directory | The single repo to look inside.                                    |
+| `--json`     | off               | Emit the full symbol graph as JSON (symbols, calls, fan, coverage). |
+| `--coverage` | off               | Report only the coverage summary.                                  |
+
+Where `index internals` stops at module imports, `index internals-symbols` goes down to
+functions, classes, and methods, and records who calls whom. This is the GO-TO-DEFINITION
+and FIND-REFERENCES data, derived from the Python AST and byte-identical across runs.
+
+A call within the same module resolves exactly (`resolution: exact`, `confidence: high`);
+`self.m()` inside a method resolves to a sibling method the same way. A call to a name
+imported from another module in this repo resolves best-effort if it names a real definition
+(`resolution: cross_module`, `confidence: moderate`). Anything the static scan cannot bind,
+an undefined name, an attribute on an object whose type is unknown, an import that names no
+definition, is surfaced as `resolution: cross_module_unresolved` with `to_symbol: null`,
+never a guessed edge. `getattr` and variable-function dispatch and unparsable files are
+recorded under `coverage`, not invented.
+
+```bash
+index internals-symbols --root ./my-repo
+```
+
+```text
+symbols=1036 calls=5517 resolved=1014 unresolved=4503
+```
+
+Only Python has symbol-level extraction today; other languages keep their module-level graph.
+The per-symbol pages in `index wiki` are a projection of this graph, sealed and re-checkable:
+`index wiki --verify` re-derives the symbol graph and flags a claimed resolved call the real
+graph does not contain as DRIFT. See `docs/PROTOCOL.md` for the full schema.
+
 ### The `[architecture]` criterion
 
 A check needs a rule to measure against. Declare one in `.index.toml`:
@@ -708,7 +746,7 @@ Bytes are exact and model-agnostic. The token figures use the common ~4 bytes/to
 index mcp
 ```
 
-The tools are `index_graph`, `index_focus` (a repo's neighborhood plus the preservation manifest), `index_verify` (ground a depends or exists claim), `index_router` (the workspace map), `index_internals` (a repo's module graph), `index.select` (path selection with typed rejection receipts), `index.invalidate` (without `pin` it mints and returns a pin of the current tree; with `pin` it emits the `index.invalidation/1` report plus its reconciliation), and `index.wiki` (the sealed single-repo wiki pack, or a verification report when called with `verify`). Each reuses the same function its matching subcommand does, so the protocol face never disagrees with the CLI. An unresolvable `focus` or `repo` argument returns an `index.focus-rejection/v1` receipt as the payload instead of a protocol error.
+The tools are `index_graph`, `index_focus` (a repo's neighborhood plus the preservation manifest), `index_verify` (ground a depends or exists claim), `index_router` (the workspace map), `index_internals` (a repo's module graph), `index.select` (path selection with typed rejection receipts), `index.invalidate` (without `pin` it mints and returns a pin of the current tree; with `pin` it emits the `index.invalidation/1` report plus its reconciliation), `index.wiki` (the sealed single-repo wiki pack, or a verification report when called with `verify`), and the symbol trio `index.symbol-graph` (the whole call/reference graph for a repo), `index.symbol-definition` (GO-TO-DEFINITION, the file:line of a symbol), and `index.symbol-references` (FIND-REFERENCES, the resolved callers of a symbol, with unresolved references reported separately). Each reuses the same function its matching subcommand does, so the protocol face never disagrees with the CLI. An unresolvable `focus` or `repo` argument returns an `index.focus-rejection/v1` receipt as the payload instead of a protocol error.
 
 ## Notes
 
