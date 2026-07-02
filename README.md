@@ -15,41 +15,37 @@
 ![deps: none](https://img.shields.io/badge/deps-none-success.svg)
 [![license: fair-source](https://img.shields.io/badge/license-fair--source-blue.svg)](LICENSE)
 
-## Try it
+`index` reads your code and docs and draws the map another person can check. Point it at one unfamiliar repo and get a self-contained, verified wiki; point it at a whole workspace and get the dependency atlas. It is for anyone handed a codebase they did not write, new maintainers, reviewers, and agents, because past a handful of modules or repos the shape of a system lives in someone's head, and that someone is usually busy or already gone. Built from file:line evidence, not guesses. Offline, deterministic, zero runtime dependencies.
+
+One name to install, one to run, one to import: `pip install index-graph` installs it, `index` runs it, `import index_graph` imports it.
+
+## Try it in 5 minutes
 
 ```bash
 pip install index-graph
-index atlas --root /path/to/your/workspace --format html --out atlas.html
-index wiki --root /path/to/one/repo --out wiki.html   # the verified single-repo wiki
 
-# from a source checkout
-python -m index status --json
+# one unfamiliar repo -> one self-contained, verified wiki
+index wiki --root /path/to/one/repo --out wiki.html
+index wiki --verify wiki.html --root /path/to/one/repo   # MATCH / DRIFT / UNVERIFIABLE
+
+# then the workspace altitude: repos + docs on one two-layer map
+index atlas --root /path/to/your/workspace --format html --out atlas.html
+
+# or just the repo dependency graph:
+index viz --root /path/to/your/workspace --format html --out graph.html
 ```
 
-Open the visual atlas sample at [`examples/atlas-demo.html`](examples/atlas-demo.html) or the static proof surface at [`examples/index-demo.html`](examples/index-demo.html).
+Each command writes one self-contained HTML file. Open it in any browser, offline. Nothing to host, and nothing phones home.
+
+Want to see the output before installing? Rendered samples ship with the repo: [`examples/wiki-demo.html`](examples/wiki-demo.html) for the verified single-repo wiki, [`examples/atlas-demo.html`](examples/atlas-demo.html) for the workspace atlas, and the static proof surface at [`examples/index-demo.html`](examples/index-demo.html). The demos regenerate deterministically with `python examples/wiki_demo.py` and `python examples/atlas_demo.py`.
+
+Bare `index` (no subcommand) writes the JSON inventory map and says where: it prints the write path before writing, and `index --dry-run` reports what would be written without writing it.
+
+---
 
 ## Why it matters
 
 A workspace becomes risky when nobody can hold its shape. index gives teams and agents a map built from imports, manifests, docs, and evidence instead of memory, so context packets can cite the structure they rely on.
-
-## Work with it
-
-Run it on a real multi-repo workspace, use the atlas for onboarding, diligence, or agent handoffs, and test whether the context envelopes preserve enough structure for another person to resume the work.
-
-## What to test first
-
-- Run `index atlas` on a workspace where the architecture currently lives in someone's head.
-- Open the generated map and ask whether a new contributor or agent could find the right repo, doc, and dependency edge without a handoff call.
-- Report any missing edge, noisy context packet, or stale evidence pointer. The target is not a prettier graph; it is a map another run can re-check.
-
-## Current status
-
-- **Release:** `index-graph 2.8.0`; command `index`; Python 3.11+; zero runtime dependencies.
-- **Operator surface:** `index status --json`, `index doctor --json`, `index demo --json`, and `index mcp` expose the Project Telos action envelope and native MCP tools: `index.map`, `index.context`, `index.context.envelope`, `index.select`, `index.invalidate`, `index.wiki`, `index.status`, `index.doctor`, plus the existing graph, focus, verify, router, and internals tools. Generated routers now carry compact dependency evidence like `pyproject.toml:12` beside internal edges, use a fast describes-only docs pass for large workspaces, and the status payload advertises shared CLI/MCP/plugin/IDE/TUI/app contracts for enterprise, research, creative, scientific, and education workflows.
-- **Current floor:** 2.8.0 covers atlas mapping, nine ecosystem resolvers, architecture certificates, freshness checks, token-economics benchmarking, selection-aware context envelopes, and MCP-native workspace intelligence.
-- **Public role:** workspace map and context-envelope layer for Project Telos: index gives gather, forum, crucible, and telos a shared view of what code, docs, and dependency evidence exist now.
-
-- **Enterprise readiness:** [docs/ENTERPRISE-READINESS.md](docs/ENTERPRISE-READINESS.md) records the large-context, action-receipt, readability, and host-integration contract for unattended agent workflows.
 
 ## What it does
 
@@ -72,37 +68,6 @@ A program's structure is knowledge, and knowledge that lives in one person's mem
 
 ---
 
-## 30-second quickstart
-
-```bash
-pip install index-graph
-
-# the two-layer code and knowledge map (the headline):
-index atlas --root /path/to/your/workspace --format html --out atlas.html
-open atlas.html        # macOS and Linux, or: start atlas.html on Windows
-
-# or just the repo dependency graph:
-index viz --root /path/to/your/workspace --format html --out graph.html
-```
-
-Each command writes one HTML file. Open it in any browser, offline. Nothing to host, and nothing phones home.
-
----
-
-## Try it in the field
-
-`index` is the right first test when the problem is a workspace nobody can hold in their head anymore.
-
-- **Engineering / agent routing:** map the repo graph and docs before assigning model work, so tokens go to the files and decisions that actually matter.
-- **Clinical or regulated software teams:** preserve architecture evidence around the systems that touch policy, records, or review workflows.
-- **Media / research teams:** keep source repos, notes, and project docs in one rerunnable atlas instead of rebuilding the map from memory.
-
-Project Telos: <https://harperz9.github.io>. GitHub: <https://github.com/HarperZ9>. Peer flagships: [gather](https://github.com/HarperZ9/gather), [crucible](https://github.com/HarperZ9/crucible), [forum](https://github.com/HarperZ9/forum), and [the telos engine](https://github.com/HarperZ9/telos).
-
-I am looking for verification, testing against real workspaces, early traction from people willing to inspect the certificates, and possibly modest grassroots research funding or pointers.
-
----
-
 ## `index wiki`, the verified wiki
 
 The atlas maps a whole workspace. `index wiki` is the other altitude, the one-unfamiliar-repo view a newcomer actually needs. Wiki generators built on models guess your architecture and write confident prose about structure that is not there; repo packers dump source without comprehending it. `index wiki` takes the third path: it derives the wiki for ONE repo from the module dependency graph index already extracts, and then seals it so the result can be re-checked instead of trusted.
@@ -120,6 +85,8 @@ One command, one offline HTML file with client-side page navigation (or a JSON p
 - **Docs**: your existing markdown joined in verbatim, clearly labeled as authored by humans.
 
 No model, no network, no generated prose. Every page footer states the derivation boundary, structure derived from the dependency graph plus that page's own evidence count. The artifact embeds an `index.wiki/1` manifest, the pinned commit (or "unversioned" for a non-git root), a canonical SHA-256 per page, and the generation inputs, sealed by the same hashing rule as every index certificate. `index wiki --verify` recomputes the page hashes and the graph derivation against the current tree and answers MATCH, DRIFT (a page was tampered with, a claimed edge is absent from the real graph, or the repo moved off its pinned commit), or UNVERIFIABLE, with exit codes 0/1/2. The test suite keeps the known-bad fixtures, a tampered page, a hash-consistent forged edge, hostile markdown and module names, because a verifier that cannot fail on a known-bad input is not a verifier.
+
+A rendered sample ships with the repo at [`examples/wiki-demo.html`](examples/wiki-demo.html). Open it directly, or regenerate it with `python examples/wiki_demo.py`.
 
 ---
 
@@ -185,6 +152,44 @@ A rendered sample ships with the repo at [`examples/atlas-demo.html`](examples/a
 
 ---
 
+## Try it in the field
+
+`index` is the right first test when the problem is a workspace nobody can hold in their head anymore.
+
+- **Engineering / agent routing:** map the repo graph and docs before assigning model work, so tokens go to the files and decisions that actually matter.
+- **Clinical or regulated software teams:** preserve architecture evidence around the systems that touch policy, records, or review workflows.
+- **Media / research teams:** keep source repos, notes, and project docs in one rerunnable atlas instead of rebuilding the map from memory.
+
+Project Telos: <https://harperz9.github.io>. GitHub: <https://github.com/HarperZ9>. Peer flagships: [gather](https://github.com/HarperZ9/gather), [crucible](https://github.com/HarperZ9/crucible), [forum](https://github.com/HarperZ9/forum), and [the telos engine](https://github.com/HarperZ9/telos).
+
+I am looking for verification, testing against real workspaces, early traction from people willing to inspect the certificates, and possibly modest grassroots research funding or pointers.
+
+## Work with it
+
+Run it on a real multi-repo workspace, use the atlas for onboarding, diligence, or agent handoffs, and test whether the context envelopes preserve enough structure for another person to resume the work.
+
+## What to test first
+
+- Run `index atlas` on a workspace where the architecture currently lives in someone's head.
+- Open the generated map and ask whether a new contributor or agent could find the right repo, doc, and dependency edge without a handoff call.
+- Report any missing edge, noisy context packet, or stale evidence pointer. The target is not a prettier graph; it is a map another run can re-check.
+
+## Current status
+
+- **Release:** `index-graph 2.8.0`; command `index`; Python 3.11+; zero runtime dependencies.
+- **Operator surface:** `index status --json`, `index doctor --json`, `index demo --json`, and `index mcp` expose the Project Telos action envelope and native MCP tools: `index.map`, `index.context`, `index.context.envelope`, `index.select`, `index.invalidate`, `index.wiki`, `index.status`, `index.doctor`, plus the existing graph, focus, verify, router, and internals tools. Generated routers now carry compact dependency evidence like `pyproject.toml:12` beside internal edges, use a fast describes-only docs pass for large workspaces, and the status payload advertises shared CLI/MCP/plugin/IDE/TUI/app contracts for enterprise, research, creative, scientific, and education workflows.
+- **Current floor:** 2.8.0 covers atlas mapping, nine ecosystem resolvers, architecture certificates, freshness checks, token-economics benchmarking, selection-aware context envelopes, and MCP-native workspace intelligence.
+- **Public role:** workspace map and context-envelope layer for Project Telos: index gives gather, forum, crucible, and telos a shared view of what code, docs, and dependency evidence exist now.
+
+- **Enterprise readiness:** [docs/ENTERPRISE-READINESS.md](docs/ENTERPRISE-READINESS.md) records the large-context, action-receipt, readability, and host-integration contract for unattended agent workflows.
+
+```bash
+# from a source checkout
+python -m index status --json
+```
+
+---
+
 ## What you get
 
 | Output | Command | Description |
@@ -243,7 +248,7 @@ All of it runs offline. No API, no account, no model, no network. The tool reads
 
 ```
 index atlas     [--root ROOT] [--format html] [--json] [--out FILE] [--no-external]
-index map       [--root ROOT] [--output FILE] [--json] [--config CFG]
+index map       [--root ROOT] [--output FILE] [--json] [--dry-run] [--config CFG]
 index graph     [--root ROOT] [--json] [--cycles]
 index context   [--root ROOT] [--focus REPO] [--hops N] [--json] [--audit]
 index context-envelope [--root ROOT] [--budget N] [--focus REPO] [--hops N] [--json]
@@ -270,6 +275,11 @@ the unresolved selector, a reason code from a closed set, and a bounded candidat
 instead of a bare error string.
 `--no-external` hides stdlib and third-party nodes, keeping the graph to your own repos.
 In the `atlas` dashboard, focus is interactive. Just double-click a node.
+
+`map` (also the bare `index` invocation) prints the write path before it writes, so the
+INDEX.json write is never silent. `--dry-run` reports the would-be path and the repo
+counts without writing anything; combined with `--json` it is rejected, because `--json`
+already writes nothing.
 
 `context-envelope` is the daemon-safe handoff surface. It keeps raw source out of the
 packet, but each retained repo carries `project-telos.source-ref/v1` handles with

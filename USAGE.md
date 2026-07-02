@@ -19,7 +19,7 @@ python -m pip install -e .
 The console script is `index` (equivalently `python -m index_graph`). With no subcommand it runs `map`, which preserves the original flat invocation.
 
 ```text
-index [--root ROOT] [--output OUTPUT] [--json]
+index [--root ROOT] [--output OUTPUT] [--json] [--dry-run]
       [--config CONFIG] [--jobs JOBS] [--version]
 ```
 
@@ -28,9 +28,12 @@ index [--root ROOT] [--output OUTPUT] [--json]
 | `--root`    | current directory                | Workspace root to scan.                              |
 | `--output`  | `<root>/INDEX.json`              | Output path (ignored when `--json` is given).        |
 | `--json`    | off                              | Print the JSON map to stdout instead of writing it.  |
+| `--dry-run` | off                              | Report the write path and repo counts without writing anything (rejected with `--json`, which already writes nothing). |
 | `--config`  | `<root>/.index.toml` if present  | Path to a `.index.toml`. A missing explicit path is fatal. |
 | `--jobs`    | config or a CPU heuristic        | Override the parallel git worker count (must be at least 1). |
 | `--version` | n/a                              | Print the version (for example `index 1.0.0`) and exit. |
+
+The default write is explicit: `index` prints `index map: writing <path>` before it touches the filesystem, so the write location is never a surprise.
 
 With no config, classification falls back to a remote-host heuristic: `local` (no remote), `public` (the origin host is in the known public set), or `private`. Supply a `.index.toml` (see `example.index.toml`) for ordered path-glob rules.
 
@@ -81,11 +84,25 @@ index --root ./my-workspace
 Example output:
 
 ```text
+index map: writing /path/to/my-workspace/INDEX.json
 wrote /path/to/my-workspace/INDEX.json
 repos=2 dirty=0
 ```
 
 The JSON file content matches the structure shown in Example 1.
+
+### Example 2b, preview the write without touching disk
+
+```bash
+index --root ./my-workspace --dry-run
+```
+
+Example output (nothing is written):
+
+```text
+index map: would write /path/to/my-workspace/INDEX.json (dry-run, nothing written)
+repos=2 dirty=0
+```
 
 ### Example 3, custom output path and worker count
 

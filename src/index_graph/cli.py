@@ -28,6 +28,8 @@ def _add_map_args(p: argparse.ArgumentParser) -> None:
     p.add_argument("--root", type=Path, default=Path.cwd())
     p.add_argument("--output", type=Path, default=None)
     p.add_argument("--json", action="store_true")
+    p.add_argument("--dry-run", action="store_true",
+                   help="report the write path and repo counts without writing anything")
     p.add_argument("--config", type=Path, default=None)
     p.add_argument("--jobs", type=int, default=None)
 
@@ -176,12 +178,21 @@ def _cmd_map(args) -> int:
             raise SystemExit("--jobs must be a positive integer")
         config = replace(config, jobs=args.jobs)
     if args.json:
+        if args.dry_run:
+            raise SystemExit("map: --dry-run applies to the file-writing mode; "
+                             "--json already writes nothing")
         print(json.dumps(build_map(root, config, __version__).to_json(), indent=2))
-    else:
-        output = args.output.resolve() if args.output else root / "INDEX.json"
-        data = write_map(root, config, __version__, output)
-        print(f"wrote {output}")
+        return 0
+    output = args.output.resolve() if args.output else root / "INDEX.json"
+    if args.dry_run:
+        print(f"index map: would write {output} (dry-run, nothing written)")
+        data = build_map(root, config, __version__)
         print(f"repos={data.repo_count} dirty={data.dirty_count}")
+        return 0
+    print(f"index map: writing {output}")
+    data = write_map(root, config, __version__, output)
+    print(f"wrote {output}")
+    print(f"repos={data.repo_count} dirty={data.dirty_count}")
     return 0
 
 
