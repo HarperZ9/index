@@ -74,8 +74,15 @@ def find_symbol_at_position(
     """Resolve the symbol under an LSP cursor against the wave-1 graph.
 
     Only files inside ``root`` are considered; a file outside the server's
-    workspace resolves to None (never a cross-repo guess). The word under the
-    cursor is matched against symbol definitions by bare name.
+    workspace resolves to None (never a cross-repo guess). Resolution defers
+    entirely to the wave-1 graph's own verdict, so nothing is guessed:
+
+      - A cursor on a definition line resolves to that definition.
+      - A cursor on a call site resolves via the ``SymbolCall`` recorded at that
+        exact (file, line): a resolved call (``to_symbol`` set) jumps to its
+        target definition; an unresolved call (``to_symbol`` None, e.g. a
+        same-named symbol elsewhere with no import/call edge) resolves to None,
+        never to a bare-name match against an unrelated definition.
     """
     root = Path(root).resolve()
     path = uri_to_path(uri)
@@ -94,14 +101,19 @@ def find_symbol_at_position(
     word = _word_at(lines[line_no], position.get("character", 0))
     if not word:
         return None
-    # Prefer a definition that lives on this exact line and file (cursor on a
-    # def), else any definition of that bare name in this file, else any in the
-    # graph. All are real definitions; nothing is guessed.
-    in_file = [s for s in graph.symbols if s.file == rel and s.name == word]
-    on_line = [s for s in in_file if s.line == line_no + 1]
+    line_1 = line_no + 1
+    # Cursor on a definition line in this file: return that definition.
+    on_line = [s for s in graph.symbols
+               if s.file == rel and s.name == word and s.line == line_1]
     if on_line:
         return on_line[0]
-    if in_file:
-        return in_file[0]
-    anywhere = [s for s in graph.symbols if s.name == word]
-    return anywhere[0] if anywhere else None
+    # Cursor on a call site: defer to the graph's resolution for THIS exact call
+    # site. A resolved call names its target; an unresolved call names None.
+    by_id = {s.id: s for s in graph.symbols}
+    for call in graph.calls:
+        if (call.evidence_file == rel and call.evidence_line == line_1
+                and call.to_name == word):
+            if call.to_symbol is not None:
+                return by_id.get(call.to_symbol)
+            return None  # graph classified this call unresolved: never guess
+    return None

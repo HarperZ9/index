@@ -7,6 +7,8 @@ from __future__ import annotations
 
 import io
 import json
+import subprocess
+import sys
 
 from index_graph.lsp import protocol, serve
 from index_graph.lsp.server import STALE_CODE
@@ -95,6 +97,32 @@ def test_e2e_unresolved_null_negative(tmp_path):
     by_id = _drain(stdout.getvalue())
     assert by_id[2]["result"] is None
     assert "error" not in by_id[2]
+
+
+def test_e2e_real_subprocess_definition_over_os_pipes(tmp_path):
+    """The real thing: spawn `python -m index_graph.cli lsp` as a child process
+    and drive it over actual OS stdin/stdout pipes (not in-memory BytesIO),
+    proving the server frames JSON-RPC correctly on real file descriptors."""
+    cross_module(tmp_path)  # app.main() calls exported() from lib
+    app_uri = path_to_uri(tmp_path / "app.py")
+    lib_uri = path_to_uri(tmp_path / "lib.py")
+    payload = (
+        _frame({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}})
+        + _frame({"jsonrpc": "2.0", "method": "initialized", "params": {}})
+        + _frame({"jsonrpc": "2.0", "id": 2, "method": "textDocument/definition",
+                  "params": {"textDocument": {"uri": app_uri},
+                             "position": {"line": 4, "character": 4}}})
+        + _frame({"jsonrpc": "2.0", "id": 3, "method": "shutdown"})
+        + _frame({"jsonrpc": "2.0", "method": "exit"}))
+    proc = subprocess.run(
+        [sys.executable, "-m", "index_graph.cli", "lsp", "--root", str(tmp_path)],
+        input=payload, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        timeout=60)
+    assert proc.returncode == 0, proc.stderr.decode("utf-8", "replace")
+    by_id = _drain(proc.stdout)
+    # resolved cross-module jump, produced by a genuinely separate OS process
+    assert by_id[2]["result"]["uri"] == lib_uri
+    assert by_id[3]["result"] is None  # shutdown ack
 
 
 def test_e2e_staleness_negative(tmp_path):

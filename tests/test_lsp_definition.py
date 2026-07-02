@@ -73,6 +73,22 @@ def test_definition_cross_repo_isolation(tmp_path):
     assert r["result"] is None  # never a cross-repo jump into repo_b
 
 
+def test_definition_unresolved_call_with_same_named_decoy_returns_null(tmp_path):
+    # Negative #2 (the meaningful case): a same-named definition exists in an
+    # unrelated file, but the call site under the cursor has NO import/call edge
+    # to it -- build_symbol_graph classifies it cross_module_unresolved. The LSP
+    # must return null, not a guessed jump to the decoy.
+    (tmp_path / "a.py").write_text("def helper():\n    pass\n", encoding="utf-8")
+    (tmp_path / "b.py").write_text("def run():\n    helper()\n", encoding="utf-8")
+    server = LSPServer(root=tmp_path)
+    _init(server)
+    b_uri = path_to_uri(tmp_path / "b.py")
+    # cursor on the unresolved helper() call in b.py (no import of helper)
+    r = _definition(server, b_uri, 1, 4)
+    assert r["result"] is None  # must not jump to a.py's helper()
+    assert "error" not in r
+
+
 def test_definition_for_document_outside_root_returns_null(tmp_path):
     simple_module(tmp_path)
     server = LSPServer(root=tmp_path)
