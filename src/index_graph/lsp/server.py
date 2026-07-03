@@ -50,6 +50,34 @@ def _fingerprint(root: Path) -> str:
     return hashlib.sha256("\n".join(entries).encode("utf-8")).hexdigest()
 
 
+def _cheap_signature(root: Path) -> str:
+    """A cheap staleness pre-check: SHA-256 over the sorted
+    (relative-path, mtime_ns, size) triples of the Python tree. This is
+    stat-only (no file reads), so it is O(files) rather than the
+    O(files * bytes) of [`_fingerprint`]. Any added or removed .py file moves
+    the set of paths, and any write moves that file's mtime, so the signature
+    moves; a stable tree keeps it identical. It is used only as a FAST PATH
+    before the authoritative full-content fingerprint: a match means "nothing
+    stat-visible changed, skip the full re-read"; a mismatch always falls back
+    to [`_fingerprint`], which stays the source of truth. (The one thing a
+    stat-only check cannot see is a content edit that preserves both size and
+    mtime to the nanosecond, which a normal filesystem write never does.)"""
+    root = Path(root).resolve()
+    entries: list[str] = []
+    for py in walk_files(root, suffixes=(".py",)):
+        try:
+            rel = py.relative_to(root).as_posix()
+        except ValueError:
+            rel = py.as_posix()
+        try:
+            st = py.stat()
+            entries.append(f"{rel}:{st.st_mtime_ns}:{st.st_size}")
+        except OSError:
+            entries.append(f"{rel}:unstattable")
+    entries.sort()
+    return hashlib.sha256("\n".join(entries).encode("utf-8")).hexdigest()
+
+
 class LSPServer:
     """A single-workspace language server over the wave-1 symbol graph."""
 
@@ -58,6 +86,7 @@ class LSPServer:
         self.trace = trace
         self.symbol_graph: SymbolGraph | None = None
         self.fingerprint: str | None = None
+        self.cheap_sig: str | None = None
         self.should_exit = False
         self._shutdown = False
 
@@ -67,12 +96,32 @@ class LSPServer:
         """Build (or rebuild) the symbol graph and pin the current fingerprint."""
         self.symbol_graph = build_symbol_graph(self.root)
         self.fingerprint = _fingerprint(self.root)
+        self.cheap_sig = _cheap_signature(self.root)
 
     def is_stale(self) -> bool:
-        """True when the Python tree changed on disk since the last build."""
+        """True when the Python tree changed on disk since the last build.
+
+        Fail-closed and fast in the common case: a cheap stat-only signature is
+        checked first, and only when it moves does the authoritative full-content
+        fingerprint run. IDEs issue definition/references on every hover and
+        click, so the unchanged-tree path (the overwhelming majority) avoids
+        re-reading and re-hashing every file.
+        """
         if self.fingerprint is None:
             return False
-        return _fingerprint(self.root) != self.fingerprint
+        cheap_now = _cheap_signature(self.root)
+        if cheap_now == self.cheap_sig:
+            return False  # fast path: nothing stat-visible changed
+        # The cheap signature moved; the full-content fingerprint is the
+        # authority and decides staleness (fail-closed on a real change).
+        if _fingerprint(self.root) != self.fingerprint:
+            return True
+        # mtime/size moved but content is byte-identical (e.g. a touch or a
+        # rewrite with the same bytes): not stale. Refresh the cheap signature
+        # so the next request takes the fast path instead of re-running the
+        # full check every time.
+        self.cheap_sig = cheap_now
+        return False
 
     # --- dispatch ------------------------------------------------------------
 
