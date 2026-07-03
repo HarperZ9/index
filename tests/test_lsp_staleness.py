@@ -21,6 +21,29 @@ def test_fingerprint_stable_when_nothing_changes(tmp_path):
     assert server.is_stale() is False  # idempotent
 
 
+def test_unchanged_tree_does_not_full_reread_per_request(tmp_path, monkeypatch):
+    # Perf guard: on an unchanged tree, the cheap stat-only pre-check must take
+    # the fast path so the expensive full-content fingerprint is NOT recomputed
+    # on every definition/references request (IDEs issue these constantly).
+    write(tmp_path, "mod.py", "def foo():\n    pass\ndef bar():\n    foo()\n")
+    server = LSPServer(root=tmp_path)
+    _init(server)  # the single build computes the full fingerprint exactly once
+    import index_graph.lsp.server as srv
+    real = srv._fingerprint
+    calls = {"n": 0}
+
+    def counting(root):
+        calls["n"] += 1
+        return real(root)
+
+    monkeypatch.setattr(srv, "_fingerprint", counting)
+    for _ in range(25):
+        assert server.is_stale() is False
+    assert calls["n"] == 0, (
+        f"the full-content fingerprint was recomputed {calls['n']} times on an "
+        "unchanged tree; the cheap pre-check should take the fast path")
+
+
 def test_definition_on_stale_workspace_errors(tmp_path):
     write(tmp_path, "mod.py", "def foo():\n    pass\ndef bar():\n    foo()\n")
     server = LSPServer(root=tmp_path)
