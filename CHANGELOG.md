@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+- Symbol navigation: `index symbols QUERY` navigates the symbol graph for one symbol the way
+  an IDE jumps, from the CLI and in JSON, each hop carrying `file:line` evidence. Three
+  sections, selectable with `--def` / `--refs` / `--impls` (all three by default):
+  go-to-definition (matching definitions with their sites), find-references (resolved callers,
+  with unresolved same-name references listed separately and never as a caller), and
+  find-implementations. Find-implementations is new: it resolves in-repo subclasses of a class
+  and method overrides of a method, from a new AST-derived inheritance edge (`subclass` and
+  `override`, each `file:line`-backed and labeled `exact` or `cross_module`). A base class that
+  names an external or statically-unbindable class yields no edge, so an implementation result
+  is never guessed. The subcommand exits `0` on a match and `2` when every requested section
+  was empty. A new MCP tool `index.symbol-implementations` exposes find-implementations
+  natively, alongside the existing `index.symbol-definition` and `index.symbol-references`.
+  Reuses the wave-1 symbol graph wholesale via a shared `build_symbol_navigator`. Python only;
+  multi-language navigation is specced (not built) in `docs/PROTOCOL.md`.
+
 - LSP server: `index lsp --root ROOT` starts a stdio language server that puts index's
   verified symbol graph inside the IDE (VSCode/Neovim/JetBrains). It speaks JSON-RPC 2.0
   with hand-rolled `Content-Length` framing (zero new runtime dependencies) and advertises

@@ -137,6 +137,34 @@ def _add_internals_symbols_parser(sub) -> None:
     )
 
 
+def _add_symbols_parser(sub) -> None:
+    s = sub.add_parser(
+        "symbols",
+        help="Navigate the symbol graph: go-to-definition, find-references, and "
+        "find-implementations for a symbol, each hop with file:line evidence.",
+    )
+    s.add_argument(
+        "query",
+        help="symbol id (module::name or Class::method) or a bare name",
+    )
+    s.add_argument("--root", type=Path, default=Path.cwd())
+    s.add_argument("--json", action="store_true")
+    s.add_argument(
+        "--def", dest="definition", action="store_true",
+        help="Only go-to-definition (matching definitions with file:line).",
+    )
+    s.add_argument(
+        "--refs", dest="references", action="store_true",
+        help="Only find-references (resolved callers; unresolved refs listed "
+        "separately, never as callers).",
+    )
+    s.add_argument(
+        "--impls", dest="implementations", action="store_true",
+        help="Only find-implementations (in-repo subclasses of a class or "
+        "overrides of a method). No flag reports all three sections.",
+    )
+
+
 def _add_check_parser(sub) -> None:
     ck = sub.add_parser(
         "check",
@@ -300,6 +328,7 @@ def build_parser() -> argparse.ArgumentParser:
     add_wiki_parser(sub)
     _add_internals_parser(sub)
     _add_internals_symbols_parser(sub)
+    _add_symbols_parser(sub)
     _add_check_parser(sub)
     _add_snapshot_parser(sub)
     _add_drift_parser(sub)
