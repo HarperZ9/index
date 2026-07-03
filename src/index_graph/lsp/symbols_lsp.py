@@ -14,7 +14,6 @@ from __future__ import annotations
 
 from pathlib import Path
 from urllib.parse import unquote, urlparse
-from urllib.request import pathname2url
 
 from ..symbols.model import SymbolDefinition, SymbolGraph
 
@@ -23,8 +22,13 @@ _IDENT = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_")
 
 
 def path_to_uri(path: Path) -> str:
-    """A file:// URI for a filesystem path (resolved, percent-encoded)."""
-    return "file:" + pathname2url(str(Path(path).resolve()))
+    """A file:// URI for a filesystem path (resolved, percent-encoded).
+
+    Uses ``Path.as_uri`` so the result is a well-formed ``file://`` URI on both
+    POSIX (``file:///tmp/x``) and Windows (``file:///C:/x``); hand-building it
+    from ``pathname2url`` yielded a single-slash ``file:/tmp/x`` on POSIX.
+    """
+    return Path(path).resolve().as_uri()
 
 
 def uri_to_path(uri: str) -> Path:
