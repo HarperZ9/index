@@ -23,6 +23,7 @@ from .cli_handlers import (
     cmd_router,
     cmd_serve,
     cmd_snapshot,
+    cmd_symbols,
     cmd_verify,
     cmd_viz,
 )
@@ -45,6 +46,7 @@ _SUBCOMMANDS = {
     "wiki",
     "internals",
     "internals-symbols",
+    "symbols",
     "check",
     "snapshot",
     "drift",
@@ -76,6 +78,7 @@ _DISPATCH = {
     "viz": cmd_viz,
     "internals": cmd_internals,
     "internals-symbols": cmd_internals_symbols,
+    "symbols": cmd_symbols,
     "check": cmd_check,
     "snapshot": cmd_snapshot,
     "drift": cmd_drift,

@@ -13,6 +13,7 @@ from .graph import cmd_graph, cmd_internals, cmd_internals_symbols, cmd_viz
 from .lsp import cmd_lsp
 from .maps import cmd_atlas, cmd_router
 from .serve import cmd_serve
+from .symbols import cmd_symbols
 from .verify import cmd_bench, cmd_freshness, cmd_mcp, cmd_verify
 
 __all__ = [
@@ -31,6 +32,7 @@ __all__ = [
     "cmd_router",
     "cmd_serve",
     "cmd_snapshot",
+    "cmd_symbols",
     "cmd_verify",
     "cmd_viz",
 ]

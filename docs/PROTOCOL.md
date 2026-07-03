@@ -276,6 +276,61 @@ Dynamic dispatch (`getattr`, a variable holding a function) and files that fail 
 recorded in the symbol coverage object, not guessed at. Only Python is symbol-exact; other
 languages keep their module-level graph and carry no symbol extraction.
 
+## Symbol navigation: `index symbols QUERY`
+
+`index symbols` navigates the symbol graph for one symbol from the CLI (and, per section,
+over MCP), the way an IDE jumps. The query is a symbol id (`module_id::name` or
+`module_id::Class::method`) or a bare name; a `Class::method` or `module::name` **tail** also
+matches. Three sections, each hop carrying `file:line`:
+
+- **go-to-definition** (`--def`, MCP `index.symbol-definition`): the matching `SymbolDefinition`
+  rows, each with `id`, `name`, `kind`, `file`, `line`, `is_public`.
+- **find-references** (`--refs`, MCP `index.symbol-references`): a `references` list of resolved
+  callers (each a `SymbolCall` projection with `from_symbol`, `file`, `line`, `resolution`,
+  `confidence`) and a separate `unresolved` list of same-name references the graph did not bind.
+  An unresolved reference is never placed in `references`.
+- **find-implementations** (`--impls`, MCP `index.symbol-implementations`): `subclasses` when the
+  query names a class, `overrides` when it names a method.
+
+Find-implementations rides on a new **inheritance edge** derived from the AST, resolved the
+same honest way calls are. An `InheritanceEdge` has a `kind`, a `child` id, a resolved `parent`
+id, the bare `name` written, `file:line` of the child site, and a `resolution`:
+
+| Edge `kind` | `child` | `parent` | Meaning |
+|-------------|---------|----------|---------|
+| `subclass` | subclass class id | base class id | class `child` lists `parent` as a base, and `parent` binds (same-module `class`, or a `from <internal> import` name) to a real class definition in this repo |
+| `override` | subclass method id | ancestor method id | the subclass defines a method whose name the resolved parent class also defines |
+
+| Resolution | Meaning |
+|------------|---------|
+| `exact` | the base class is defined in the same module |
+| `cross_module` | the base class binds through a `from <internal-module> import` to a real class in this repo |
+
+A base class that names an external class, or a name the static scan cannot bind, yields **no**
+edge, so an implementation result is never guessed. `index symbols` exits `0` when the query
+matched something and `2` when every requested section was empty. Only Python is AST-exact here,
+matching the definitions/calls layers.
+
+### Multi-language navigation (specced, not yet built)
+
+Symbol navigation is Python-only today because definitions, calls, and inheritance are all read
+from the stdlib `ast` module. The module-import graph already resolves JavaScript, TypeScript,
+Rust, Go, Java, C#, C++, PHP, and Ruby (see the resolver test suite), so the navigation surface
+is language-agnostic by design: the CLI and JSON shape above does not mention Python. Extending
+navigation to a second language is a matter of adding, per language, three extractors that emit
+the existing `SymbolDefinition`, `SymbolCall`, and `InheritanceEdge` shapes:
+
+1. **definitions** (function/class/method sites with `file:line`),
+2. **calls** (call sites with the same layered, honestly-labeled resolution), and
+3. **inheritance** (base-class and method-override edges).
+
+Each extractor must keep the same posture: resolve exactly where the language's own scoping
+allows, label cross-module resolution as best-effort, and emit **no** edge where the binding is
+statically unknown (never a guessed hop). A language whose extractors are not yet written keeps
+its module-level graph and reports zero symbols, which is honest, rather than a lower-confidence
+guess. The build seam is `build_symbol_navigator`, which dispatches by module language; a new
+language plugs in without changing the CLI, JSON, or MCP surface.
+
 ## LSP server: `index lsp --root ROOT`
 
 `index lsp` starts a stdio language server so the same symbol graph answers an IDE

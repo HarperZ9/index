@@ -10,10 +10,15 @@ module graph uses.
 from __future__ import annotations
 
 from .model import (SymbolCall, SymbolCoverage, SymbolDefinition, SymbolGraph)
-from .build import (build_symbol_graph, symbol_graph_to_claims,
-                    symbol_graph_to_payload)
+from .inheritance import InheritanceEdge, extract_inheritance_edges
+from .navigate import (find_definitions, find_implementations, find_references)
+from .build import (build_symbol_graph, build_symbol_navigator,
+                    symbol_graph_to_claims, symbol_graph_to_payload)
 
 __all__ = [
     "SymbolCall", "SymbolCoverage", "SymbolDefinition", "SymbolGraph",
-    "build_symbol_graph", "symbol_graph_to_claims", "symbol_graph_to_payload",
+    "InheritanceEdge", "extract_inheritance_edges",
+    "find_definitions", "find_implementations", "find_references",
+    "build_symbol_graph", "build_symbol_navigator",
+    "symbol_graph_to_claims", "symbol_graph_to_payload",
 ]

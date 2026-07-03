@@ -12,6 +12,7 @@ from ..internals.modules import discover_modules
 from .calls import extract_symbol_calls
 from .definitions import extract_symbol_definitions
 from .imports import module_import_bindings
+from .inheritance import InheritanceEdge, extract_inheritance_edges
 from .model import SymbolCall, SymbolCoverage, SymbolDefinition, SymbolGraph
 
 
@@ -37,12 +38,27 @@ def _fan(calls: tuple[SymbolCall, ...]) -> tuple[dict[str, int], dict[str, int]]
 
 
 def build_symbol_graph(repo_root: Path, repo_name: str | None = None) -> SymbolGraph:
+    graph, _ = build_symbol_navigator(repo_root, repo_name)
+    return graph
+
+
+def build_symbol_navigator(
+    repo_root: Path, repo_name: str | None = None,
+) -> tuple[SymbolGraph, list[InheritanceEdge]]:
+    """Build the symbol graph and its resolved inheritance edges in one pass.
+
+    The extraction (definitions, imports, calls) is shared, so navigation
+    (definition/references/implementations) rides on the exact same evidence the
+    graph seals. Inheritance edges power find-implementations and are never
+    guessed: an external or unbindable base yields no edge.
+    """
     root = repo_root.resolve()
     name = repo_name or root.name
     ids = _python_ids(root)
     definitions, parse_errors = extract_symbol_definitions(root, ids)
     import_tables = module_import_bindings(root, ids)
     calls_list, dynamic = extract_symbol_calls(root, definitions, ids, import_tables)
+    edges = extract_inheritance_edges(root, definitions, ids, import_tables)
     calls = tuple(calls_list)
     resolved = sum(1 for c in calls if c.to_symbol is not None)
     coverage = SymbolCoverage(
@@ -53,8 +69,9 @@ def build_symbol_graph(repo_root: Path, repo_name: str | None = None) -> SymbolG
         dynamic_calls=tuple(dynamic),
     )
     fan_in, fan_out = _fan(calls)
-    return SymbolGraph(repo=name, symbols=tuple(definitions), calls=calls,
-                       coverage=coverage, fan_in=fan_in, fan_out=fan_out)
+    graph = SymbolGraph(repo=name, symbols=tuple(definitions), calls=calls,
+                        coverage=coverage, fan_in=fan_in, fan_out=fan_out)
+    return graph, edges
 
 
 def _definition_payload(d: SymbolDefinition) -> dict:

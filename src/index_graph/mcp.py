@@ -69,6 +69,11 @@ def _tool_defs() -> list[dict]:
          "inputSchema": _root_schema({"symbol": {"type": "string",
                                                  "description": "symbol id (module::name) or bare name"}},
                                      required=["root", "symbol"])},
+        {"name": "index.symbol-implementations",
+         "description": "FIND-IMPLEMENTATIONS: in-repo subclasses of a class or overrides of a method, each with file:line evidence and an exact/cross_module resolution label; an external or unbindable base yields no edge (never guessed).",
+         "inputSchema": _root_schema({"symbol": {"type": "string",
+                                                 "description": "class or method symbol id (module::name / Class::method) or bare name"}},
+                                     required=["root", "symbol"])},
         {"name": "index.status",
          "description": "Project Telos operator-spine status action envelope, matching the `index status --json` CLI surface.",
          "inputSchema": {"type": "object", "properties": {}}},
@@ -105,13 +110,17 @@ def _symbol_matches(sym, query: str) -> bool:
 
 
 def _symbol_tool(name: str, root: Path, args: dict) -> str:
-    from .symbols import build_symbol_graph, symbol_graph_to_payload
-    g = build_symbol_graph(root)
+    from .symbols import (build_symbol_navigator, find_implementations,
+                          symbol_graph_to_payload)
+    g, edges = build_symbol_navigator(root)
     if name == "index.symbol-graph":
         return json.dumps(symbol_graph_to_payload(g), indent=2, sort_keys=True)
     query = (args.get("symbol") or "").strip()
     if not query:
         raise ValueError("missing required argument: symbol")
+    if name == "index.symbol-implementations":
+        impls = find_implementations(g, edges, query)
+        return json.dumps({"symbol": query, **impls}, indent=2, sort_keys=True)
     if name == "index.symbol-definition":
         defs = [{"id": s.id, "name": s.name, "kind": s.kind, "file": s.file,
                  "line": s.line, "parent": s.parent}
@@ -167,7 +176,8 @@ def call_tool(name: str, args: dict) -> str:
         from .wiki import build_wiki_pack
         return json.dumps(build_wiki_pack(root), indent=2, sort_keys=True)
 
-    if name in ("index.symbol-graph", "index.symbol-definition", "index.symbol-references"):
+    if name in ("index.symbol-graph", "index.symbol-definition",
+                "index.symbol-references", "index.symbol-implementations"):
         return _symbol_tool(name, root, args)
 
     repo_paths = _repo_paths(root)

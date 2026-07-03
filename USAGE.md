@@ -576,6 +576,48 @@ The per-symbol pages in `index wiki` are a projection of this graph, sealed and 
 `index wiki --verify` re-derives the symbol graph and flags a claimed resolved call the real
 graph does not contain as DRIFT. See `docs/PROTOCOL.md` for the full schema.
 
+### `symbols` subcommand (navigate: def / refs / impls)
+
+```text
+index symbols QUERY --root REPO [--json] [--def] [--refs] [--impls]
+```
+
+| Flag      | Default           | Meaning                                                                   |
+| --------- | ----------------- | ------------------------------------------------------------------------- |
+| `QUERY`   | required          | A symbol id (`module::name` or `Class::method`) or a bare name.           |
+| `--root`  | current directory | The single repo to look inside.                                           |
+| `--json`  | off               | Emit the navigation result as JSON.                                       |
+| `--def`   | off               | Only go-to-definition.                                                    |
+| `--refs`  | off               | Only find-references.                                                      |
+| `--impls` | off               | Only find-implementations. With no mode flag, all three sections report.  |
+
+Where `index internals-symbols` dumps the whole graph, `index symbols` navigates it for one
+symbol, the way an IDE does, each hop carrying `file:line` evidence:
+
+- **go-to-definition** (`--def`): every symbol whose id or bare name matches, with its site.
+- **find-references** (`--refs`): every resolved caller, plus a separate, honestly-labeled list
+  of unresolved same-name references. An unresolved reference is never reported as a caller.
+- **find-implementations** (`--impls`): for a class query, the in-repo subclasses; for a method
+  query, the in-repo overrides of that method. A base class that names an external or
+  statically-unbindable class yields no edge, so an implementation result is never guessed.
+
+```bash
+index symbols "Animal::speak" --root ./my-repo --impls
+```
+
+```text
+symbol query: Animal::speak  (repo my-repo)
+implementations (0 subclasses, 2 overrides):
+  override pets/dog::Dog::speak  pets/dog.py:5  [cross_module]
+  override pets/cat::Cat::speak  pets/cat.py:5  [cross_module]
+```
+
+The exit code is `0` when the query matched something and `2` when every requested section was
+empty, so a script can tell "no such symbol" from a hit without parsing text. The same
+navigation is exposed over MCP as `index.symbol-definition`, `index.symbol-references`, and
+`index.symbol-implementations`. Only Python is AST-exact today; multi-language navigation is
+specced in `docs/PROTOCOL.md`.
+
 ### The `[architecture]` criterion
 
 A check needs a rule to measure against. Declare one in `.index.toml`:
@@ -746,7 +788,7 @@ Bytes are exact and model-agnostic. The token figures use the common ~4 bytes/to
 index mcp
 ```
 
-The tools are `index_graph`, `index_focus` (a repo's neighborhood plus the preservation manifest), `index_verify` (ground a depends or exists claim), `index_router` (the workspace map), `index_internals` (a repo's module graph), `index.select` (path selection with typed rejection receipts), `index.invalidate` (without `pin` it mints and returns a pin of the current tree; with `pin` it emits the `index.invalidation/1` report plus its reconciliation), `index.wiki` (the sealed single-repo wiki pack, or a verification report when called with `verify`), and the symbol trio `index.symbol-graph` (the whole call/reference graph for a repo), `index.symbol-definition` (GO-TO-DEFINITION, the file:line of a symbol), and `index.symbol-references` (FIND-REFERENCES, the resolved callers of a symbol, with unresolved references reported separately). Each reuses the same function its matching subcommand does, so the protocol face never disagrees with the CLI. An unresolvable `focus` or `repo` argument returns an `index.focus-rejection/v1` receipt as the payload instead of a protocol error.
+The tools are `index_graph`, `index_focus` (a repo's neighborhood plus the preservation manifest), `index_verify` (ground a depends or exists claim), `index_router` (the workspace map), `index_internals` (a repo's module graph), `index.select` (path selection with typed rejection receipts), `index.invalidate` (without `pin` it mints and returns a pin of the current tree; with `pin` it emits the `index.invalidation/1` report plus its reconciliation), `index.wiki` (the sealed single-repo wiki pack, or a verification report when called with `verify`), and the symbol quartet `index.symbol-graph` (the whole call/reference graph for a repo), `index.symbol-definition` (GO-TO-DEFINITION, the file:line of a symbol), `index.symbol-references` (FIND-REFERENCES, the resolved callers of a symbol, with unresolved references reported separately), and `index.symbol-implementations` (FIND-IMPLEMENTATIONS, in-repo subclasses of a class or overrides of a method, with an external base never guessed into an edge). Each reuses the same function its matching subcommand does, so the protocol face never disagrees with the CLI. An unresolvable `focus` or `repo` argument returns an `index.focus-rejection/v1` receipt as the payload instead of a protocol error.
 
 ## Notes
 
