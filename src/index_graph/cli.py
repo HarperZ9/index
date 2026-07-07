@@ -9,6 +9,7 @@ from dataclasses import replace
 from . import __version__
 from .cli_handlers import (
     cmd_atlas,
+    cmd_workbench,
     cmd_bench,
     cmd_check,
     cmd_context,
@@ -45,6 +46,7 @@ _SUBCOMMANDS = {
     "select",
     "viz",
     "atlas",
+    "workbench",
     "wiki",
     "internals",
     "internals-symbols",
@@ -72,6 +74,7 @@ _DISPATCH = {
     "doctor": cmd_doctor,
     "demo": cmd_demo,
     "atlas": cmd_atlas,
+    "workbench": cmd_workbench,
     "wiki": cmd_wiki,
     "graph": cmd_graph,
     "context": cmd_context,
