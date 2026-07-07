@@ -101,3 +101,50 @@ def cmd_context_envelope(args) -> int:
         )
         print(f"retained={len(env['retained'])} omitted={len(env['omitted'])}")
     return 0
+
+
+def cmd_lens(args) -> int:
+    if args.budget < 1:
+        raise SystemExit("--budget must be a positive integer")
+    if args.hops is not None and args.hops < 0:
+        raise SystemExit("--hops must be >= 0")
+    from ..context.lens import build_lens_pack
+    from ..viz.lens_html import render_lens_html
+
+    graph = build_graph(repo_paths(args.root.resolve()))
+    try:
+        lens = build_lens_pack(
+            graph,
+            root=args.root.resolve(),
+            token_budget=args.budget,
+            focus=args.focus,
+            hops=args.hops,
+        )
+    except FocusRejection as exc:
+        print(
+            json.dumps(exc.receipt, indent=2, sort_keys=True)
+            if args.json
+            else render_rejection(exc.receipt)
+        )
+        return 2
+    except ValueError as exc:
+        print(str(exc))
+        return 2
+    if args.json:
+        print(json.dumps(lens, indent=2, sort_keys=True))
+        return 0
+    out = getattr(args, "out", None)
+    if out:
+        from pathlib import Path
+
+        Path(out).write_text(render_lens_html(lens), encoding="utf-8")
+        env = lens["envelope"]
+        print(
+            f"context lens -> {out}  "
+            f"(verdict={env['verification_verdict']}, "
+            f"{len(env['retained'])} retained / {len(env['omitted'])} omitted "
+            f"at budget {env['budget']['token_budget']})"
+        )
+    else:
+        print(render_lens_html(lens))
+    return 0
