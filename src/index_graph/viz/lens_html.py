@@ -155,8 +155,9 @@ function render(budget){
  const inN=keep.size,outN=ORDER.length-inN;
  $('#in-n').textContent=inN;$('#out-n').textContent=outN;
  $('#used').textContent=approx;$('#bud').textContent=budget;$('#bval').textContent=budget;
- const over=approx>budget&&inN>1;                 // greedy floor keeps 1 even over budget
- const v=$('#verdict');v.dataset.v=over?'UNVERIFIABLE':'MATCH';v.textContent=over?'UNVERIFIABLE':'MATCH';
+ // MIRRORS context/lens.py replay_verdict: any scoped candidate dropped -> UNVERIFIABLE
+ const verdict=inN<ORDER.length?'UNVERIFIABLE':'MATCH';
+ const v=$('#verdict');v.dataset.v=verdict;v.textContent=verdict;
 }
 const slider=$('#budget');
 slider.addEventListener('input',()=>render(+slider.value));
