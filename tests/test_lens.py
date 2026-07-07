@@ -12,7 +12,11 @@ from pathlib import Path
 import pytest
 
 from index_graph.context.envelope import build_context_envelope
-from index_graph.context.lens import build_lens_pack, replay_retained
+from index_graph.context.lens import (
+    build_lens_pack,
+    replay_retained,
+    replay_verdict,
+)
 from index_graph.graph.build import build_graph
 from index_graph.viz.lens_html import render_lens_html
 
@@ -47,6 +51,29 @@ def test_replay_matches_envelope_at_every_budget(workspace):
         expected = [item["name"] for item in env["retained"]]
         assert replay_retained(order, base, budget) == expected, (
             f"replay diverged from the envelope at budget={budget}")
+
+
+def test_replay_verdict_matches_envelope_at_every_budget(workspace):
+    # the pill must never disagree with the CLI verdict — the "slider that lies" ban
+    graph = _graph(workspace)
+    lens = build_lens_pack(graph, root=workspace, token_budget=1200)
+    order = lens["replay"]["order"]
+    base = lens["replay"]["base_tokens"]
+    hi = base + sum(o["cost"] for o in order) + 50
+    for budget in range(1, hi, 5):
+        env = build_context_envelope(graph, root=workspace, token_budget=budget)
+        assert replay_verdict(order, base, budget) == env["verification_verdict"], (
+            f"verdict diverged at budget={budget}")
+
+
+def test_descriptions_are_plain_text_no_markup(workspace):
+    # descriptions must not leak raw README HTML/markdown into the UI
+    graph = _graph(workspace)
+    lens = build_lens_pack(graph, root=workspace, token_budget=1200)
+    for item in lens["replay"]["order"]:
+        d = item["description"]
+        for marker in ("<", ">", "](", "![", "```"):
+            assert marker not in d, f"markup {marker!r} leaked into description: {d!r}"
 
 
 def test_pack_is_deterministic(workspace):

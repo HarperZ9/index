@@ -46,6 +46,27 @@ def replay_retained(order: list[dict], base_tokens: int, token_budget: int) -> l
     return retained
 
 
+def replay_verdict(order: list[dict], base_tokens: int, token_budget: int) -> str:
+    """The verdict the envelope would emit at this budget, from the same numbers.
+    `order` is the focus-scoped candidate set, so any candidate NOT retained is a
+    budget drop (failure_code budget_exceeded) -> UNVERIFIABLE; else MATCH. The
+    page's JS mirrors exactly this so the pill never disagrees with the CLI."""
+    kept = set(replay_retained(order, base_tokens, token_budget))
+    return "UNVERIFIABLE" if len(kept) < len(order) else "MATCH"
+
+
+def _plain(text: str) -> str:
+    """Reduce a repo's description (often raw README head: HTML tags, markdown
+    image/link syntax, badges) to a clean one-line plain string for display."""
+    import re
+
+    text = re.sub(r"<[^>]+>", " ", text)                         # HTML tags
+    text = re.sub(r"!\[[^\]]*\]\([^)]*\)", " ", text)            # md images
+    text = re.sub(r"\[([^\]]*)\]\([^)]*\)", r"\1", text)         # md links -> label
+    text = re.sub(r"[`*#>_|]+", " ", text)                        # md punctuation
+    return re.sub(r"\s+", " ", text).strip()
+
+
 def build_lens_pack(
     graph: DependencyGraph,
     *,
@@ -70,9 +91,9 @@ def build_lens_pack(
         item = _repo_item(repo, pack, refs.get(repo["name"], []))
         order.append({
             "name": item["name"],
-            "cost": _approx_tokens(item),
+            "cost": _approx_tokens(item),           # cost from the FULL item (refs incl.)
             "roles": item["roles"],
-            "description": item["description"],
+            "description": _plain(item["description"])[:160],
             "salience": item["salience"],
             "source_refs": item["source_refs"],
         })
