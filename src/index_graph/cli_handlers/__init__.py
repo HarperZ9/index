@@ -8,7 +8,7 @@ to the pre-split single-file implementation.
 from __future__ import annotations
 
 from .certify import cmd_check, cmd_drift, cmd_snapshot
-from .context import cmd_context, cmd_context_envelope
+from .context import cmd_context, cmd_context_envelope, cmd_lens
 from .graph import cmd_graph, cmd_internals, cmd_internals_symbols, cmd_viz
 from .lsp import cmd_lsp
 from .maps import cmd_atlas, cmd_router
@@ -22,6 +22,7 @@ __all__ = [
     "cmd_check",
     "cmd_context",
     "cmd_context_envelope",
+    "cmd_lens",
     "cmd_drift",
     "cmd_freshness",
     "cmd_graph",
