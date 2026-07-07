@@ -108,6 +108,24 @@ def _add_workbench_parser(sub) -> None:
                      help="emit the workbench pack JSON (minus svg) instead of HTML")
 
 
+def _add_watch_parser(sub) -> None:
+    w = sub.add_parser(
+        "watch",
+        help="Auto-resync on file change: hold the prior fingerprint, emit a "
+             "live FRESH/STALE receipt per change, optionally regenerate an artifact.",
+    )
+    w.add_argument("--root", type=Path, default=Path.cwd())
+    w.add_argument("--interval", type=float, default=2.0,
+                   help="poll seconds (latency floor; the fingerprint is authoritative)")
+    w.add_argument("--max-ticks", type=int, default=0,
+                   help="stop after N ticks (0 = run until Ctrl-C)")
+    w.add_argument("--regen", choices=["workbench", "atlas"], default=None,
+                   help="regenerate this artifact on every detected change")
+    w.add_argument("--out", default=None, help="artifact output path for --regen")
+    w.add_argument("--json", action="store_true",
+                   help="emit one freshness-sync receipt (JSON) per line")
+
+
 def _add_select_parser(sub) -> None:
     se = sub.add_parser(
         "select",
@@ -359,6 +377,7 @@ def build_parser() -> argparse.ArgumentParser:
     _add_graph_parser(sub)
     _add_context_parser(sub)
     _add_context_envelope_parser(sub)
+    _add_watch_parser(sub)
     _add_lens_parser(sub)
     _add_select_parser(sub)
     _add_viz_parser(sub)

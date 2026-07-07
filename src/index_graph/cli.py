@@ -27,6 +27,7 @@ from .cli_handlers import (
     cmd_snapshot,
     cmd_symbols,
     cmd_verify,
+    cmd_watch,
     cmd_viz,
 )
 from .cli_parser import build_parser
@@ -57,6 +58,7 @@ _SUBCOMMANDS = {
     "router",
     "verify",
     "freshness",
+    "watch",
     "invalidate",
     "bench",
     "serve",
@@ -91,6 +93,7 @@ _DISPATCH = {
     "router": cmd_router,
     "verify": cmd_verify,
     "freshness": cmd_freshness,
+    "watch": cmd_watch,
     "invalidate": cmd_invalidate,
     "bench": cmd_bench,
     "serve": cmd_serve,
