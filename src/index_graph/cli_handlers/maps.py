@@ -31,6 +31,38 @@ def cmd_atlas(args) -> int:
     return 0
 
 
+def cmd_workbench(args) -> int:
+    from ..knowledge.docs import discover_docs
+    from ..viz.workbench_html import render_workbench_html
+    from ..workbench import build_workbench_pack
+
+    if args.budget < 1:
+        raise SystemExit("--budget must be a positive integer")
+    root = require_dir(args.root)
+    paths = repo_paths(root)
+    repo_dirs = {name: rel_to_root(root, p) for name, p in paths.items()}
+    graph = build_graph(paths)
+    docs = discover_docs(root)
+    wb = build_workbench_pack(
+        graph, docs, repo_dirs,
+        root=root, token_budget=args.budget, spine_dir=args.spine_dir,
+        max_doc_bodies=args.max_doc_bodies)
+    if args.json:
+        print(json.dumps({k: v for k, v in wb.items() if k != "svg"},
+                         indent=2, sort_keys=True))
+        return 0
+    page = render_workbench_html(wb)
+    if args.out:
+        Path(args.out).write_text(page, encoding="utf-8")
+        s = wb["summary"]
+        print(f"workbench -> {args.out}  ({s['repos']} repos, {s['docs']} docs, "
+              f"{len(wb['spine']['tools'])} spine envelopes, "
+              f"receipt {wb['receipt_sha256'][:16]}…)")
+    else:
+        print(page)
+    return 0
+
+
 def _atlas_html(args, pack, docs) -> int:
     from .. import viz
 

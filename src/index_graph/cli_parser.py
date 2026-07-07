@@ -71,6 +71,43 @@ def _add_context_envelope_parser(sub) -> None:
     ce.add_argument("--json", action="store_true")
 
 
+def _add_lens_parser(sub) -> None:
+    ln = sub.add_parser(
+        "lens",
+        help="Render the Context Lens: a live, self-contained page showing "
+             "what a token budget retains and drops, with failure codes.",
+    )
+    ln.add_argument("--root", type=Path, default=Path.cwd())
+    ln.add_argument(
+        "--budget",
+        type=int,
+        default=1200,
+        help="approximate token budget the lens opens at (slider varies it live)",
+    )
+    ln.add_argument("--focus", default=None)
+    ln.add_argument("--hops", type=int, default=None)
+    ln.add_argument("--out", default=None, help="write the HTML here instead of stdout")
+    ln.add_argument("--json", action="store_true", help="emit the lens pack JSON instead of HTML")
+
+
+def _add_workbench_parser(sub) -> None:
+    wbp = sub.add_parser(
+        "workbench",
+        help="Render the unified workbench: map, docs, context lens, health, "
+             "and the flagship spine in one self-contained page.",
+    )
+    wbp.add_argument("--root", type=Path, default=Path.cwd())
+    wbp.add_argument("--budget", type=int, default=6000,
+                     help="token budget the context lens opens at")
+    wbp.add_argument("--max-doc-bodies", type=int, default=200,
+                     help="rendered doc bodies embedded in the page (page-weight budget; the doc list and search always cover all docs)")
+    wbp.add_argument("--spine-dir", default=None,
+                     help="directory of captured flagship-action envelopes (*.json)")
+    wbp.add_argument("--out", default=None, help="write the HTML here instead of stdout")
+    wbp.add_argument("--json", action="store_true",
+                     help="emit the workbench pack JSON (minus svg) instead of HTML")
+
+
 def _add_select_parser(sub) -> None:
     se = sub.add_parser(
         "select",
@@ -322,9 +359,11 @@ def build_parser() -> argparse.ArgumentParser:
     _add_graph_parser(sub)
     _add_context_parser(sub)
     _add_context_envelope_parser(sub)
+    _add_lens_parser(sub)
     _add_select_parser(sub)
     _add_viz_parser(sub)
     _add_atlas_parser(sub)
+    _add_workbench_parser(sub)
     add_wiki_parser(sub)
     _add_internals_parser(sub)
     _add_internals_symbols_parser(sub)
