@@ -1,24 +1,17 @@
-<p align="center">
-  <img src="docs/brand/index-hero.png" alt="Index, map large codebases and docs for agents and teams">
-</p>
-<!-- Project mark: docs/brand/index-mark.svg -->
+<p align="center"><img src=".github/assets/banner.svg" alt="index: Maps a multi-repo workspace in seconds: nine ecosystems, dependency and symbol graphs, fully offline, zero dependencies." width="100%"></p>
 
-# index
+**Maps a multi-repo workspace in seconds: nine ecosystems, dependency and symbol graphs, fully offline, zero dependencies.**
 
-> Map large workspaces so people and agents can find the right context.
+[![PyPI](https://img.shields.io/pypi/v/index-graph?style=flat-square&labelColor=14041b&color=26dfe8)](https://pypi.org/project/index-graph/)
+[![license: FSL-1.1-MIT](https://img.shields.io/badge/license-FSL--1.1--MIT-8f8095?style=flat-square&labelColor=14041b)](LICENSE)
+[![CI](https://github.com/HarperZ9/index/actions/workflows/ci.yml/badge.svg)](https://github.com/HarperZ9/index/actions/workflows/ci.yml)
+[![downloads](https://img.shields.io/pypi/dm/index-graph?label=downloads&style=flat-square&labelColor=14041b)](https://pypi.org/project/index-graph/)
+![python: 3.11+](https://img.shields.io/badge/python-3.11%2B-blue?style=flat-square&labelColor=14041b)
+![deps: none](https://img.shields.io/badge/deps-none-success?style=flat-square&labelColor=14041b)
 
 [Project Telos](https://harperz9.github.io) | [gather](https://github.com/HarperZ9/gather) | [crucible](https://github.com/HarperZ9/crucible) | [index](https://github.com/HarperZ9/index) | [forum](https://github.com/HarperZ9/forum) | [telos](https://github.com/HarperZ9/telos) | [learn](https://github.com/HarperZ9/learn) | [emet](https://github.com/HarperZ9/emet) | [buildlang](https://github.com/HarperZ9/buildlang)
 
-[![CI](https://github.com/HarperZ9/index/actions/workflows/ci.yml/badge.svg)](https://github.com/HarperZ9/index/actions/workflows/ci.yml)
-[![PyPI](https://img.shields.io/pypi/v/index-graph.svg)](https://pypi.org/project/index-graph/)
-[![downloads](https://img.shields.io/pypi/dm/index-graph.svg?label=downloads)](https://pypi.org/project/index-graph/)
-![python: 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)
-![deps: none](https://img.shields.io/badge/deps-none-success.svg)
-[![license: fair-source](https://img.shields.io/badge/license-fair--source-blue.svg)](LICENSE)
-
-`index` reads your code and docs and draws the map another person can check. Point it at one unfamiliar repo and get a self-contained, verified wiki; point it at a whole workspace and get the dependency atlas. It is for anyone handed a codebase they did not write, new maintainers, reviewers, and agents, because past a handful of modules or repos the shape of a system lives in someone's head, and that someone is usually busy or already gone. Built from file:line evidence, not guesses. Offline, deterministic, zero runtime dependencies.
-
-One name to install, one to run, one to import: `pip install index-graph` installs it, `index` runs it, `import index_graph` imports it.
+Point `index` at one unfamiliar repo and get a self-contained wiki with module, symbol, and architecture pages; point it at a whole workspace and get the dependency atlas with your docs joined to the code they explain. Every edge is recorded with the file and line that proves it, and each command writes one offline HTML file: no server, no account, no model, no network. `pip install index-graph` installs it, `index` runs it, `import index_graph` imports it. Every wiki seals a manifest you can re-check with `index wiki --verify`.
 
 ## Try it in 5 minutes
 
