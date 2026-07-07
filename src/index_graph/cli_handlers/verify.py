@@ -10,6 +10,84 @@ from ..graph.build import build_graph
 from ._common import repo_paths, require_dir
 
 
+def cmd_watch(args) -> int:
+    """Auto-resync: hold the prior fingerprint, recompute on each tick, emit a
+    live FRESH/STALE receipt on change, and (optionally) regenerate an artifact."""
+    import time as _time
+
+    from ..freshness.watch import watch_iter
+    from ._common import rel_to_root
+
+    if args.interval <= 0:
+        raise SystemExit("watch: --interval must be positive")
+    root = require_dir(args.root)
+
+    def _paths():
+        return repo_paths(root)
+
+    regen = None
+    if args.regen:
+        regen = _make_regen(args, root, rel_to_root)
+
+    max_ticks = args.max_ticks if args.max_ticks and args.max_ticks > 0 else None
+    changed = 0
+    try:
+        for report in watch_iter(_paths(), interval=args.interval,
+                                  max_ticks=max_ticks):
+            if args.json:
+                print(json.dumps(report), flush=True)
+            elif report["tick"] == 0:
+                print(f"watching {root} — baseline {report['curr_root'][:12]}… "
+                      f"(every {args.interval}s; Ctrl-C to stop)", flush=True)
+            else:
+                deltas = (report.get("repos_changed", []) +
+                          ["+" + a for a in report.get("repos_added", [])] +
+                          ["-" + r for r in report.get("repos_removed", [])])
+                print(f"[tick {report['tick']}] {report['verdict']}: "
+                      f"{', '.join(deltas) or report.get('error', '—')}", flush=True)
+            if regen and report["tick"] > 0 and report["verdict"] == "STALE":
+                out = regen()
+                if not args.json:
+                    print(f"           regenerated {out}", flush=True)
+            if report["tick"] > 0 and report["verdict"] == "STALE":
+                changed += 1
+    except KeyboardInterrupt:
+        if not args.json:
+            print(f"\nstopped — {changed} resync(s) detected", flush=True)
+    return 0
+
+
+def _make_regen(args, root, rel_to_root):
+    """Return a zero-arg callable that regenerates the requested artifact and
+    returns its path. Reuses the same builders the one-shot subcommands use."""
+    from pathlib import Path
+
+    from ..knowledge.docs import discover_docs
+
+    out = Path(args.out or f"index-{args.regen}.html")
+
+    def _run():
+        paths = repo_paths(root)
+        graph = build_graph(paths)
+        if args.regen == "workbench":
+            from ..viz.workbench_html import render_workbench_html
+            from ..workbench import build_workbench_pack
+            repo_dirs = {n: rel_to_root(root, p) for n, p in paths.items()}
+            wb = build_workbench_pack(graph, discover_docs(root), repo_dirs, root=root)
+            out.write_text(render_workbench_html(wb), encoding="utf-8")
+        elif args.regen == "atlas":
+            from .. import viz
+            from ..knowledge.atlas import build_atlas_pack
+            docs = discover_docs(root)
+            repo_dirs = {n: rel_to_root(root, p) for n, p in paths.items()}
+            pack = build_atlas_pack(graph, docs, repo_dirs)
+            svg = viz.render_atlas_svg(viz.build_atlas_layout(pack))
+            out.write_text(viz.render_atlas_html(pack, docs, svg=svg), encoding="utf-8")
+        return str(out)
+
+    return _run
+
+
 def cmd_verify(args) -> int:
     from ..verify import build_verification
 
