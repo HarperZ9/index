@@ -26,13 +26,22 @@ from .freshness.fingerprint import workspace_fingerprint
 from .graph.build import DependencyGraph
 from .knowledge.atlas import build_atlas_pack
 from .knowledge.markdown import render_markdown
-from .viz.atlas_html import _backlinks
 from .viz.atlas_layout import build_atlas_layout
 from .viz.atlas_svg import render_atlas_svg
 
 SCHEMA = "project-telos.workbench/v1"
 TOOL = "index.workbench"
 ACTION_SCHEMA = "project-telos.flagship-action/v1"
+
+# Page-weight budgets. Large workspaces (2k+ docs) produced a 60MB page that
+# choked renderers — a robustness failure. Budgets are HONEST: what is dropped
+# is counted and shown on the page ("N of M"), search metadata stays complete,
+# and every cap is overridable at the CLI. Never a silent truncation.
+MAX_DOC_BODIES = 200          # rendered markdown bodies embedded in the page
+MAX_MAP_DOCS_PER_REPO = 6     # doc satellites drawn under one repo on the map
+MAX_MAP_BAND_DOCS = 40        # cross-cutting (band) docs drawn on the map
+MAX_MENTIONS = 2000           # weakest-tier edges embedded (describes/links-to
+                              # always ship in full; mention drops are counted)
 
 
 def load_spine(spine_dir: str | Path | None, root: Path) -> dict:
@@ -146,6 +155,51 @@ def _summary(pack: dict, repos: list[dict]) -> dict:
     }
 
 
+def _rank_docs(pack: dict) -> list[str]:
+    """Doc ids by connectivity (strongest knowledge edges first), then id.
+    Deterministic; drives which bodies are embedded and which nodes are drawn."""
+    weight = {"describes": 3, "links-to": 2, "mentions": 1}
+    score: dict[str, int] = {d["id"]: 0 for d in pack.get("docs", [])}
+    for e in pack.get("knowledge_edges", []):
+        w = weight.get(e["type"], 0)
+        if e["from"] in score:
+            score[e["from"]] += w
+        if e.get("to_kind") == "doc" and e["to"] in score:
+            score[e["to"]] += w
+    return sorted(score, key=lambda i: (-score[i], i))
+
+
+def _map_pack(pack: dict, ranked: list[str]) -> dict:
+    """A copy of the pack with docs capped for the MAP ONLY (satellites per
+    repo + band docs), so the SVG stays renderable on huge workspaces. The
+    full doc list remains in the workbench data for search and the Docs view."""
+    describes: dict[str, str] = {}
+    for e in sorted(pack.get("knowledge_edges", []),
+                    key=lambda e: (e["from"], e["type"], e["to_kind"], e["to"])):
+        if e["type"] == "describes" and e["from"] not in describes:
+            describes[e["from"]] = e["to"]
+    rank = {rid: i for i, rid in enumerate(ranked)}
+    per_repo: dict[str, int] = {}
+    band = 0
+    keep: set[str] = set()
+    for d in sorted(pack.get("docs", []), key=lambda d: rank.get(d["id"], 1 << 30)):
+        target = describes.get(d["id"])
+        if target is not None:
+            if per_repo.get(target, 0) < MAX_MAP_DOCS_PER_REPO:
+                per_repo[target] = per_repo.get(target, 0) + 1
+                keep.add(d["id"])
+        elif band < MAX_MAP_BAND_DOCS:
+            band += 1
+            keep.add(d["id"])
+    capped = dict(pack)
+    capped["docs"] = [d for d in pack.get("docs", []) if d["id"] in keep]
+    capped["knowledge_edges"] = [
+        e for e in pack.get("knowledge_edges", [])
+        if e["type"] != "mentions"
+        and e["from"] in keep and (e.get("to_kind") != "doc" or e["to"] in keep)]
+    return capped
+
+
 def build_workbench_pack(
     graph: DependencyGraph,
     docs: list,
@@ -154,18 +208,32 @@ def build_workbench_pack(
     root: Path | str,
     token_budget: int = 6000,
     spine_dir: str | Path | None = None,
+    max_doc_bodies: int = MAX_DOC_BODIES,
 ) -> dict:
     """Compose the atlas, docs, freshness fingerprint, lens, and health into one
     deterministic, self-contained pack. The SVG (map markup) rides along under
-    'svg'; everything else is JSON the shell renders and the receipt seals."""
+    'svg'; everything else is JSON the shell renders and the receipt seals.
+    Page-weight budgets (MAX_*) keep huge workspaces renderable; every drop is
+    counted in `summary`/`doc_meta` and stated on the page."""
     pack = build_atlas_pack(graph, docs, repo_dirs)
-    pack["doc_html"] = {d.rel_path: render_markdown(d.body)
-                        for d in sorted(docs, key=lambda d: d.rel_path)}
-    pack["backlinks"] = _backlinks(pack)
-    svg = render_atlas_svg(build_atlas_layout(pack))
+    ranked_docs = _rank_docs(pack)
+    structural = [e for e in pack.get("knowledge_edges", [])
+                  if e["type"] != "mentions"]
+    mentions = [e for e in pack.get("knowledge_edges", [])
+                if e["type"] == "mentions"]
+    kept_mentions = sorted(mentions, key=lambda e: (e["from"], e["to"]))[:MAX_MENTIONS]
+    pack["knowledge_edges"] = structural + kept_mentions
+    embed = set(ranked_docs[:max_doc_bodies])
+    body_of = {d.rel_path: d.body for d in docs}
+    pack["doc_html"] = {rid: render_markdown(body_of[rid])
+                        for rid in sorted(embed) if rid in body_of}
+    map_capped = _map_pack(pack, ranked_docs)
+    svg = render_atlas_svg(build_atlas_layout(map_capped))
     fresh = workspace_fingerprint({n.name: Path(n.path) for n in graph.repos})
     repos = _repo_view(pack, fresh)
     lens = build_lens_pack(graph, root=root, token_budget=token_budget)
+    lens_order = [{k: o[k] for k in ("name", "cost", "roles", "salience")}
+                  for o in lens["replay"]["order"]]   # page never reads source_refs
     wb = {
         "schema": SCHEMA,
         "tool": TOOL,
@@ -175,7 +243,6 @@ def build_workbench_pack(
         "docs": sorted(pack.get("docs", []), key=lambda d: d["id"]),
         "doc_html": pack["doc_html"],
         "knowledge_edges": pack.get("knowledge_edges", []),
-        "backlinks": pack["backlinks"],
         "cycles": [list(c) for c in pack.get("cycles", [])],
         "warnings": list(pack.get("warnings", [])),
         "knowledge_warnings": list(pack.get("knowledge_warnings", [])),
@@ -191,7 +258,19 @@ def build_workbench_pack(
         "lens": {
             "verdict": lens["envelope"]["verification_verdict"],
             "budget": lens["envelope"]["budget"],
-            "replay": lens["replay"],
+            "replay": {"rule": lens["replay"]["rule"],
+                       "base_tokens": lens["replay"]["base_tokens"],
+                       "order": lens_order},
+        },
+        "doc_meta": {
+            "total": len(pack.get("docs", [])),
+            "bodies_embedded": len(pack["doc_html"]),
+            "map_docs": len(map_capped["docs"]),
+            "mentions_total": len(mentions),
+            "mentions_embedded": len(kept_mentions),
+            "bodies_note": ("bodies beyond the budget are not embedded; the doc "
+                            "list and search stay complete — open the file at "
+                            "its id path, or raise --max-doc-bodies"),
         },
         "spine": load_spine(spine_dir, Path(root)),
     }

@@ -45,9 +45,11 @@ def _build(workspace, **kw):
 def test_pack_composes_every_surface(workspace):
     wb = _build(workspace)
     for key in ("summary", "repos", "docs", "doc_html", "knowledge_edges",
-                "backlinks", "cycles", "freshness", "lens", "spine",
+                "cycles", "freshness", "lens", "spine", "doc_meta",
                 "receipt_sha256", "svg"):
         assert key in wb, f"surface missing from the pack: {key}"
+    assert "backlinks" not in wb, \
+        "backlinks are a projection of knowledge_edges; the page rebuilds them"
     assert wb["summary"]["repos"] == 3
     names = {r["name"] for r in wb["repos"]}
     assert names == {"alpha", "beta", "gamma"}
@@ -127,6 +129,25 @@ def test_receipt_seals_data_not_svg(workspace):
     assert wb1["receipt_sha256"] == wb2["receipt_sha256"]
 
 
+def test_page_weight_budgets_are_honest_not_silent(workspace):
+    # cap bodies to 1: the strongest-connected doc keeps its body, the drop is COUNTED
+    wb = _build(workspace, max_doc_bodies=1)
+    assert wb["doc_meta"]["total"] == 3
+    assert wb["doc_meta"]["bodies_embedded"] == 1
+    assert len(wb["doc_html"]) == 1
+    assert len(wb["docs"]) == 3            # the LIST stays complete (search reaches all)
+    page = render_workbench_html(wb)
+    assert "1</b> of <b>3</b> bodies embedded" in page   # stated on the page
+    assert "map draws" in page
+
+
+def test_lens_order_is_stripped_of_unread_weight(workspace):
+    wb = _build(workspace)
+    for o in wb["lens"]["replay"]["order"]:
+        assert set(o) == {"name", "cost", "roles", "salience"}, \
+            "page-unread fields (source_refs, descriptions) must not ship in the embed"
+
+
 def test_cli_workbench_writes_html(workspace, tmp_path, capsys):
     from index_graph.cli_handlers.maps import cmd_workbench
 
@@ -135,6 +156,7 @@ def test_cli_workbench_writes_html(workspace, tmp_path, capsys):
         budget = 800
         spine_dir = None
         json = False
+        max_doc_bodies = 200
         out = str(tmp_path / "wb.html")
 
     assert cmd_workbench(Args()) == 0

@@ -99,6 +99,8 @@ def _add_workbench_parser(sub) -> None:
     wbp.add_argument("--root", type=Path, default=Path.cwd())
     wbp.add_argument("--budget", type=int, default=6000,
                      help="token budget the context lens opens at")
+    wbp.add_argument("--max-doc-bodies", type=int, default=200,
+                     help="rendered doc bodies embedded in the page (page-weight budget; the doc list and search always cover all docs)")
     wbp.add_argument("--spine-dir", default=None,
                      help="directory of captured flagship-action envelopes (*.json)")
     wbp.add_argument("--out", default=None, help="write the HTML here instead of stdout")

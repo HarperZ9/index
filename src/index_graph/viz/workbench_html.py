@@ -61,10 +61,16 @@ def _docs_view(wb: dict) -> str:
         f'<li><span class="nm" onclick="select(\'doc\',{json.dumps(d["id"])})">'
         f'{html.escape(d["title"])}</span><span class="mt">{html.escape(d["id"])}</span></li>'
         for d in wb["docs"])
+    dm = wb["doc_meta"]
+    budget_line = ""
+    if dm["bodies_embedded"] < dm["total"]:
+        budget_line = (f' Page-weight budget: <b>{dm["bodies_embedded"]}</b> of '
+                       f'<b>{dm["total"]}</b> bodies embedded (most-connected first); '
+                       f'the list and search below cover all of them.')
     return (f'<div class="hero"><h2>The knowledge layer</h2>'
             f'<p>{len(wb["docs"])} docs discovered and linked to the map by '
             f'<b>describes / links-to / mentions</b> edges — derived, not hand-filed. '
-            f'Select one to read it with backlinks in the panel.</p></div>'
+            f'Select one to read it with backlinks in the panel.{budget_line}</p></div>'
             f'<ul class="rowlist">{rows or "<li><span class=mt>no docs discovered</span></li>"}</ul>')
 
 
@@ -191,6 +197,7 @@ def render_workbench_html(wb: dict) -> str:
 <span class="lg"><i style="background:#4636e8"></i>in budget (overlay)</span>
 <span class="lg">click: inspect</span><span class="lg">double-click: neighborhood</span>
 <span class="lg">wheel: zoom</span>
+<span class="lg">map draws {wb['doc_meta']['map_docs']} of {wb['doc_meta']['total']} docs</span>
 </div>
 {svg}</div></div>
 <div class="view" id="view-docs">{_docs_view(wb)}</div>

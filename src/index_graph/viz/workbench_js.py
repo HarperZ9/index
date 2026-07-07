@@ -14,6 +14,10 @@ const REPO={};D.repos.forEach(r=>REPO[r.name]=r);
 const DOC={};D.docs.forEach(d=>DOC[d.id]=d);
 const ORDER=D.lens.replay.order,BASE=D.lens.replay.base_tokens;
 const COST={};ORDER.forEach(o=>COST[o.name]=o.cost);
+// backlinks are a projection of knowledge_edges — rebuilt here instead of
+// shipped twice (a 6MB saving on large workspaces)
+const BL={};(D.knowledge_edges||[]).forEach(e=>{
+ (BL[e.to]=BL[e.to]||[]).push({from:e.from,type:e.type});});
 const S={mode:'overview',sel:null,budget:D.lens.budget.token_budget,basket:[],trail:[]};
 
 /* ---------- hash state (deep-linkable, offline) ---------- */
@@ -67,7 +71,7 @@ function detailRepo(name){const r=REPO[name];if(!r)return;
    `<span class="conf">${esc(d.confidence)}</span>${d.in_cycle?'<span class="cyc">cycle</span>':''}`+
    (d.evidence||[]).map(evLine).join('')+`</div>`).join('')||'<div class="mt">none</div>';
  const docs=(r.documented_by||[]).map(id=>`<div><a class="navlink" data-kind="doc" data-id="${esc(id)}">${esc((DOC[id]||{title:id}).title)}</a></div>`).join('')||'<div class="mt">none</div>';
- const back=(D.backlinks[name]||[]).map(b=>`<div><a class="navlink" data-kind="doc" data-id="${esc(b.from)}">${esc((DOC[b.from]||{title:b.from}).title)}</a> <span class="mt">${esc(b.type)}</span></div>`).join('')||'<div class="mt">none</div>';
+ const back=(BL[name]||[]).map(b=>`<div><a class="navlink" data-kind="doc" data-id="${esc(b.from)}">${esc((DOC[b.from]||{title:b.from}).title)}</a> <span class="mt">${esc(b.type)}</span></div>`).join('')||'<div class="mt">none</div>';
  $('#detail').innerHTML=`<h3>${esc(name)} <small>repo</small></h3>`+
   `<div class="kv"><span>roles <b>${esc((r.roles||[]).join(', ')||'none')}</b></span>`+
   `<span>in <b>${r.in_degree}</b></span><span>out <b>${r.out_degree}</b></span>`+
@@ -80,11 +84,14 @@ function detailRepo(name){const r=REPO[name];if(!r)return;
  wireNav();
 }
 function detailDoc(id){const d=DOC[id];if(!d)return;
- const back=(D.backlinks[id]||[]).map(b=>`<div><a class="navlink" data-kind="doc" data-id="${esc(b.from)}">${esc((DOC[b.from]||{title:b.from}).title)}</a></div>`).join('')||'<div class="mt">none</div>';
+ const back=(BL[id]||[]).map(b=>`<div><a class="navlink" data-kind="doc" data-id="${esc(b.from)}">${esc((DOC[b.from]||{title:b.from}).title)}</a></div>`).join('')||'<div class="mt">none</div>';
+ const body=D.doc_html[id]||('<em>body not embedded (page-weight budget: '+
+  D.doc_meta.bodies_embedded+' of '+D.doc_meta.total+' bodies). Open the file at <code>'+
+  esc(id)+'</code> or rebuild with --max-doc-bodies.</em>');
  $('#detail').innerHTML=`<h3>${esc(d.title)} <small>doc</small></h3>`+
   `<div class="kv"><span class="mt">${esc(id)}</span></div>`+
   `<h4>linked from</h4>${back}`+
-  `<div class="md">${D.doc_html[id]||'<em>no rendered body</em>'}</div>`;
+  `<div class="md">${body}</div>`;
  wireNav();
 }
 function wireNav(){$$('#detail .navlink,#detail .wikilink').forEach(a=>a.onclick=ev=>{

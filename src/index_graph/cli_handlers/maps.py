@@ -45,7 +45,8 @@ def cmd_workbench(args) -> int:
     docs = discover_docs(root)
     wb = build_workbench_pack(
         graph, docs, repo_dirs,
-        root=root, token_budget=args.budget, spine_dir=args.spine_dir)
+        root=root, token_budget=args.budget, spine_dir=args.spine_dir,
+        max_doc_bodies=args.max_doc_bodies)
     if args.json:
         print(json.dumps({k: v for k, v in wb.items() if k != "svg"},
                          indent=2, sort_keys=True))
