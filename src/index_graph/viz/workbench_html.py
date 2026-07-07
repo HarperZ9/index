@@ -197,7 +197,7 @@ def render_workbench_html(wb: dict) -> str:
 <span class="lg"><i style="background:#4636e8"></i>in budget (overlay)</span>
 <span class="lg">click: inspect</span><span class="lg">double-click: neighborhood</span>
 <span class="lg">wheel: zoom</span>
-<span class="lg">map draws {wb['doc_meta']['map_docs']} of {wb['doc_meta']['total']} docs</span>
+<span class="lg">map draws {wb['doc_meta']['map_docs']} of {wb['doc_meta']['total']} docs · internal deps only ({wb['summary']['external_relations']} external edges counted)</span>
 </div>
 {svg}</div></div>
 <div class="view" id="view-docs">{_docs_view(wb)}</div>

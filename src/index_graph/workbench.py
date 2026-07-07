@@ -145,6 +145,7 @@ def _summary(pack: dict, repos: list[dict]) -> dict:
         "repos": len(repos),
         "docs": len(pack.get("docs", [])),
         "relations": len([r for r in pack.get("relations", []) if not r.get("external")]),
+        "external_relations": len([r for r in pack.get("relations", []) if r.get("external")]),
         "knowledge_edges": len(pack.get("knowledge_edges", [])),
         "cycles": len(pack.get("cycles", [])),
         "warnings": len(pack.get("warnings", [])) + len(pack.get("knowledge_warnings", [])),
@@ -228,7 +229,7 @@ def build_workbench_pack(
     pack["doc_html"] = {rid: render_markdown(body_of[rid])
                         for rid in sorted(embed) if rid in body_of}
     map_capped = _map_pack(pack, ranked_docs)
-    svg = render_atlas_svg(build_atlas_layout(map_capped))
+    svg = render_atlas_svg(build_atlas_layout(map_capped, include_external=False))
     fresh = workspace_fingerprint({n.name: Path(n.path) for n in graph.repos})
     repos = _repo_view(pack, fresh)
     lens = build_lens_pack(graph, root=root, token_budget=token_budget)
