@@ -46,6 +46,10 @@ footnote. Confidence comes from re-derivability, not from visual assertion.
   Fluidity is earned with hand-rolled CSS/JS, never bought with a CDN.
 - **UNVERIFIABLE is first-class.** Verdicts are never softened or rounded up;
   the UI gives failure the same typographic dignity as success.
+- **Invent the category when the category is crowded.** The graph view market
+  is saturated; the context lens, the budget-frontier replay, and the spine
+  view exist nowhere else. Compose organs into surfaces with no incumbent
+  rather than chasing parity in someone else's frame.
 - **Motion shows state change.** Things move when the data moves (a repo
   crossing the budget frontier); nothing animates for decoration.
 
