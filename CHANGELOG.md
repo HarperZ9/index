@@ -1,6 +1,34 @@
 # Changelog
 
-## Unreleased
+## 2.9.0 (2026-07-07)
+
+- Workbench: `index workbench` renders every index surface (the workspace map, docs,
+  the context lens, health, and the flagship spine) into one self-contained single-page
+  HTML artifact, so the whole workspace picture opens from a single file with no server
+  and no dependencies.
+- Context Lens: `index lens` gives a live view of budgeted context assembly as one
+  sliding budget-frontier stack: replay how an envelope was packed under a token budget,
+  see exactly which repos were retained or omitted and the typed failure code behind
+  every omission. A lens verdict is faithful to the underlying envelope, with plain-text
+  descriptions throughout.
+- Watch: `index watch` adds live auto-resync. The watcher holds the prior workspace
+  fingerprint and re-runs the pure freshness compare on each tick, emitting a
+  re-checkable `index.freshness-sync/1` receipt (both roots, FRESH/STALE verdict, named
+  repo deltas) on every real change; FRESH ticks are silent. Zero-dependency stdlib
+  polling; `--regen workbench|atlas` rebuilds the artifact on change. A rescan that
+  raises reports UNVERIFIABLE and the loop recovers on the next tick.
+- Bench faithfulness: `index bench` now measures `edge_grounding`, the fraction of
+  internal dependency edges the compact pack keeps that carry file:line source evidence.
+  1.0 means every structural fact retained is provably in the source, so the reported
+  reduction is faithful, not just small. On a real workspace: 91.6x reduction with 100
+  percent of kept edges grounded.
+- Performance: workbench page-weight budgets keep large-workspace artifacts lean (61.8MB
+  down to 5.6MB on a 2k-document workspace), and the workbench map now draws only the
+  internal graph while externals stay counted.
+- Visual identity refresh: spectrum banner, feature-first README header and body, a
+  current plain-language introduction (`docs/INTRODUCTION.md`), the delivery contract
+  evolved to the new visual identity, and a live PyPI downloads badge.
+- Docs: `PRODUCT.md` states the invented-category principle (context lens, spine view).
 
 - Symbol navigation: `index symbols QUERY` navigates the symbol graph for one symbol the way
   an IDE jumps, from the CLI and in JSON, each hop carrying `file:line` evidence. Three
