@@ -61,3 +61,24 @@ def test_bench_cli_human(tmp_path, capsys):
     out = capsys.readouterr().out
     assert "token economy" in out
     assert "x smaller" in out
+
+
+def test_faithfulness_every_kept_edge_is_grounded_in_source(tmp_path):
+    # the honesty dimension: a byte reduction is only real if it fabricates
+    # nothing. Every internal dependency edge index keeps must cite the import
+    # that produced it (file:line evidence) -> grounding 1.0.
+    _repo(tmp_path / "app", "app", dep="lib")
+    _repo(tmp_path / "lib", "lib")
+    rep = bench_workspace({"app": tmp_path / "app", "lib": tmp_path / "lib"})
+    f = rep["faithfulness"]
+    assert f["internal_edges"] >= 1                 # app -> lib is a real edge
+    assert f["grounded_edges"] == f["internal_edges"]
+    assert f["edge_grounding"] == 1.0               # the reduction invented no structure
+
+
+def test_faithfulness_in_cli_human_output(tmp_path, capsys):
+    _repo(tmp_path / "app", "app", dep="lib")
+    _repo(tmp_path / "lib", "lib")
+    assert main(["bench", "--root", str(tmp_path)]) == 0
+    out = capsys.readouterr().out
+    assert "faithfulness" in out and "grounded in file:line" in out

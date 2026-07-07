@@ -39,8 +39,31 @@ def _compact_bytes(obj) -> int:
     return len(json.dumps(obj, sort_keys=True, separators=(",", ":")).encode("utf-8"))
 
 
+def _grounding(pack: dict) -> dict:
+    """Faithfulness of the reduction: what fraction of the internal dependency
+    edges the compact pack KEEPS are backed by real file:line source evidence.
+
+    A byte reduction is only honest if it fabricates nothing. grep-and-truncate
+    or an LLM summary can drop or invent structure; index's every retained edge
+    cites the import that produced it. This turns 'the reduction is faithful'
+    into a measured number, not a promise: grounded internal edges / internal
+    edges. 1.0 means every structural fact kept is provably in the source."""
+    internal = [r for r in pack.get("relations", []) if not r.get("external")]
+    grounded = [r for r in internal
+                if any(s.get("file") for s in r.get("signals", []))]
+    total = len(internal)
+    return {
+        "internal_edges": total,
+        "grounded_edges": len(grounded),
+        "edge_grounding": round(len(grounded) / total, 4) if total else 1.0,
+        "note": ("fraction of kept dependency edges carrying file:line evidence; "
+                 "1.0 = the reduction fabricates no structure"),
+    }
+
+
 def bench_workspace(repo_paths: dict[str, Path]) -> dict:
-    """The bytes index reads vs the bytes of the structural pack it emits.
+    """The bytes index reads vs the bytes of the structural pack it emits, AND
+    the faithfulness of that reduction (every kept edge grounded in source).
 
     Deterministic for a fixed workspace, so the report is re-checkable like every
     other index verdict.
@@ -59,4 +82,5 @@ def bench_workspace(repo_paths: dict[str, Path]) -> dict:
         "bytes_per_token": BYTES_PER_TOKEN,
         "approx_tokens_source": src_bytes // BYTES_PER_TOKEN,
         "approx_tokens_pack": pack_bytes // BYTES_PER_TOKEN,
+        "faithfulness": _grounding(pack),
     }
