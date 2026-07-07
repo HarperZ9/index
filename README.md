@@ -144,7 +144,7 @@ Everything works with zero configuration. An optional `.index.toml` at the works
 
 ## Status
 
-`index-graph` 2.8.0 on PyPI, command `index`, Python 3.11+, Development Status Beta. It is used as the workspace map layer of [Project Telos](https://harperz9.github.io), alongside [gather](https://github.com/HarperZ9/gather), [crucible](https://github.com/HarperZ9/crucible), [forum](https://github.com/HarperZ9/forum), and [telos](https://github.com/HarperZ9/telos).
+`index-graph` 2.9.0 on PyPI, command `index`, Python 3.11+, Development Status Beta. It is used as the workspace map layer of [Project Telos](https://harperz9.github.io), alongside [gather](https://github.com/HarperZ9/gather), [crucible](https://github.com/HarperZ9/crucible), [forum](https://github.com/HarperZ9/forum), and [telos](https://github.com/HarperZ9/telos).
 
 One note on why the outputs look the way they do: every claim an `index` artifact makes, an edge, a page, a verdict, carries the evidence to re-derive it, and the verifiers are built to be able to fail. If you only remember one command, make it `index wiki --verify`.
 

@@ -110,7 +110,7 @@ def status_payload() -> dict:
                 "index_internals",
             ],
             "current_status": (
-                "2.8.0 workspace atlas, certificates, freshness, benchmarking, "
+                "2.9.0 workspace atlas, certificates, freshness, benchmarking, "
                 "selection-aware context envelopes, and MCP parity"
             ),
             "telos_contracts": TELOS_CONTRACTS,
