@@ -107,6 +107,17 @@ index mcp
 
 The full flag reference, the importable Python API, and worked examples live in [`USAGE.md`](USAGE.md). Artifact schemas are written down in [`docs/PROTOCOL.md`](docs/PROTOCOL.md) so other tools can consume them without knowing anything about `index`.
 
+## Operator surface
+
+For hosts and unattended workflows, `index status --json`, `index doctor --json`, and `index demo --json` expose the machine-readable action envelope, and `index mcp` serves the same map, context, envelope, selection, wiki, symbol, and verification surfaces as native MCP tools. The status payload advertises the shared CLI/MCP/plugin/IDE contracts, so an agent host can discover what this installation supports before calling it:
+
+```bash
+# from a source checkout
+python -m index status --json
+```
+
+Within [Project Telos](https://harperz9.github.io), this operator surface is how `index` acts as the workspace map and context-envelope layer for gather, forum, crucible, and telos. Integration notes for unattended agent workflows are in [`docs/ENTERPRISE-READINESS.md`](docs/ENTERPRISE-READINESS.md).
+
 ## A worked example
 
 Run the wiki on this repository itself:
@@ -133,7 +144,7 @@ Everything works with zero configuration. An optional `.index.toml` at the works
 
 ## Status
 
-`index-graph` 2.8.0 on PyPI, command `index`, Python 3.11+, Development Status Beta. It is used as the workspace map layer of [Project Telos](https://harperz9.github.io), alongside [gather](https://github.com/HarperZ9/gather), [crucible](https://github.com/HarperZ9/crucible), [forum](https://github.com/HarperZ9/forum), and [telos](https://github.com/HarperZ9/telos). Integration notes for unattended agent workflows are in [`docs/ENTERPRISE-READINESS.md`](docs/ENTERPRISE-READINESS.md).
+`index-graph` 2.8.0 on PyPI, command `index`, Python 3.11+, Development Status Beta. It is used as the workspace map layer of [Project Telos](https://harperz9.github.io), alongside [gather](https://github.com/HarperZ9/gather), [crucible](https://github.com/HarperZ9/crucible), [forum](https://github.com/HarperZ9/forum), and [telos](https://github.com/HarperZ9/telos).
 
 One note on why the outputs look the way they do: every claim an `index` artifact makes, an edge, a page, a verdict, carries the evidence to re-derive it, and the verifiers are built to be able to fail. If you only remember one command, make it `index wiki --verify`.
 
