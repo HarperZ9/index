@@ -1,4 +1,4 @@
-"""Python ecosystem resolver: manifests + AST import scan."""
+﻿"""Python ecosystem resolver: manifests + AST import scan."""
 from __future__ import annotations
 
 import ast
@@ -36,7 +36,7 @@ class PythonResolver:
         pp = repo_root / "pyproject.toml"
         if pp.is_file():
             try:
-                data = tomllib.loads(pp.read_text(encoding="utf-8"))
+                data = tomllib.loads(pp.read_text(encoding="utf-8", errors="replace"))
                 proj = data.get("project", {})
                 if isinstance(proj, dict) and proj.get("name"):
                     names.add(str(proj["name"]))
@@ -73,7 +73,7 @@ class PythonResolver:
         pp = repo_root / "pyproject.toml"
         if pp.is_file():
             try:
-                text = pp.read_text(encoding="utf-8")
+                text = pp.read_text(encoding="utf-8", errors="replace")
                 data = tomllib.loads(text)
                 proj = data.get("project", {})
                 deps = list(proj.get("dependencies", []) or [])
@@ -88,7 +88,7 @@ class PythonResolver:
                 pass
         for req in sorted(repo_root.glob("requirements*.txt")):
             try:
-                for i, line in enumerate(req.read_text(encoding="utf-8").splitlines(), 1):
+                for i, line in enumerate(req.read_text(encoding="utf-8", errors="replace").splitlines(), 1):
                     s = line.strip()
                     if not s or s.startswith(("#", "-")):
                         continue
@@ -103,7 +103,7 @@ class PythonResolver:
         out: list[RawEdge] = []
         for py in walk_files(repo_root, suffixes=(".py",)):
             try:
-                tree = ast.parse(py.read_text(encoding="utf-8"))
+                tree = ast.parse(py.read_text(encoding="utf-8", errors="replace"))
             except (OSError, SyntaxError, ValueError):
                 continue
             rel = py.relative_to(repo_root).as_posix()

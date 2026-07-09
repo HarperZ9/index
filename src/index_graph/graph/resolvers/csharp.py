@@ -1,4 +1,4 @@
-"""C#/.NET ecosystem resolver: .csproj manifest + using-statement scan."""
+﻿"""C#/.NET ecosystem resolver: .csproj manifest + using-statement scan."""
 from __future__ import annotations
 
 import re
@@ -29,7 +29,7 @@ class CSharpResolver:
         for csproj in walk_files(repo_root, suffixes=(".csproj",)):
             names.add(csproj.stem)
             try:
-                text = csproj.read_text(encoding="utf-8")
+                text = csproj.read_text(encoding="utf-8", errors="replace")
             except OSError:
                 continue
             for pattern in (_ASSEMBLY_NAME, _ROOT_NAMESPACE):
@@ -44,7 +44,7 @@ class CSharpResolver:
         # manifest edges: parse each .csproj for PackageReference and ProjectReference
         for csproj in walk_files(repo_root, suffixes=(".csproj",)):
             try:
-                lines = csproj.read_text(encoding="utf-8").splitlines()
+                lines = csproj.read_text(encoding="utf-8", errors="replace").splitlines()
             except OSError:
                 continue
             rel = csproj.relative_to(repo_root).as_posix()
@@ -63,7 +63,7 @@ class CSharpResolver:
         # import edges: scan .cs files for using statements
         for src in walk_files(repo_root, suffixes=(".cs",)):
             try:
-                lines = src.read_text(encoding="utf-8").splitlines()
+                lines = src.read_text(encoding="utf-8", errors="replace").splitlines()
             except OSError:
                 continue
             rel = src.relative_to(repo_root).as_posix()

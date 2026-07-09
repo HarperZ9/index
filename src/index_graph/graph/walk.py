@@ -7,8 +7,14 @@ from pathlib import Path
 
 EXCLUDE_DIRS = frozenset({
     ".git", ".hg", ".svn", ".venv", "venv", "env",
-    "node_modules", "site-packages", "__pycache__", ".tox",
-    ".mypy_cache", ".pytest_cache", "build", "dist", ".eggs",
+    "venvs", "node_modules", "site-packages", "__pycache__",
+    ".tox", ".mypy_cache", ".pytest_cache", ".ruff_cache",
+    "build", "dist", ".eggs", ".cache", ".playwright-mcp",
+    ".warden-safe-cache", ".next", ".turbo",
+    "target", "coverage", ".coverage", ".nyc_output",
+    ".parcel-cache", ".svelte-kit", ".angular", ".expo",
+    ".gradle", ".idea", ".vscode", ".yarn", ".pnpm-store",
+    ".terraform", "out",
 })
 
 

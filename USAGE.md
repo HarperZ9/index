@@ -306,6 +306,12 @@ The same receipt shape covers `context-envelope --focus`, `viz --focus`, and the
 tool payload rather than a protocol error. Python callers of `build_context_envelope` get a
 `FocusRejection` (a `ValueError` subclass) carrying the receipt on `.receipt`.
 
+For MCP hosts, unexpected tool-call failures are also returned as payloads rather than
+stdio process exits where possible. The payload schema is `index.mcp-tool-error/v1`,
+with `status: "UNVERIFIABLE"`, the error type, message, root, and next actions. This
+includes `SystemExit` raised by invalid workspace configuration, which prevents a bad
+`.index.toml` from surfacing to the host as an opaque transport close.
+
 The map subcommand (`index map`, or the flat `index --root ...`) is unaffected.
 
 ### `select` subcommand

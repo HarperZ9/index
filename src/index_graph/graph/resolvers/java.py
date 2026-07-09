@@ -1,4 +1,4 @@
-"""Java ecosystem resolver: Maven pom.xml + best-effort Gradle. Manifest-only."""
+﻿"""Java ecosystem resolver: Maven pom.xml + best-effort Gradle. Manifest-only."""
 from __future__ import annotations
 
 import re
@@ -82,7 +82,7 @@ class JavaResolver:
             if not gp.is_file():
                 continue
             try:
-                lines = gp.read_text(encoding="utf-8").splitlines()
+                lines = gp.read_text(encoding="utf-8", errors="replace").splitlines()
             except OSError:
                 continue
             for i, line in enumerate(lines, 1):

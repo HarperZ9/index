@@ -8,7 +8,7 @@ point, what is the core, and which docs describe what. Every line traces to a gr
 from __future__ import annotations
 
 
-def render_router(pack: dict) -> str:
+def render_router(pack: dict, *, max_docs: int = 500, max_deps: int = 30) -> str:
     relations = [r for r in pack.get("relations", []) if not r.get("external")]
     roles = pack.get("roles", {})
     repos = sorted(r["name"] for r in pack.get("repos", []))
@@ -28,7 +28,7 @@ def render_router(pack: dict) -> str:
     if entry:
         L.append("## Entry points")
         for n in entry:
-            out = _deps_label(deps_out.get(n, {})) or "nothing internal"
+            out = _deps_label(deps_out.get(n, {}), max_items=max_deps) or "nothing internal"
             L.append(f"- `{n}` starts here; depends on {out}")
         L.append("")
 
@@ -43,7 +43,7 @@ def render_router(pack: dict) -> str:
     L.append("## Where things live")
     for n in repos:
         rs = ", ".join(roles.get(n, [])) or "unclassified"
-        out = _deps_label(deps_out.get(n, {}))
+        out = _deps_label(deps_out.get(n, {}), max_items=max_deps)
         dep = f"; depends on {out}" if out else ""
         L.append(f"- `{n}` ({rs}){dep}")
     L.append("")
@@ -52,8 +52,15 @@ def render_router(pack: dict) -> str:
                        if e.get("type") == "describes")
     if describes:
         L.append("## Docs")
-        for doc, repo in describes:
+        capped = describes[:max(0, max_docs)]
+        for doc, repo in capped:
             L.append(f"- `{doc}` describes `{repo}`")
+        omitted = len(describes) - len(capped)
+        if omitted > 0:
+            L.append(
+                f"- ... {omitted} doc edge(s) omitted from this router view; "
+                "run `index atlas --json` for the full evidence pack"
+            )
         L.append("")
 
     L.extend(_deep_dives(pack.get("repo_dirs", {}), repos))
@@ -75,8 +82,13 @@ def _deep_dives(repo_dirs: dict, repos: list[str]) -> list[str]:
     return lines
 
 
-def _deps_label(deps: dict[str, str]) -> str:
-    return ", ".join(label for _name, label in sorted(deps.items()))
+def _deps_label(deps: dict[str, str], *, max_items: int) -> str:
+    items = sorted(deps.items())
+    labels = [label for _name, label in items[:max(0, max_items)]]
+    omitted = len(items) - len(labels)
+    if omitted > 0:
+        labels.append(f"... {omitted} more")
+    return ", ".join(labels)
 
 
 def _relation_label(relation: dict) -> str:

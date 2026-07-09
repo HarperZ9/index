@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- MCP stability: tool-call failures now return an `index.mcp-tool-error/v1`
+  JSON receipt with `UNVERIFIABLE` status instead of a bare text error, and
+  `SystemExit` from invalid workspace config is contained inside the tool result
+  rather than terminating the stdio process. Large workspace repo discovery also
+  uses an `os.walk` error hook, so unreadable directories are skipped with a
+  warning instead of aborting the scan.
+
 - Symbol navigation: `index symbols QUERY` navigates the symbol graph for one symbol the way
   an IDE jumps, from the CLI and in JSON, each hop carrying `file:line` evidence. Three
   sections, selectable with `--def` / `--refs` / `--impls` (all three by default):
