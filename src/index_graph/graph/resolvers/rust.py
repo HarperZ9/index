@@ -1,4 +1,4 @@
-"""Rust ecosystem resolver: Cargo.toml manifests + a use/extern-crate scan."""
+﻿"""Rust ecosystem resolver: Cargo.toml manifests + a use/extern-crate scan."""
 from __future__ import annotations
 
 import re
@@ -31,7 +31,7 @@ class RustResolver:
         names: set[str] = set()
         for ct in self._manifests(repo_root):
             try:
-                data = tomllib.loads(ct.read_text(encoding="utf-8"))
+                data = tomllib.loads(ct.read_text(encoding="utf-8", errors="replace"))
             except (tomllib.TOMLDecodeError, OSError):
                 continue
             pkg = data.get("package", {})
@@ -43,7 +43,7 @@ class RustResolver:
         edges: list[RawEdge] = []
         for ct in self._manifests(repo_root):
             try:
-                data = tomllib.loads(ct.read_text(encoding="utf-8"))
+                data = tomllib.loads(ct.read_text(encoding="utf-8", errors="replace"))
             except (tomllib.TOMLDecodeError, OSError):
                 continue
             rel = ct.relative_to(repo_root).as_posix()
@@ -54,7 +54,7 @@ class RustResolver:
                         edges.append(RawEdge(str(name), "manifest", rel, None, f"{table}.{name}"))
         for src in walk_files(repo_root, suffixes=(".rs",)):
             try:
-                lines = src.read_text(encoding="utf-8").splitlines()
+                lines = src.read_text(encoding="utf-8", errors="replace").splitlines()
             except OSError:
                 continue
             rel = src.relative_to(repo_root).as_posix()

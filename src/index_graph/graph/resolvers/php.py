@@ -1,4 +1,4 @@
-"""PHP ecosystem resolver: composer.json require/require-dev + use-statement scan."""
+﻿"""PHP ecosystem resolver: composer.json require/require-dev + use-statement scan."""
 from __future__ import annotations
 
 import json
@@ -32,7 +32,7 @@ class PhpResolver:
         if not cj.is_file():
             return set()
         try:
-            data = json.loads(cj.read_text(encoding="utf-8"))
+            data = json.loads(cj.read_text(encoding="utf-8", errors="replace"))
         except (json.JSONDecodeError, OSError):
             return set()
         name = data.get("name")
@@ -43,7 +43,7 @@ class PhpResolver:
         cj = repo_root / "composer.json"
         if cj.is_file():
             try:
-                data = json.loads(cj.read_text(encoding="utf-8"))
+                data = json.loads(cj.read_text(encoding="utf-8", errors="replace"))
                 for field in ("require", "require-dev"):
                     for pkg, spec in (data.get(field, {}) or {}).items():
                         edges.append(RawEdge(str(pkg), "manifest", "composer.json", None, f"{pkg}: {spec}"))
@@ -51,7 +51,7 @@ class PhpResolver:
                 pass
         for src in walk_files(repo_root, suffixes=(".php",)):
             try:
-                lines = src.read_text(encoding="utf-8").splitlines()
+                lines = src.read_text(encoding="utf-8", errors="replace").splitlines()
             except OSError:
                 continue
             rel = src.relative_to(repo_root).as_posix()

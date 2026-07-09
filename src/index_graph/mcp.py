@@ -8,13 +8,172 @@ index function, so the protocol face adds a surface, never a second source of tr
 """
 from __future__ import annotations
 
+import hashlib
 import json
+import os
 import sys
+import traceback
 from pathlib import Path
+from time import time
 
 from . import __version__
 
 _PROTOCOL_VERSION = "2024-11-05"
+_CACHE_SCHEMA = "index.mcp-cache-entry/v1"
+_CACHE: dict[str, dict] = {}
+_CACHEABLE_TOOLS = {
+    "index.map",
+    "index.context",
+    "index.context.envelope",
+    "index_graph",
+    "index_router",
+}
+
+
+def _configure_stdio() -> None:
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if callable(reconfigure):
+            try:
+                reconfigure(encoding="utf-8", errors="replace")
+            except (OSError, ValueError):
+                pass
+
+
+def _tool_error_payload(name: str, args: dict, exc: BaseException) -> str:
+    root = args.get("root", "") if isinstance(args, dict) else ""
+    payload = {
+        "schema": "index.mcp-tool-error/v1",
+        "tool": name,
+        "status": "UNVERIFIABLE",
+        "error_type": type(exc).__name__,
+        "message": str(exc),
+        "root": str(root),
+        "recoverable": not isinstance(exc, (KeyboardInterrupt,)),
+        "next_actions": [
+            "Inspect the root configuration and filesystem permissions.",
+            "Run the matching index CLI command with --json to reproduce outside the MCP host.",
+            "If this came from a large workspace scan, reduce focus or add [scan].prune entries.",
+        ],
+    }
+    if os.environ.get("INDEX_MCP_DEBUG_ERRORS") == "1":
+        payload["traceback"] = traceback.format_exception(type(exc), exc, exc.__traceback__)
+    return json.dumps(payload, indent=2, sort_keys=True)
+
+
+def _cache_ttl_seconds() -> float:
+    raw = os.environ.get("INDEX_MCP_CACHE_TTL_SECONDS", "900")
+    try:
+        return max(0.0, float(raw))
+    except ValueError:
+        return 900.0
+
+
+def _cache_dir() -> Path:
+    raw = os.environ.get("INDEX_MCP_CACHE_DIR")
+    if raw:
+        return Path(raw)
+    base = os.environ.get("LOCALAPPDATA")
+    if base:
+        return Path(base) / "index_graph" / "mcp-cache"
+    return Path.home() / ".cache" / "index_graph" / "mcp-cache"
+
+
+def _sha256_text(value: str) -> str:
+    return hashlib.sha256(value.encode("utf-8")).hexdigest()
+
+
+def _workspace_signature(root: Path) -> str:
+    parts = [str(root)]
+    for cfg in (root / ".index.toml", root / ".repomap.toml"):
+        try:
+            stat = cfg.stat()
+        except OSError:
+            parts.append(f"{cfg.name}:missing")
+        else:
+            parts.append(f"{cfg.name}:{stat.st_mtime_ns}:{stat.st_size}")
+    try:
+        entries = sorted(root.iterdir(), key=lambda p: p.name.lower())
+    except OSError as exc:
+        parts.append(f"root-error:{type(exc).__name__}:{exc}")
+        return _sha256_text("|".join(parts))
+    for entry in entries:
+        try:
+            stat = entry.stat()
+        except OSError:
+            parts.append(f"{entry.name}:unstatable")
+            continue
+        kind = "d" if entry.is_dir() else "f"
+        parts.append(f"{entry.name}:{kind}:{stat.st_mtime_ns}:{stat.st_size}")
+    return _sha256_text("|".join(parts))
+
+
+def _cache_key(name: str, root: Path, args: dict) -> str:
+    stable_args = {
+        key: value
+        for key, value in args.items()
+        if key not in {"root"} and isinstance(value, (str, int, float, bool, type(None), list, dict))
+    }
+    payload = {
+        "tool": name,
+        "root": str(root),
+        "args": stable_args,
+        "workspace_signature": _workspace_signature(root),
+        "tool_version": __version__,
+    }
+    return _sha256_text(json.dumps(payload, sort_keys=True, separators=(",", ":"), default=str))
+
+
+def _cache_path(key: str) -> Path:
+    return _cache_dir() / f"{key}.json"
+
+
+def _cache_read(key: str) -> str | None:
+    ttl = _cache_ttl_seconds()
+    if ttl <= 0:
+        return None
+    now = time()
+    entry = _CACHE.get(key)
+    if entry and now - float(entry.get("created_at", 0.0)) <= ttl:
+        return str(entry.get("text", ""))
+    path = _cache_path(key)
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError, json.JSONDecodeError):
+        return None
+    if data.get("schema") != _CACHE_SCHEMA:
+        return None
+    created_at = float(data.get("created_at", 0.0))
+    if now - created_at > ttl:
+        return None
+    text = str(data.get("text", ""))
+    _CACHE[key] = {"created_at": created_at, "text": text}
+    return text
+
+
+def _cache_write(key: str, text: str) -> str:
+    ttl = _cache_ttl_seconds()
+    if ttl <= 0:
+        return text
+    entry = {"schema": _CACHE_SCHEMA, "created_at": time(), "text": text}
+    _CACHE[key] = {"created_at": entry["created_at"], "text": text}
+    try:
+        path = _cache_path(key)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(entry, separators=(",", ":")), encoding="utf-8")
+    except OSError:
+        pass
+    return text
+
+
+def _with_cache(name: str, root: Path, args: dict, build):
+    if name not in _CACHEABLE_TOOLS:
+        return build()
+    key = _cache_key(name, root, args)
+    cached = _cache_read(key)
+    if cached is not None:
+        return cached
+    return _cache_write(key, build())
 
 
 def _root_schema(extra: dict | None = None, required: list | None = None) -> dict:
@@ -92,7 +251,7 @@ def _tool_defs() -> list[dict]:
          "inputSchema": _root_schema({"depends": {"type": "string"}, "exists": {"type": "string"}})},
         {"name": "index_router",
          "description": "A deterministic CLAUDE.md/AGENTS.md workspace map derived from the graph and docs.",
-         "inputSchema": _root_schema()},
+         "inputSchema": _root_schema({"max_docs": {"type": "integer"}})},
         {"name": "index_internals",
          "description": "Intra-repo module dependency graph for one repo, with cycles and coverage.",
          "inputSchema": _root_schema({"repo": {"type": "string"}}, required=["root", "repo"])},
@@ -199,27 +358,42 @@ def call_tool(name: str, args: dict) -> str:
     if name == "index.map":
         from .config import load_config
         from .scan import build_map
-        return json.dumps(build_map(root, load_config(None, root), __version__).to_json(),
-                          indent=2, sort_keys=True)
+        return _with_cache(
+            name,
+            root,
+            args,
+            lambda: json.dumps(
+                build_map(root, load_config(None, root), __version__).to_json(),
+                indent=2,
+                sort_keys=True,
+            ),
+        )
 
     if name in ("index.context", "index_graph"):
-        return json.dumps(to_json(build_graph(repo_paths)), indent=2, sort_keys=True)
+        return _with_cache(
+            name,
+            root,
+            args,
+            lambda: json.dumps(to_json(build_graph(repo_paths)), indent=2, sort_keys=True),
+        )
 
     if name == "index.context.envelope":
         from .context.envelope import build_context_envelope
-        try:
-            env = build_context_envelope(
-                build_graph(repo_paths),
-                root=root,
-                token_budget=int(args.get("budget", 1200)),
-                focus=args.get("focus"),
-                hops=args.get("hops"),
-            )
-        except FocusRejection as exc:
-            # an unresolvable focus is a typed receipt, not a protocol error
-            # (the index.select not-found precedent)
-            return json.dumps(exc.receipt, indent=2, sort_keys=True)
-        return json.dumps(env, indent=2, sort_keys=True)
+        def _build_envelope():
+            try:
+                env = build_context_envelope(
+                    build_graph(repo_paths),
+                    root=root,
+                    token_budget=int(args.get("budget", 1200)),
+                    focus=args.get("focus"),
+                    hops=args.get("hops"),
+                )
+            except FocusRejection as exc:
+                # an unresolvable focus is a typed receipt, not a protocol error
+                # (the index.select not-found precedent)
+                return json.dumps(exc.receipt, indent=2, sort_keys=True)
+            return json.dumps(env, indent=2, sort_keys=True)
+        return _with_cache(name, root, args, _build_envelope)
 
     if name == "index_focus":
         graph = build_graph(repo_paths)
@@ -259,8 +433,17 @@ def call_tool(name: str, args: dict) -> str:
             return "" if r == "." else r
 
         repo_dirs = {nm: _rel(p) for nm, p in repo_paths.items()}
-        pack = build_router_pack(build_graph(repo_paths), discover_docs(root), repo_dirs)
-        return render_router(pack)
+        max_docs = max(0, int(args.get("max_docs", 500)))
+        return _with_cache(
+            name,
+            root,
+            args,
+            lambda: render_router(build_router_pack(
+                build_graph(repo_paths),
+                discover_docs(root),
+                repo_dirs,
+            ), max_docs=max_docs),
+        )
 
     if name == "index_internals":
         from .internals import build_internals
@@ -314,28 +497,82 @@ def handle_request(req: dict) -> dict | None:
             text = call_tool(name, args)
             return {"jsonrpc": "2.0", "id": rid,
                     "result": {"content": [{"type": "text", "text": text}], "isError": False}}
-        except Exception as exc:
+        except BaseException as exc:
             return {"jsonrpc": "2.0", "id": rid,
-                    "result": {"content": [{"type": "text", "text": f"error: {exc}"}],
+                    "result": {"content": [{"type": "text", "text": _tool_error_payload(name, args, exc)}],
                                "isError": True}}
     return {"jsonrpc": "2.0", "id": rid,
             "error": {"code": -32601, "message": f"method not found: {method}"}}
 
 
+def _decode_line(line) -> str:
+    if isinstance(line, bytes):
+        return line.decode("utf-8", "replace")
+    return str(line)
+
+
+def _read_framed_body(first_line, stdin) -> str | None:
+    header = _decode_line(first_line).strip()
+    try:
+        length = int(header.split(":", 1)[1].strip())
+    except (IndexError, ValueError):
+        return None
+    while True:
+        line = stdin.readline()
+        if line in ("", b""):
+            return None
+        if _decode_line(line).strip() == "":
+            break
+    body = stdin.read(length)
+    if body in ("", b""):
+        return None
+    if isinstance(body, bytes):
+        return body.decode("utf-8", "replace")
+    return str(body)
+
+
+def _write_response(stdout, resp: dict, framed: bool) -> None:
+    body = json.dumps(resp)
+    if not framed:
+        stdout.write(body + "\n")
+        stdout.flush()
+        return
+    payload = body.encode("utf-8")
+    frame = f"Content-Length: {len(payload)}\r\n\r\n".encode("ascii") + payload
+    buffer = getattr(stdout, "buffer", None)
+    if buffer is not None:
+        buffer.write(frame)
+        buffer.flush()
+        return
+    stdout.write(frame.decode("utf-8"))
+    stdout.flush()
+
+
 def serve(stdin=None, stdout=None) -> int:
-    """Read newline-delimited JSON-RPC from stdin, write responses to stdout."""
+    """Read MCP stdio frames or newline-delimited JSON-RPC from stdin."""
+    _configure_stdio()
     stdin = stdin if stdin is not None else sys.stdin
     stdout = stdout if stdout is not None else sys.stdout
-    for line in stdin:
-        line = line.strip()
+    reader = getattr(stdin, "buffer", stdin)
+    while True:
+        line = reader.readline()
+        if line in ("", b""):
+            break
+        text = _decode_line(line).strip()
+        framed = text.lower().startswith("content-length:")
+        if framed:
+            text = _read_framed_body(line, reader)
+            if text is None:
+                continue
+        else:
+            text = text.strip()
         if not line:
             continue
         try:
-            req = json.loads(line)
+            req = json.loads(text)
         except json.JSONDecodeError:
             continue  # no id to address a parse error to; conformant hosts send valid frames
         resp = handle_request(req)
         if resp is not None:
-            stdout.write(json.dumps(resp) + "\n")
-            stdout.flush()
+            _write_response(stdout, resp, framed)
     return 0

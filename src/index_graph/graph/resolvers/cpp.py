@@ -1,4 +1,4 @@
-"""C/C++ ecosystem resolver: CMake target links + #include directives.
+﻿"""C/C++ ecosystem resolver: CMake target links + #include directives.
 
 Best-effort only. C/C++ has no single canonical dependency manifest.
 This resolver reads:
@@ -45,7 +45,7 @@ class CppResolver:
         names: set[str] = set()
         for cmake in walk_files(repo_root, names=("CMakeLists.txt",)):
             try:
-                lines = cmake.read_text(encoding="utf-8").splitlines()
+                lines = cmake.read_text(encoding="utf-8", errors="replace").splitlines()
             except OSError:
                 continue
             for line in lines:
@@ -62,7 +62,7 @@ class CppResolver:
         # Manifest edges from CMakeLists.txt
         for cmake in walk_files(repo_root, names=("CMakeLists.txt",)):
             try:
-                lines = cmake.read_text(encoding="utf-8").splitlines()
+                lines = cmake.read_text(encoding="utf-8", errors="replace").splitlines()
             except OSError:
                 continue
             rel = cmake.relative_to(repo_root).as_posix()
@@ -97,7 +97,7 @@ class CppResolver:
         src_suffixes = (".c", ".cc", ".cpp", ".cxx", ".h", ".hpp")
         for src in walk_files(repo_root, suffixes=src_suffixes):
             try:
-                lines = src.read_text(encoding="utf-8").splitlines()
+                lines = src.read_text(encoding="utf-8", errors="replace").splitlines()
             except OSError:
                 continue
             rel = src.relative_to(repo_root).as_posix()

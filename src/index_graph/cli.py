@@ -102,6 +102,17 @@ _DISPATCH = {
 }
 
 
+def _configure_stdio() -> None:
+    for stream_name in ("stdout", "stderr"):
+        stream = getattr(sys, stream_name, None)
+        if stream is None or not hasattr(stream, "reconfigure"):
+            continue
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except (OSError, ValueError):
+            pass
+
+
 def _cmd_map(args) -> int:
     root = args.root.resolve()
     if not root.is_dir():
@@ -145,6 +156,7 @@ def _normalize_argv(argv: list[str] | None) -> list[str]:
 
 
 def main(argv: list[str] | None = None) -> int:
+    _configure_stdio()
     args = build_parser().parse_args(_normalize_argv(argv))
     handler = _DISPATCH.get(args.cmd, _cmd_map)
     return handler(args)

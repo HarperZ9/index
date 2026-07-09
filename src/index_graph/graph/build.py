@@ -1,4 +1,4 @@
-"""Assemble repo trees + resolvers into a DependencyGraph."""
+﻿"""Assemble repo trees + resolvers into a DependencyGraph."""
 from __future__ import annotations
 
 import configparser
@@ -40,7 +40,7 @@ def _description(repo_root: Path) -> str:
         p = repo_root / readme
         if p.is_file():
             try:
-                text = p.read_text(encoding="utf-8").strip()
+                text = p.read_text(encoding="utf-8", errors="replace").strip()
             except OSError:
                 continue
             for block in _PARA.split(text):
@@ -50,7 +50,7 @@ def _description(repo_root: Path) -> str:
     pp = repo_root / "pyproject.toml"
     if pp.is_file():
         try:
-            d = tomllib.loads(pp.read_text(encoding="utf-8")).get("project", {})
+            d = tomllib.loads(pp.read_text(encoding="utf-8", errors="replace")).get("project", {})
             if d.get("description"):
                 return str(d["description"])
         except (tomllib.TOMLDecodeError, OSError):
@@ -58,7 +58,7 @@ def _description(repo_root: Path) -> str:
     pj = repo_root / "package.json"
     if pj.is_file():
         try:
-            d = json.loads(pj.read_text(encoding="utf-8"))
+            d = json.loads(pj.read_text(encoding="utf-8", errors="replace"))
             if d.get("description"):
                 return str(d["description"])
         except (json.JSONDecodeError, OSError):
@@ -73,7 +73,7 @@ def detect_markers(repo_root: Path, exposed: set[str]) -> set[str]:
     pp = repo_root / "pyproject.toml"
     if pp.is_file():
         try:
-            data = tomllib.loads(pp.read_text(encoding="utf-8"))
+            data = tomllib.loads(pp.read_text(encoding="utf-8", errors="replace"))
             if data.get("project", {}).get("scripts") or \
                data.get("project", {}).get("entry-points"):
                 mk.add("entry")
@@ -91,7 +91,7 @@ def detect_markers(repo_root: Path, exposed: set[str]) -> set[str]:
     pj = repo_root / "package.json"
     if pj.is_file():
         try:
-            if json.loads(pj.read_text(encoding="utf-8")).get("bin"):
+            if json.loads(pj.read_text(encoding="utf-8", errors="replace")).get("bin"):
                 mk.add("entry")
         except (json.JSONDecodeError, OSError):
             pass

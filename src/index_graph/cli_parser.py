@@ -260,6 +260,10 @@ def _add_router_parser(sub) -> None:
     )
     rt.add_argument("--root", type=Path, default=Path.cwd())
     rt.add_argument("--out", default=None)
+    rt.add_argument("--max-docs", type=int, default=500,
+                    help="maximum doc-to-repo edges rendered in the router markdown")
+    rt.add_argument("--no-cache", action="store_true",
+                    help="disable the workspace-router filesystem cache for this run")
 
 
 def _add_verify_parser(sub) -> None:

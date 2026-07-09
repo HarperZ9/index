@@ -14,7 +14,14 @@ from .arch.criteria import ArchitectureCriteria, parse_architecture
 
 DEFAULT_PRUNE_DIRS = frozenset({
     ".git", ".mypy_cache", ".pytest_cache", ".ruff_cache",
-    "__pycache__", ".venv", "venv", "node_modules",
+    "__pycache__", ".venv", "venv", "venvs", "env",
+    "node_modules", "site-packages", ".tox", ".eggs",
+    "build", "dist", ".cache", ".playwright-mcp",
+    ".warden-safe-cache", ".next", ".turbo",
+    "target", "coverage", ".coverage", ".nyc_output",
+    ".parcel-cache", ".svelte-kit", ".angular", ".expo",
+    ".gradle", ".idea", ".vscode", ".yarn", ".pnpm-store",
+    ".terraform", "out",
 })
 DEFAULT_MARKERS = (
     "README.md", "AGENTS.md", "CLAUDE.md", "pyproject.toml", "package.json",
@@ -86,14 +93,14 @@ def default_config() -> Config:
 
 def load_config(path: Path | None, root: Path) -> Config:
     if path is None:
-        candidate = root / ".index.toml"
-        if not candidate.exists():
+        candidates = (root / ".index.toml", root / ".repomap.toml")
+        path = next((candidate for candidate in candidates if candidate.exists()), None)
+        if path is None:
             return default_config()
-        path = candidate
     elif not path.exists():
         raise SystemExit(f"config not found: {path}")
     try:
-        text = path.read_text(encoding="utf-8-sig")  # tolerate a UTF-8 BOM
+        text = path.read_text(encoding="utf-8-sig", errors="replace")  # tolerate BOM and legacy bytes
         data = tomllib.loads(text)
     except tomllib.TOMLDecodeError as exc:
         raise SystemExit(f"{path}: invalid TOML: {exc}") from exc
