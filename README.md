@@ -138,7 +138,7 @@ Everything works with zero configuration. An optional `.index.toml` at the works
 
 - Evidence on every edge: no dependency edge exists without a file and line behind it, and a confidence grade. Two independent signals (manifest and observed import) grade each one.
 - Deterministic output: the same input gives the same bytes. No timestamps, no randomness.
-- Zero runtime dependencies, including the markdown renderer, the SVG layout, and the LSP framing. A test keeps it that way; the suite currently collects 585 tests.
+- Zero runtime dependencies, including the markdown renderer, the SVG layout, and the LSP framing. A test keeps it that way; the suite currently collects 600 tests.
 - Self-contained and safe with untrusted docs: one HTML file, no external URLs, markdown escaped as it renders, with hostile-content fixtures in the tests.
 - Private by default: paths are root-relative, the local root reduces to a short hash, and credential-shaped fragments in remote URLs are redacted.
 
