@@ -1,4 +1,4 @@
-"""Ruby ecosystem resolver: Gemfile gem declarations + require/require_relative scan."""
+﻿"""Ruby ecosystem resolver: Gemfile gem declarations + require/require_relative scan."""
 from __future__ import annotations
 
 import re
@@ -27,7 +27,7 @@ class RubyResolver:
     def exposed_names(self, repo_root: Path) -> set[str]:
         for gemspec in repo_root.glob("*.gemspec"):
             try:
-                text = gemspec.read_text(encoding="utf-8")
+                text = gemspec.read_text(encoding="utf-8", errors="replace")
             except OSError:
                 continue
             m = _SPEC_NAME.search(text)
@@ -42,7 +42,7 @@ class RubyResolver:
         gemfile = repo_root / "Gemfile"
         if gemfile.is_file():
             try:
-                lines = gemfile.read_text(encoding="utf-8").splitlines()
+                lines = gemfile.read_text(encoding="utf-8", errors="replace").splitlines()
             except OSError:
                 lines = []
             for i, line in enumerate(lines, 1):
@@ -54,7 +54,7 @@ class RubyResolver:
         # import edges: .rb source files
         for src in walk_files(repo_root, suffixes=(".rb",)):
             try:
-                lines = src.read_text(encoding="utf-8").splitlines()
+                lines = src.read_text(encoding="utf-8", errors="replace").splitlines()
             except OSError:
                 continue
             rel = src.relative_to(repo_root).as_posix()

@@ -73,6 +73,37 @@ def test_router_omits_empty_sections():
     assert "`solo` (unclassified)" in out
 
 
+def test_router_caps_doc_edges_with_omission_notice():
+    pack = {
+        "repos": [{"name": "core"}],
+        "roles": {},
+        "relations": [],
+        "knowledge_edges": [
+            {"type": "describes", "from": f"docs/{i}.md", "to": "core", "to_kind": "repo"}
+            for i in range(3)
+        ],
+    }
+    out = render_router(pack, max_docs=1)
+    assert "`docs/0.md` describes `core`" in out
+    assert "`docs/1.md` describes `core`" not in out
+    assert "2 doc edge(s) omitted" in out
+
+
+def test_router_caps_dependency_labels():
+    pack = {
+        "repos": [{"name": "api"}, {"name": "a"}, {"name": "b"}, {"name": "c"}],
+        "roles": {"api": ["entrypoint"]},
+        "relations": [
+            {"from": "api", "to": "a", "external": False},
+            {"from": "api", "to": "b", "external": False},
+            {"from": "api", "to": "c", "external": False},
+        ],
+        "knowledge_edges": [],
+    }
+    out = render_router(pack, max_deps=2)
+    assert "`api` starts here; depends on a, b, ... 1 more" in out
+
+
 def test_negative_hops_rejected(tmp_path):
     (tmp_path / "solo" / ".git").mkdir(parents=True)
     r = _run(["context", "--root", str(tmp_path), "--hops", "-1"])

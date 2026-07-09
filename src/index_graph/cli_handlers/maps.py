@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from ..cache import cached_text
 from ..graph.build import build_graph
 from ._common import rel_to_root, repo_paths, require_dir
 
@@ -85,10 +86,21 @@ def cmd_router(args) -> int:
     from ..router import render_router
 
     root = require_dir(args.root)
-    paths = repo_paths(root)
-    repo_dirs = {name: rel_to_root(root, p) for name, p in paths.items()}
-    pack = build_router_pack(build_graph(paths), discover_docs(root), repo_dirs)
-    text = render_router(pack)
+    max_docs = max(0, int(getattr(args, "max_docs", 500)))
+
+    def _build() -> str:
+        paths = repo_paths(root)
+        repo_dirs = {name: rel_to_root(root, p) for name, p in paths.items()}
+        pack = build_router_pack(build_graph(paths), discover_docs(root), repo_dirs)
+        return render_router(pack, max_docs=max_docs)
+
+    text = cached_text(
+        "router",
+        root,
+        {"max_docs": max_docs},
+        _build,
+        enabled=not getattr(args, "no_cache", False),
+    )
     if args.out:
         Path(args.out).write_text(text, encoding="utf-8")
         print(f"wrote {args.out}")

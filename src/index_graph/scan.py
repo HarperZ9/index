@@ -17,10 +17,21 @@ from .gitmeta import repo_metadata
 from .model import SCHEMA_VERSION, Map, RepoRow
 
 
+def _warn(message: str) -> None:
+    try:
+        print(message, file=sys.stderr)
+    except UnicodeError:
+        safe = message.encode("utf-8", "backslashreplace").decode("ascii", "replace")
+        print(safe, file=sys.stderr)
+
+
 def discover_repos(root: Path, config: Config) -> list[Path]:
     prune = config.prune
     repos: set[Path] = set()
-    for dirpath, dirnames, filenames in os.walk(root):
+    def _onerror(exc: OSError) -> None:
+        _warn(f"warning: skipped unreadable directory during repo discovery: {exc}")
+
+    for dirpath, dirnames, filenames in os.walk(root, onerror=_onerror):
         current = Path(dirpath)
         if ".git" in dirnames or ".git" in filenames:
             repos.add(current)
@@ -55,7 +66,7 @@ def _safe_repo_row(repo: Path, root: Path, config: Config) -> RepoRow:
         return _repo_row(repo, root, config)
     except Exception as exc:
         rel = _relative(repo, root)
-        print(f"warning: failed to scan {rel}: {exc}", file=sys.stderr)
+        _warn(f"warning: failed to scan {rel}: {exc}")
         return RepoRow(
             path=(rel if config.portable else str(repo)), class_="unknown",
             branch="unknown", head="unknown", origin="", dirty_count=0,
@@ -72,7 +83,7 @@ def _top_level(root: Path, config: Config) -> list[dict[str, Any]]:
             stat = path.stat()
             is_dir = path.is_dir()
         except OSError as exc:
-            print(f"warning: skipped top-level entry {path.name}: {exc}", file=sys.stderr)
+            _warn(f"warning: skipped top-level entry {path.name}: {exc}")
             continue
         entries.append({
             "name": path.name,
