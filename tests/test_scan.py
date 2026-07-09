@@ -12,6 +12,7 @@ def test_discover_prunes_and_sorts(tmp_path: Path):
     _make_repo(tmp_path / "public" / "b")
     _make_repo(tmp_path / "public" / "a")
     (tmp_path / "node_modules" / "pkg" / ".git").mkdir(parents=True)
+    (tmp_path / "target" / "debug" / "crate" / ".git").mkdir(parents=True)
     found = [p.relative_to(tmp_path).as_posix() for p in discover_repos(tmp_path, Config())]
     assert found == ["public/a", "public/b"]  # sorted; node_modules pruned
 

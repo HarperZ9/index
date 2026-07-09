@@ -1,4 +1,4 @@
-"""JavaScript/TypeScript resolver: package.json + conservative import scan."""
+﻿"""JavaScript/TypeScript resolver: package.json + conservative import scan."""
 from __future__ import annotations
 
 import json
@@ -36,7 +36,7 @@ class JavaScriptResolver:
         if not pj.is_file():
             return set()
         try:
-            data = json.loads(pj.read_text(encoding="utf-8"))
+            data = json.loads(pj.read_text(encoding="utf-8", errors="replace"))
         except (json.JSONDecodeError, OSError):
             return set()
         name = data.get("name")
@@ -47,7 +47,7 @@ class JavaScriptResolver:
         pj = repo_root / "package.json"
         if pj.is_file():
             try:
-                data = json.loads(pj.read_text(encoding="utf-8"))
+                data = json.loads(pj.read_text(encoding="utf-8", errors="replace"))
                 for field in ("dependencies", "devDependencies", "peerDependencies"):
                     for name, spec in (data.get(field, {}) or {}).items():
                         edges.append(RawEdge(str(name), "manifest", "package.json", None, f"{name}: {spec}"))
@@ -55,7 +55,7 @@ class JavaScriptResolver:
                 pass
         for src in walk_files(repo_root, suffixes=_EXTS):
             try:
-                lines = src.read_text(encoding="utf-8").splitlines()
+                lines = src.read_text(encoding="utf-8", errors="replace").splitlines()
             except OSError:
                 continue
             rel = src.relative_to(repo_root).as_posix()

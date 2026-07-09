@@ -10,6 +10,8 @@ def _make(root):
     (root / ".venv" / "lib" / "buried.py").write_text("y = 2\n", encoding="utf-8")
     (root / "node_modules").mkdir()
     (root / "node_modules" / "dep.js").write_text("z\n", encoding="utf-8")
+    (root / "target" / "debug").mkdir(parents=True)
+    (root / "target" / "debug" / "buried.py").write_text("z = 3\n", encoding="utf-8")
     (root / "pkg" / "__main__.py").write_text("main\n", encoding="utf-8")
 
 
@@ -19,6 +21,7 @@ def test_walk_prunes_excluded_dirs_by_suffix(tmp_path):
     assert "a.py" in found
     assert "buried.py" not in found          # under .venv -> pruned
     assert ".venv" in EXCLUDE_DIRS and "node_modules" in EXCLUDE_DIRS
+    assert "target" in EXCLUDE_DIRS
 
 
 def test_walk_matches_by_exact_name(tmp_path):
