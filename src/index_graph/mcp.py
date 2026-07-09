@@ -505,21 +505,74 @@ def handle_request(req: dict) -> dict | None:
             "error": {"code": -32601, "message": f"method not found: {method}"}}
 
 
+def _decode_line(line) -> str:
+    if isinstance(line, bytes):
+        return line.decode("utf-8", "replace")
+    return str(line)
+
+
+def _read_framed_body(first_line, stdin) -> str | None:
+    header = _decode_line(first_line).strip()
+    try:
+        length = int(header.split(":", 1)[1].strip())
+    except (IndexError, ValueError):
+        return None
+    while True:
+        line = stdin.readline()
+        if line in ("", b""):
+            return None
+        if _decode_line(line).strip() == "":
+            break
+    body = stdin.read(length)
+    if body in ("", b""):
+        return None
+    if isinstance(body, bytes):
+        return body.decode("utf-8", "replace")
+    return str(body)
+
+
+def _write_response(stdout, resp: dict, framed: bool) -> None:
+    body = json.dumps(resp)
+    if not framed:
+        stdout.write(body + "\n")
+        stdout.flush()
+        return
+    payload = body.encode("utf-8")
+    frame = f"Content-Length: {len(payload)}\r\n\r\n".encode("ascii") + payload
+    buffer = getattr(stdout, "buffer", None)
+    if buffer is not None:
+        buffer.write(frame)
+        buffer.flush()
+        return
+    stdout.write(frame.decode("utf-8"))
+    stdout.flush()
+
+
 def serve(stdin=None, stdout=None) -> int:
-    """Read newline-delimited JSON-RPC from stdin, write responses to stdout."""
+    """Read MCP stdio frames or newline-delimited JSON-RPC from stdin."""
     _configure_stdio()
     stdin = stdin if stdin is not None else sys.stdin
     stdout = stdout if stdout is not None else sys.stdout
-    for line in stdin:
-        line = line.strip()
+    reader = getattr(stdin, "buffer", stdin)
+    while True:
+        line = reader.readline()
+        if line in ("", b""):
+            break
+        text = _decode_line(line).strip()
+        framed = text.lower().startswith("content-length:")
+        if framed:
+            text = _read_framed_body(line, reader)
+            if text is None:
+                continue
+        else:
+            text = text.strip()
         if not line:
             continue
         try:
-            req = json.loads(line)
+            req = json.loads(text)
         except json.JSONDecodeError:
             continue  # no id to address a parse error to; conformant hosts send valid frames
         resp = handle_request(req)
         if resp is not None:
-            stdout.write(json.dumps(resp) + "\n")
-            stdout.flush()
+            _write_response(stdout, resp, framed)
     return 0

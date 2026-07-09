@@ -245,3 +245,34 @@ def test_serve_roundtrip():
     assert len(lines) == 2
     assert json.loads(lines[0])["result"]["serverInfo"]["name"] == "index-graph"
     assert "tools" in json.loads(lines[1])["result"]
+
+
+def _stdio_frame(message):
+    body = json.dumps(message).encode("utf-8")
+    return f"Content-Length: {len(body)}\r\n\r\n".encode("ascii") + body
+
+
+def _parse_stdio_frames(raw):
+    frames = []
+    offset = 0
+    while offset < len(raw):
+        header_end = raw.index("\r\n\r\n", offset)
+        header = raw[offset:header_end]
+        length = int(header.split(":", 1)[1].strip())
+        body_start = header_end + 4
+        body = raw[body_start:body_start + length]
+        frames.append(json.loads(body))
+        offset = body_start + length
+    return frames
+
+
+def test_serve_framed_stdio_roundtrip():
+    inp = io.BytesIO(
+        _stdio_frame({"jsonrpc": "2.0", "id": 1, "method": "initialize"})
+        + _stdio_frame({"jsonrpc": "2.0", "id": 2, "method": "tools/list"})
+    )
+    out = io.StringIO()
+    serve(inp, out)
+    frames = _parse_stdio_frames(out.getvalue())
+    assert frames[0]["result"]["serverInfo"]["name"] == "index-graph"
+    assert "tools" in frames[1]["result"]
