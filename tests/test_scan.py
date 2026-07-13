@@ -58,6 +58,17 @@ def test_deduplicate_repo_aliases_keeps_sole_alias(tmp_path: Path):
     assert scan_mod.deduplicate_repo_aliases([alias]) == [alias]
 
 
+def test_discover_reports_sole_directory_symlink_alias(tmp_path: Path):
+    if os.name == "nt":
+        pytest.skip("directory symlink behavior covered on POSIX; Windows uses junction fixture")
+    target = tmp_path / "outside" / "target"
+    _make_repo(target)
+    alias = tmp_path / "scan-root" / "alias"
+    alias.parent.mkdir()
+    alias.symlink_to(target, target_is_directory=True)
+    assert discover_repos(alias.parent, Config()) == [alias]
+
+
 def test_deduplicate_repo_aliases_collapses_mocked_physical_identity(
     tmp_path: Path, monkeypatch
 ):

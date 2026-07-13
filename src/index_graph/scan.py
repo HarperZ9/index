@@ -51,6 +51,13 @@ def discover_repos(root: Path, config: Config) -> list[Path]:
         current = Path(dirpath)
         if ".git" in dirnames or ".git" in filenames:
             repos.add(current)
+        for dirname in dirnames:
+            child = current / dirname
+            try:
+                if child.is_symlink() and ((child / ".git").is_dir() or (child / ".git").is_file()):
+                    repos.add(child)
+            except OSError as exc:
+                _warn(f"warning: skipped unreadable directory during repo discovery: {exc}")
         dirnames[:] = [name for name in dirnames if name not in prune]
     valid: list[Path] = []
     for repo in sorted(repos, key=lambda p: p.relative_to(root).as_posix().lower()):
