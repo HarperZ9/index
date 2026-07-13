@@ -52,6 +52,8 @@ def discover_repos(root: Path, config: Config) -> list[Path]:
         if ".git" in dirnames or ".git" in filenames:
             repos.add(current)
         for dirname in dirnames:
+            if dirname in prune:
+                continue
             child = current / dirname
             try:
                 if child.is_symlink() and ((child / ".git").is_dir() or (child / ".git").is_file()):
