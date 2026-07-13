@@ -6,6 +6,7 @@ import hashlib
 import json
 import os
 import sys
+from collections.abc import Iterable
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from pathlib import Path
@@ -13,7 +14,7 @@ from typing import Any
 
 from .classify import classify
 from .config import Config
-from .gitmeta import repo_metadata
+from .gitmeta import canonical_path_identity, gitfile_backlink_matches, repo_metadata
 from .model import SCHEMA_VERSION, Map, RepoRow
 
 
@@ -23,6 +24,21 @@ def _warn(message: str) -> None:
     except UnicodeError:
         safe = message.encode("utf-8", "backslashreplace").decode("ascii", "replace")
         print(safe, file=sys.stderr)
+
+
+def _alias_rank(path: Path) -> tuple[bool, str, str]:
+    lexical = os.path.normcase(os.path.abspath(path))
+    return (lexical != canonical_path_identity(path), lexical, str(path))
+
+
+def deduplicate_repo_aliases(repos: Iterable[Path]) -> list[Path]:
+    selected: dict[str, Path] = {}
+    for repo in repos:
+        identity = canonical_path_identity(repo)
+        incumbent = selected.get(identity)
+        if incumbent is None or _alias_rank(repo) < _alias_rank(incumbent):
+            selected[identity] = repo
+    return sorted(selected.values(), key=lambda path: (str(path).casefold(), str(path)))
 
 
 def discover_repos(root: Path, config: Config) -> list[Path]:
@@ -36,7 +52,17 @@ def discover_repos(root: Path, config: Config) -> list[Path]:
         if ".git" in dirnames or ".git" in filenames:
             repos.add(current)
         dirnames[:] = [name for name in dirnames if name not in prune]
-    return sorted(repos, key=lambda p: p.relative_to(root).as_posix().lower())
+    valid: list[Path] = []
+    for repo in sorted(repos, key=lambda p: p.relative_to(root).as_posix().lower()):
+        if not gitfile_backlink_matches(repo):
+            rel = _relative(repo, root)
+            _warn(
+                "warning: skipped unregistered linked-worktree copy "
+                f"{rel}; run 'git worktree repair' if this worktree was moved intentionally"
+            )
+            continue
+        valid.append(repo)
+    return deduplicate_repo_aliases(valid)
 
 
 def _relative(path: Path, root: Path) -> str:
