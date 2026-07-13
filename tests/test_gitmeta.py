@@ -1,6 +1,8 @@
+import os
 import subprocess
 from pathlib import Path
 
+import index_graph.gitmeta as gitmeta
 from index_graph.gitmeta import repo_metadata, run_git, sanitize_credentials
 
 
@@ -47,3 +49,80 @@ def test_run_git_timeout_returns_empty(monkeypatch, tmp_path):
         raise subprocess.TimeoutExpired(cmd="git", timeout=20)
     monkeypatch.setattr(subprocess, "run", _raise)
     assert run_git(tmp_path, ["status"]) == ""
+
+
+def _linked_worktree_fixture(tmp_path: Path) -> tuple[Path, Path]:
+    admin = tmp_path / "main" / ".git" / "worktrees" / "feature"
+    admin.mkdir(parents=True)
+    (admin / "commondir").write_text("../..\n", encoding="utf-8")
+    linked = tmp_path / "worktrees" / "feature"
+    linked.mkdir(parents=True)
+    (linked / ".git").write_text(f"gitdir: {admin}\n", encoding="utf-8")
+    (admin / "gitdir").write_text(f"{linked / '.git'}\n", encoding="utf-8")
+    return linked, admin
+
+
+def test_gitfile_backlink_matches_registered_linked_worktree(tmp_path: Path):
+    linked, _ = _linked_worktree_fixture(tmp_path)
+    assert gitmeta.gitfile_backlink_matches(linked)
+
+
+def test_gitfile_backlink_rejects_copied_linked_worktree(tmp_path: Path):
+    linked, _ = _linked_worktree_fixture(tmp_path)
+    copied = tmp_path / "audit" / "source"
+    copied.mkdir(parents=True)
+    (copied / ".git").write_text(
+        (linked / ".git").read_text(encoding="utf-8"), encoding="utf-8"
+    )
+    assert not gitmeta.gitfile_backlink_matches(copied)
+
+
+def test_gitfile_backlink_resolves_relative_paths(tmp_path: Path):
+    linked, admin = _linked_worktree_fixture(tmp_path)
+    (linked / ".git").write_text(
+        f"gitdir: {os.path.relpath(admin, linked)}\n", encoding="utf-8"
+    )
+    (admin / "gitdir").write_text(
+        f"{os.path.relpath(linked / '.git', admin)}\n", encoding="utf-8"
+    )
+    assert gitmeta.gitfile_backlink_matches(linked)
+
+
+def test_gitfile_without_worktree_backlink_is_accepted(tmp_path: Path):
+    admin = tmp_path / "super" / ".git" / "modules" / "sub"
+    admin.mkdir(parents=True)
+    submodule = tmp_path / "super" / "sub"
+    submodule.mkdir()
+    (submodule / ".git").write_text(f"gitdir: {admin}\n", encoding="utf-8")
+    assert gitmeta.gitfile_backlink_matches(submodule)
+
+
+def test_empty_gitfile_marker_is_accepted(tmp_path: Path):
+    (tmp_path / ".git").write_text("", encoding="utf-8")
+    assert gitmeta.gitfile_backlink_matches(tmp_path)
+
+
+def test_malformed_gitfile_marker_is_accepted(tmp_path: Path):
+    (tmp_path / ".git").write_text("not a gitdir record\n", encoding="utf-8")
+    assert gitmeta.gitfile_backlink_matches(tmp_path)
+
+
+def test_separate_git_dir_with_unrelated_gitdir_file_is_accepted(tmp_path: Path):
+    repo = tmp_path / "separate"
+    repo.mkdir()
+    admin = tmp_path / "admin"
+    admin.mkdir()
+    (repo / ".git").write_text(f"gitdir: {admin}\n", encoding="utf-8")
+    (admin / "gitdir").write_text("an unrelated file\n", encoding="utf-8")
+    assert gitmeta.gitfile_backlink_matches(repo)
+
+
+def test_canonical_identity_falls_back_when_realpath_fails(tmp_path: Path, monkeypatch):
+    monkeypatch.setattr(
+        os.path,
+        "realpath",
+        lambda _path: (_ for _ in ()).throw(OSError("nope")),
+    )
+    assert gitmeta.canonical_path_identity(tmp_path) == os.path.normcase(
+        os.path.abspath(tmp_path)
+    )
