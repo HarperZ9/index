@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Repository discovery now removes duplicate physical aliases and ignores
+  copied linked-worktree gitfiles whose registration backlink names another
+  path, while retaining registered worktrees, submodules, and sole aliases.
+
 ## 2.9.0 (2026-07-07)
 
 - Workbench: `index workbench` renders every index surface (the workspace map, docs,
