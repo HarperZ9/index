@@ -35,6 +35,8 @@ index [--root ROOT] [--output OUTPUT] [--json] [--dry-run]
 
 The default write is explicit: `index` prints `index map: writing <path>` before it touches the filesystem, so the write location is never a surprise.
 
+Repository discovery resolves physical path identity before Git status fan-out. If both a directory and its junction or symbolic-link alias are visible beneath the scan root, Index reports the direct directory once. Registered linked worktrees remain independent repositories. A copied linked-worktree `.git` pointer whose administrative backlink names another path is skipped with a warning and a `git worktree repair` hint.
+
 With no config, classification falls back to a remote-host heuristic: `local` (no remote), `public` (the origin host is in the known public set), or `private`. Supply a `.index.toml` (see `example.index.toml`) for ordered path-glob rules.
 
 ### Example 1, print a map to stdout
