@@ -10,10 +10,12 @@ from ..config import load_config
 from ..scan import discover_repos
 
 
-def repo_paths(root: Path) -> dict[str, Path]:
+def repo_paths(root: Path, *, skipped: list | None = None) -> dict[str, Path]:
     # discover_repos requires a Config; use neutral defaults for graph/context.
+    # `skipped`, when given, collects directories the scan could not read, so a
+    # narrowed scan is a receiptable fact rather than a stderr-only warning.
     config = load_config(None, root)
-    return {p.name: p for p in discover_repos(root, config)}
+    return {p.name: p for p in discover_repos(root, config, skipped=skipped)}
 
 
 def require_dir(root: Path) -> Path:

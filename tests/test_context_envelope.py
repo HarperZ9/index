@@ -140,3 +140,13 @@ def test_forced_first_item_overflow_is_reported_not_capped(tmp_path):
     assert env["budget"]["approx_tokens"] > 1, "the true cost must not be capped to the budget"
     assert "budget_overflow" in env["failure_codes"]
     assert env["verification_verdict"] == "UNVERIFIABLE"
+
+
+def test_packet_tokens_distinct_from_retained_and_names_the_scope(tmp_path):
+    graph = build_graph(_workspace(tmp_path))
+    env = build_context_envelope(graph, root=tmp_path, token_budget=1000)
+    b = env["budget"]
+    # approx_tokens bounds the retained selection; packet_approx_tokens is the
+    # whole emitted dict, which carries more, so it is >= the retained cost
+    assert "packet_approx_tokens" in b
+    assert b["packet_approx_tokens"] >= b["approx_tokens"]

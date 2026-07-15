@@ -70,3 +70,30 @@ def test_top_level_skips_unstatable_entry(tmp_path: Path, monkeypatch, capsys):
     names = [e["name"] for e in result.top_level]
     assert "good.txt" not in names
     assert "skipped top-level entry good.txt" in capsys.readouterr().err
+
+
+def test_discover_repos_records_skipped_unreadable_directories(tmp_path, monkeypatch):
+    # os.walk invokes onerror on an unreadable directory; those repos never
+    # enter the scan, so a partial scan must be RECORDED, not swallowed to
+    # stderr only. The skipped out-param collects them.
+    import index_graph.scan as scan
+
+    def fake_walk(root, onerror=None, **kw):
+        if onerror is not None:
+            err = OSError("permission denied")
+            err.filename = str(Path(root) / "locked-subtree")
+            onerror(err)
+        return iter(())
+
+    monkeypatch.setattr(scan.os, "walk", fake_walk)
+    skipped: list[str] = []
+    discover_repos(tmp_path, Config(), skipped=skipped)
+    assert any("locked-subtree" in s for s in skipped)
+
+
+def test_check_verdict_downgrades_on_incomplete_scan():
+    from index_graph.cli_handlers.certify import _check_verdict
+    # a MATCH must not be issued over a scan silently narrowed by unreadable
+    # directories: findings that could not see the whole tree are UNVERIFIABLE
+    findings = [{"rule": "scan_incomplete", "detail": "skipped a subtree"}]
+    assert _check_verdict(False, [], findings) == "UNVERIFIABLE"
