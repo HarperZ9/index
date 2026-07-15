@@ -25,10 +25,16 @@ def _warn(message: str) -> None:
         print(safe, file=sys.stderr)
 
 
-def discover_repos(root: Path, config: Config) -> list[Path]:
+def discover_repos(root: Path, config: Config, *,
+                   skipped: list | None = None) -> list[Path]:
     prune = config.prune
     repos: set[Path] = set()
     def _onerror(exc: OSError) -> None:
+        # a directory os.walk could not read narrows the scan: record it so a
+        # partial scan is a receiptable fact, not a stderr-only warning that a
+        # certificate can MATCH straight past
+        if skipped is not None:
+            skipped.append(getattr(exc, "filename", None) or str(exc))
         _warn(f"warning: skipped unreadable directory during repo discovery: {exc}")
 
     for dirpath, dirnames, filenames in os.walk(root, onerror=_onerror):

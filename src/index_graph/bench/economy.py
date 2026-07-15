@@ -55,9 +55,13 @@ def _grounding(pack: dict) -> dict:
     return {
         "internal_edges": total,
         "grounded_edges": len(grounded),
-        "edge_grounding": round(len(grounded) / total, 4) if total else 1.0,
+        # a workspace with no internal edges grounded NOTHING: report the honest
+        # null, not a vacuous 1.0 that reads as perfect faithfulness for a
+        # reduction that had no structure to fabricate or preserve
+        "edge_grounding": (round(len(grounded) / total, 4) if total else None),
         "note": ("fraction of kept dependency edges carrying file:line evidence; "
-                 "1.0 = the reduction fabricates no structure"),
+                 "1.0 = the reduction fabricates no structure; null = no "
+                 "internal edges to ground"),
     }
 
 

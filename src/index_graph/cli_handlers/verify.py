@@ -185,11 +185,15 @@ def cmd_bench(args) -> int:
             f"(~{report['approx_tokens_pack']:,} tokens){red_txt}"
         )
         f = report["faithfulness"]
-        print(
-            f"  faithfulness  {f['edge_grounding'] * 100:.0f}% of "
-            f"{f['internal_edges']} kept edges grounded in file:line source "
-            f"(the reduction fabricates nothing)"
-        )
+        if f["edge_grounding"] is None:
+            print(f"  faithfulness  n/a: {f['internal_edges']} internal edges "
+                  "(nothing to ground)")
+        else:
+            print(
+                f"  faithfulness  {f['edge_grounding'] * 100:.0f}% of "
+                f"{f['internal_edges']} kept edges grounded in file:line source "
+                f"(the reduction fabricates nothing)"
+            )
         print(
             f"  note: ~{report['bytes_per_token']} bytes/token is an approximation; "
             "the reduction ratio does not depend on it."

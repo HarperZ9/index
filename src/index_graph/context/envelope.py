@@ -67,7 +67,7 @@ def build_context_envelope(
         failure_codes.append("budget_overflow")
     verdict = "UNVERIFIABLE" if failure_codes else "MATCH"
     fresh = _freshness(source_graph, retained)
-    return {
+    envelope = {
         "schema": SCHEMA,
         "tool": TOOL,
         "verification_verdict": verdict,
@@ -76,8 +76,11 @@ def build_context_envelope(
         "focus": {"repo": focus, "hops": hops},
         "budget": {
             "token_budget": token_budget,
-            # the TRUE approximate cost, never capped to the budget: a cap
-            # would hide a forced-first overflow behind an honest-looking number
+            # approx_tokens bounds the RETAINED selection (base + kept items):
+            # that is what the budget gates. It is NOT the whole emitted packet,
+            # which also carries omitted/preserved/freshness/selection metadata;
+            # packet_approx_tokens (set below) reports the full serialized cost
+            # so neither number is read as the other.
             "approx_tokens": approx_tokens,
             "bytes_per_token": BYTES_PER_TOKEN,
         },
@@ -106,6 +109,11 @@ def build_context_envelope(
             "freshness_root_sha256": fresh["workspace_root_sha256"],
         },
     }
+    # the whole emitted packet's approximate token cost (retained content plus
+    # all the metadata the caller receives), re-derivable from the dict itself
+    packet_bytes = len(json.dumps(envelope, sort_keys=True).encode("utf-8"))
+    envelope["budget"]["packet_approx_tokens"] = packet_bytes // BYTES_PER_TOKEN
+    return envelope
 
 
 def _ranked_repos(pack: dict, focus: str | None = None) -> list[dict]:
