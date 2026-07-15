@@ -287,8 +287,10 @@ def test_workspace_signature_moves_on_a_nested_source_edit(tmp_path):
     f = repo / "mod.py"
     f.write_text("def a():\n    return 1\n", encoding="utf-8")
     before = _workspace_signature(tmp_path)
-    # edit the nested file (content change: top-level dir mtime does not move)
-    f.write_text("def a():\n    return 2\n", encoding="utf-8")
+    # edit the nested file: change the BYTE LENGTH too, so the signature moves
+    # via size even when two rapid writes land in the same mtime tick (a
+    # same-length edit would be a flaky assertion on mtime granularity alone)
+    f.write_text("def a():\n    return 2  # edited, longer now\n", encoding="utf-8")
     after = _workspace_signature(tmp_path)
     assert before != after, "a nested source edit must move the workspace signature"
     # a brand-new nested module also moves the key
