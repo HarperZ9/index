@@ -64,6 +64,10 @@ def extract_symbol_definitions(
         try:
             tree = ast.parse(py.read_text(encoding="utf-8-sig"))
         except OSError:
+            # an unreadable file (locked / permission-denied / removed
+            # mid-scan) is a coverage gap, not a file to drop silently: the
+            # map must not claim it saw everything while swallowing a file
+            parse_errors.append(rel)
             continue
         except (SyntaxError, ValueError):
             parse_errors.append(rel)

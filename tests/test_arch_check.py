@@ -71,3 +71,27 @@ def test_convergence_when_required_edge_present():
     pack = _pack([{"from": "web", "to": "core", "external": False, "confidence": "high", "signals": []}])
     crit = ArchitectureCriteria(require=(RequireRule("web", "core"),))
     assert [f for f in check_graph(pack, crit) if f.rule == "absence"] == []
+
+
+def test_forbid_unmatched_when_endpoint_absent():
+    # a forbid rule whose endpoints name no repo cannot be meaningfully
+    # checked: it must read UNVERIFIABLE (forbid_unmatched), not silently
+    # pass as if the forbidden edge were confirmed absent.
+    pack = _pack([{"from": "web", "to": "api", "external": False,
+                   "confidence": "high", "signals": []}],
+                 roles={"web": [], "api": []})
+    crit = ArchitectureCriteria(forbid=(ForbidRule("ghost", "phantom"),))
+    findings = check_graph(pack, crit)
+    assert any(f.rule == "forbid_unmatched" for f in findings)
+    assert not any(f.rule == "forbid" for f in findings)  # no false breach
+
+
+def test_forbid_matched_still_checks_normally():
+    # both endpoints exist and the edge is present -> a real forbid finding,
+    # never forbid_unmatched
+    pack = _pack([{"from": "core", "to": "web", "external": False,
+                   "confidence": "high", "signals": [{"file": "core/x.py", "line": 1}]}])
+    crit = ArchitectureCriteria(forbid=(ForbidRule("core", "web"),))
+    findings = check_graph(pack, crit)
+    assert any(f.rule == "forbid" for f in findings)
+    assert not any(f.rule == "forbid_unmatched" for f in findings)

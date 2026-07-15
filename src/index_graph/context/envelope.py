@@ -58,6 +58,13 @@ def build_context_envelope(
     failure_codes = ["budget_exceeded"] if any(
         item["reason"] == "budget_exceeded" for item in omitted
     ) else []
+    # if what was KEPT still exceeds the budget (a forced-first item larger
+    # than the whole budget, retained because dropping it would return
+    # nothing), that is a distinct honest fact from budget_exceeded omissions:
+    # the request could not be met even after omitting everything omittable.
+    # Name it rather than hiding it behind a min() cap on the reported cost.
+    if approx_tokens > token_budget:
+        failure_codes.append("budget_overflow")
     verdict = "UNVERIFIABLE" if failure_codes else "MATCH"
     fresh = _freshness(source_graph, retained)
     return {
@@ -69,7 +76,9 @@ def build_context_envelope(
         "focus": {"repo": focus, "hops": hops},
         "budget": {
             "token_budget": token_budget,
-            "approx_tokens": min(approx_tokens, token_budget),
+            # the TRUE approximate cost, never capped to the budget: a cap
+            # would hide a forced-first overflow behind an honest-looking number
+            "approx_tokens": approx_tokens,
             "bytes_per_token": BYTES_PER_TOKEN,
         },
         "selection": _selection(
