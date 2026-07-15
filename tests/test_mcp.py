@@ -276,3 +276,21 @@ def test_serve_framed_stdio_roundtrip():
     frames = _parse_stdio_frames(out.getvalue())
     assert frames[0]["result"]["serverInfo"]["name"] == "index-graph"
     assert "tools" in frames[1]["result"]
+
+
+def test_workspace_signature_moves_on_a_nested_source_edit(tmp_path):
+    # A source edit nested inside a repo must move the cache key, or the MCP
+    # serves a stale map as fresh. The top-level-only scan was invariant to it.
+    from index_graph.mcp import _workspace_signature
+    repo = tmp_path / "myrepo" / "src"
+    repo.mkdir(parents=True)
+    f = repo / "mod.py"
+    f.write_text("def a():\n    return 1\n", encoding="utf-8")
+    before = _workspace_signature(tmp_path)
+    # edit the nested file (content change: top-level dir mtime does not move)
+    f.write_text("def a():\n    return 2\n", encoding="utf-8")
+    after = _workspace_signature(tmp_path)
+    assert before != after, "a nested source edit must move the workspace signature"
+    # a brand-new nested module also moves the key
+    (repo / "new.py").write_text("x = 1\n", encoding="utf-8")
+    assert _workspace_signature(tmp_path) != after
