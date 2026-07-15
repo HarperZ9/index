@@ -51,11 +51,18 @@ def cmd_check(args) -> int:
         for f in check_graph(pack, crit)
     ]
     internal_content = _check_internals(args, crit, paths, findings)
-    # require_unmatched is a criterion-quality gap (UNVERIFIABLE), not a breach;
-    # capture real_violations BEFORE layer findings are appended (order matters).
-    real_violations = any(f["rule"] != "require_unmatched" for f in findings)
+    # an internal graph the analyzer could not fully build (parse errors /
+    # unreadable files) must not yield a MATCH: the map would certify structure
+    # it could not fully see.
+    internal_incomplete = internal_content is not None and any(
+        not repo.get("coverage", {}).get("complete", True)
+        for repo in internal_content.values())
+    # a *_unmatched rule (require_unmatched, forbid_unmatched) is a
+    # criterion-quality gap (UNVERIFIABLE), not a breach; capture
+    # real_violations BEFORE layer findings are appended (order matters).
+    real_violations = any(not f["rule"].endswith("_unmatched") for f in findings)
     unmatched = _check_layers(crit, names, findings)
-    verdict = _check_verdict(real_violations, unmatched, findings)
+    verdict = _check_verdict(real_violations, unmatched, findings, internal_incomplete)
     cert = _check_certificate(
         args, crit, pack, internal_content, findings, verdict, fresh_stamp, fresh_flag
     )
@@ -117,11 +124,15 @@ def _check_layers(crit, names, findings) -> list[str]:
     return unmatched
 
 
-def _check_verdict(real_violations, unmatched, findings) -> str:
+def _check_verdict(real_violations, unmatched, findings, internal_incomplete=False) -> str:
     # a confirmed breach outranks an unverifiable criterion
     if real_violations:
         return "DRIFT"
-    if unmatched or any(f["rule"] == "require_unmatched" for f in findings):
+    # a *_unmatched criterion gap, an unmatched layer, or an internal graph the
+    # analyzer could not fully build (parse errors) all read UNVERIFIABLE: a
+    # MATCH must not be issued over a graph that is not fully derivable
+    if (unmatched or internal_incomplete
+            or any(f["rule"].endswith("_unmatched") for f in findings)):
         return "UNVERIFIABLE"
     return "MATCH"
 

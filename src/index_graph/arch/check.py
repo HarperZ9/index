@@ -79,13 +79,25 @@ def check_graph(pack: dict, criteria: ArchitectureCriteria) -> list[Finding]:
                 f"{n} dependency cycle(s) exceed the ceiling of {criteria.max_cycles}",
                 None, None))
 
-    # repo names present in the workspace (used by both owns and require endpoint checks)
+    # repo names present in the workspace (used by forbid, owns, require checks)
     names: list[str] = []
-    if criteria.owns or criteria.require:
+    if criteria.owns or criteria.require or criteria.forbid:
         names_src = [r.get("from") for r in pack.get("relations", [])]
         names_src += [r.get("to") for r in pack.get("relations", []) if r.get("to")]
         names_src += list(pack.get("roles", {}).keys())
         names = sorted({n for n in names_src if n})
+
+    # a forbid rule whose endpoints name no repo cannot be meaningfully checked:
+    # the forbidden edge is trivially absent because a glob is wrong, not
+    # because the code obeys the rule. Mirror require/owns: emit an UNVERIFIABLE
+    # criterion-quality finding, never a silent vacuous pass.
+    for rule in criteria.forbid:
+        if not (any(_match(rule.from_glob, n) for n in names)
+                and any(_match(rule.to_glob, n) for n in names)):
+            findings.append(Finding(
+                "forbid_unmatched",
+                f"forbid {rule.from_glob} -> {rule.to_glob} names a repo not in the workspace",
+                None, None))
 
     # ownership: a declared owner glob that matches no repo is a finding
     for glob, owner in criteria.owns:
