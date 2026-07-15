@@ -65,6 +65,27 @@ def test_forged_edge_with_consistent_hash_is_still_rejected(tmp_path):
     assert any(f["rule"] == "edge-not-in-graph" for f in report["findings"])
 
 
+def test_phantom_edge_in_architecture_diagram_drifts(tmp_path):
+    # The architecture page draws the module graph as rendered svg/mermaid
+    # strings. An adversary injects an edge into the diagram the code does not
+    # have and re-seals the page hash. Only re-rendering from the tree can
+    # catch it; the diagram is a verified-map surface and must not pass MATCH.
+    from index_graph.wiki.seal import canonical_sha
+    root, pack = _fresh(tmp_path)
+    assert verify_wiki(pack, root)["verdict"] == "MATCH"
+    arch = next(p for p in pack["pages"] if p["kind"] == "architecture")
+    # inject a phantom edge into both rendered strings
+    arch["mermaid"] = arch["mermaid"] + "\n    nX -->|high| nY"
+    arch["svg"] = arch["svg"].replace("</svg>", "<line id='phantom'/></svg>")
+    for entry in pack["manifest"]["pages"]:
+        if entry["id"] == arch["id"]:
+            entry["sha256"] = canonical_sha(arch)  # consistent re-seal
+    report = verify_wiki(pack, root)
+    assert not any(f["rule"] == "page-tampered" for f in report["findings"])
+    assert report["verdict"] == "DRIFT"
+    assert any(f["rule"] == "architecture-diagram-drift" for f in report["findings"])
+
+
 def test_repo_moved_commit_is_drift(tmp_path):
     root = make_repo(tmp_path / "demo")
     git_commit_all(root)

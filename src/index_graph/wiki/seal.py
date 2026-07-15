@@ -154,6 +154,27 @@ def verify_wiki(artifact: object, root: Path | str, *, recheck: str = "") -> dic
         findings.append({"rule": "commit-moved",
                          "detail": f"wiki is pinned to {pinned} "
                                    f"but the current tree is at {current}"})
+    else:
+        # the architecture page draws the graph as rendered svg/mermaid strings
+        # that no structured check re-derives, so a phantom edge injected into
+        # the diagram and re-sealed passes MATCH. Re-render the page from the
+        # tree (deterministic) and confirm the stored diagram is exactly it;
+        # only compared at the pinned commit, so it is not double-counting a
+        # moved tree (commit-moved fires there instead).
+        stored_arch = next((p for p in artifact["pages"]
+                            if p.get("kind") == "architecture"), None)
+        if stored_arch is not None:
+            from .pack import build_wiki_pack
+            fresh_arch = next((p for p in build_wiki_pack(root)["pages"]
+                              if p.get("kind") == "architecture"), None)
+            if fresh_arch is not None:
+                for field in ("mermaid", "svg"):
+                    if stored_arch.get(field) != fresh_arch.get(field):
+                        findings.append({
+                            "rule": "architecture-diagram-drift",
+                            "detail": f"the architecture {field} does not match a "
+                                      "re-render from the current tree: the diagram "
+                                      "depicts structure the code does not have"})
     return _report("MATCH" if not findings else "DRIFT", findings,
                    pages_checked=len(artifact["pages"]),
                    edges_checked=len(claimed) + len(claimed_symbol), recheck=recheck)
