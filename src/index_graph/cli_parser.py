@@ -69,6 +69,14 @@ def _add_context_envelope_parser(sub) -> None:
     ce.add_argument("--focus", default=None)
     ce.add_argument("--hops", type=int, default=None)
     ce.add_argument("--json", action="store_true")
+    ce.add_argument(
+        "--verify",
+        type=Path,
+        default=None,
+        metavar="ENVELOPE_JSON",
+        help="re-derive a saved envelope's freshness against the current workspace "
+             "(exit 0 if still fresh, 1 if it drifted); other build flags are ignored",
+    )
 
 
 def _add_lens_parser(sub) -> None:

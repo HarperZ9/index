@@ -67,6 +67,8 @@ def _context_emit(args, graph, title, preserved) -> int:
 
 
 def cmd_context_envelope(args) -> int:
+    if getattr(args, "verify", None) is not None:
+        return _verify_envelope(args)
     if args.budget < 1:
         raise SystemExit("--budget must be a positive integer")
     if args.hops is not None and args.hops < 0:
@@ -101,6 +103,28 @@ def cmd_context_envelope(args) -> int:
         )
         print(f"retained={len(env['retained'])} omitted={len(env['omitted'])}")
     return 0
+
+
+def _verify_envelope(args) -> int:
+    from ..context.envelope import verify_envelope_freshness
+
+    try:
+        envelope = json.loads(args.verify.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        print(f"could not read envelope {args.verify}: {exc}")
+        return 2
+    graph = build_graph(repo_paths(args.root.resolve()))
+    verdict = verify_envelope_freshness(envelope, graph)
+    if args.json:
+        print(json.dumps(verdict, indent=2, sort_keys=True))
+    else:
+        print(f"envelope-freshness verdict={verdict['verdict']} "
+              f"root_ok={verdict['workspace_root_ok']}")
+        if verdict["drifted_repos"]:
+            print(f"drifted: {', '.join(verdict['drifted_repos'])}")
+        if verdict["missing_repos"]:
+            print(f"missing: {', '.join(verdict['missing_repos'])}")
+    return 0 if verdict["fresh"] else 1
 
 
 def cmd_lens(args) -> int:

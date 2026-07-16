@@ -228,6 +228,39 @@ def _selection(
     }
 
 
+FRESHNESS_VERDICT_SCHEMA = "index.context-envelope-freshness-verdict/v1"
+
+
+def verify_envelope_freshness(envelope: dict, graph: DependencyGraph) -> dict:
+    """Re-derive an envelope's freshness against the current workspace and return a verdict.
+
+    The envelope binds itself to a workspace fingerprint (a root hash plus a per-repo hash
+    for every retained repo). This re-fingerprints the workspace from ``graph`` and confirms
+    those hashes still hold, so a cached envelope that went stale (the workspace changed
+    under it) is caught and the drifted repos are named -- the staleness failure mode of
+    cached context, made a check instead of a hope. MATCH when nothing moved, else DRIFT.
+    Re-derived from the workspace, never trusted from the envelope. Read-only."""
+    fr = envelope.get("freshness") or {}
+    repo_paths = {node.name: Path(node.path) for node in graph.repos}
+    stamp = workspace_fingerprint(repo_paths)
+    root_ok = stamp["root"] == fr.get("workspace_root_sha256")
+    retained = fr.get("retained_repo_sha256") or {}
+    drifted = sorted(n for n, sha in retained.items() if stamp["repos"].get(n) != sha)
+    missing = sorted(n for n in retained if n not in stamp["repos"])
+    fresh = root_ok and not drifted and not missing
+    return {
+        "schema": FRESHNESS_VERDICT_SCHEMA,
+        "verdict": "MATCH" if fresh else "DRIFT",
+        "fresh": fresh,
+        "workspace_root_ok": root_ok,
+        "drifted_repos": drifted,
+        "missing_repos": missing,
+        "expected_root_sha256": fr.get("workspace_root_sha256"),
+        "actual_root_sha256": stamp["root"],
+        "checked_repos": sorted(retained),
+    }
+
+
 def _freshness(source_graph: DependencyGraph, retained: list[dict]) -> dict:
     repo_paths = {node.name: Path(node.path) for node in source_graph.repos}
     stamp = workspace_fingerprint(repo_paths)
