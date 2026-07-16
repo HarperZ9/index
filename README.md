@@ -1,6 +1,6 @@
-<p align="center"><img src=".github/assets/banner.svg" alt="index: Maps a multi-repo workspace in seconds: nine ecosystems, dependency and symbol graphs, fully offline, zero dependencies." width="100%"></p>
+<p align="center"><img src=".github/assets/banner.svg" alt="index: Maps a multi-repo workspace in seconds on the nine-ecosystem reference tree it ships with (self-measured): nine ecosystems, dependency and symbol graphs, fully offline, zero dependencies." width="100%"></p>
 
-**Maps a multi-repo workspace in seconds: nine ecosystems, dependency and symbol graphs, fully offline, zero dependencies.**
+**Maps a multi-repo workspace in seconds on the nine-ecosystem reference tree it ships with (self-measured): nine ecosystems, dependency and symbol graphs, fully offline, zero dependencies.**
 
 [![PyPI](https://img.shields.io/pypi/v/index-graph?style=flat-square&labelColor=14041b&color=26dfe8)](https://pypi.org/project/index-graph/)
 [![license: FSL-1.1-MIT](https://img.shields.io/badge/license-FSL--1.1--MIT-8f8095?style=flat-square&labelColor=14041b)](LICENSE)
@@ -65,7 +65,7 @@ require = [{ from = "web", to = "core" }]
 max_cycles = 0
 ```
 
-`index check` measures the real graph against it, reports every breach with the file and line that shows it, and exits non-zero, so it sits in CI as a gate. `index snapshot` then `index drift` diff the shape across time. `index check --freshness` stamps a certificate with a workspace fingerprint and `index freshness` later answers FRESH or STALE; `index invalidate` goes further and names exactly which artifacts a change invalidated, with typed reasons.
+`index check` measures the real graph against it, reports every breach with the file and line that shows it, and exits non-zero, so it sits in CI as a check. `index snapshot` then `index drift` diff the shape across time. `index check --freshness` stamps a certificate with a workspace fingerprint and `index freshness` later answers FRESH or STALE; `index invalidate` goes further and names exactly which artifacts a change invalidated, with typed reasons.
 
 **`index serve`, the on-demand wiki server.** A local stdlib server: request any repo by its forge path (`http://127.0.0.1:8000/github.com/org/repo`) and get its wiki, derived that moment by the same code path as `index wiki`, then discarded. Nothing is crawled or pre-indexed, `robots.txt` disallows indexing, every page defers to the repo owner's authored docs, and it binds loopback by default.
 
@@ -108,7 +108,7 @@ index mcp
 
 The full flag reference, the importable Python API, and worked examples live in [`USAGE.md`](USAGE.md). Artifact schemas are written down in [`docs/PROTOCOL.md`](docs/PROTOCOL.md) so other tools can consume them without knowing anything about `index`.
 
-## Operator surface
+## Command reference
 
 For hosts and unattended workflows, `index status --json`, `index doctor --json`, and `index demo --json` expose the machine-readable action envelope, and `index mcp` serves the same map, context, envelope, selection, wiki, symbol, and verification surfaces as native MCP tools. The status payload advertises the shared CLI/MCP/plugin/IDE contracts, so an agent host can discover what this installation supports before calling it:
 
@@ -117,7 +117,7 @@ For hosts and unattended workflows, `index status --json`, `index doctor --json`
 python -m index status --json
 ```
 
-Within [Project Telos](https://harperz9.github.io), this operator surface is how `index` acts as the workspace map and context-envelope layer for gather, forum, crucible, and telos. Integration notes for unattended agent workflows are in [`docs/ENTERPRISE-READINESS.md`](docs/ENTERPRISE-READINESS.md).
+Within [Project Telos](https://harperz9.github.io), this command surface is how `index` acts as the workspace map and context-envelope layer for gather, forum, crucible, and telos. Integration notes for unattended agent workflows are in [`docs/ENTERPRISE-READINESS.md`](docs/ENTERPRISE-READINESS.md).
 
 ## A worked example
 
@@ -171,7 +171,7 @@ Built with Claude Code. Reviewed, tested, and owned by me.
 
 ## What this believes
 
-This tool is one lane of a family that holds a single belief steady across
+This tool is one part of a family that holds a single belief steady across
 every surface: knowledge open to anyone who can attain the means; acceptance
 decided by external checks, never reputation; every result re-runnable;
 honest nulls first-class; ownership earned by comprehension; learning woven
