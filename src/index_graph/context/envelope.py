@@ -58,9 +58,16 @@ def build_context_envelope(
     failure_codes = ["budget_exceeded"] if any(
         item["reason"] == "budget_exceeded" for item in omitted
     ) else []
+    # if what was KEPT still exceeds the budget (a forced-first item larger
+    # than the whole budget, retained because dropping it would return
+    # nothing), that is a distinct honest fact from budget_exceeded omissions:
+    # the request could not be met even after omitting everything omittable.
+    # Name it rather than hiding it behind a min() cap on the reported cost.
+    if approx_tokens > token_budget:
+        failure_codes.append("budget_overflow")
     verdict = "UNVERIFIABLE" if failure_codes else "MATCH"
     fresh = _freshness(source_graph, retained)
-    return {
+    envelope = {
         "schema": SCHEMA,
         "tool": TOOL,
         "verification_verdict": verdict,
@@ -69,7 +76,12 @@ def build_context_envelope(
         "focus": {"repo": focus, "hops": hops},
         "budget": {
             "token_budget": token_budget,
-            "approx_tokens": min(approx_tokens, token_budget),
+            # approx_tokens bounds the RETAINED selection (base + kept items):
+            # that is what the budget gates. It is NOT the whole emitted packet,
+            # which also carries omitted/preserved/freshness/selection metadata;
+            # packet_approx_tokens (set below) reports the full serialized cost
+            # so neither number is read as the other.
+            "approx_tokens": approx_tokens,
             "bytes_per_token": BYTES_PER_TOKEN,
         },
         "selection": _selection(
@@ -97,6 +109,11 @@ def build_context_envelope(
             "freshness_root_sha256": fresh["workspace_root_sha256"],
         },
     }
+    # the whole emitted packet's approximate token cost (retained content plus
+    # all the metadata the caller receives), re-derivable from the dict itself
+    packet_bytes = len(json.dumps(envelope, sort_keys=True).encode("utf-8"))
+    envelope["budget"]["packet_approx_tokens"] = packet_bytes // BYTES_PER_TOKEN
+    return envelope
 
 
 def _ranked_repos(pack: dict, focus: str | None = None) -> list[dict]:

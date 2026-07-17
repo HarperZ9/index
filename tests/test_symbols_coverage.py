@@ -28,3 +28,25 @@ def test_coverage_complete_on_clean_module(tmp_path):
     write(tmp_path, "mod.py", "def foo():\n    pass\n\n\ndef bar():\n    foo()\n")
     g = build_symbol_graph(tmp_path)
     assert not g.coverage.parse_errors
+
+
+def test_unreadable_file_is_a_coverage_gap_not_silently_dropped(tmp_path, monkeypatch):
+    # a .py file that walk_files yields but that raises OSError on read
+    # (locked / permission-denied / removed mid-scan) must dent coverage,
+    # not vanish while coverage.complete still reports True.
+    import index_graph.symbols.definitions as d
+    write(tmp_path, "ok.py", "def foo():\n    pass\n")
+    write(tmp_path, "locked.py", "def bar():\n    pass\n")
+    real_read = d.Path.read_text
+
+    def flaky(self, *a, **k):
+        if self.name == "locked.py":
+            raise OSError("permission denied")
+        return real_read(self, *a, **k)
+
+    monkeypatch.setattr(d.Path, "read_text", flaky)
+    defs, parse_errors = d.extract_symbol_definitions(tmp_path)
+    assert "locked.py" in parse_errors
+    # and the module graph's coverage reflects it (complete drops)
+    g = build_symbol_graph(tmp_path)
+    assert "locked.py" in g.coverage.parse_errors

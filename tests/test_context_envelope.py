@@ -77,7 +77,7 @@ def test_context_envelope_states_lossless_reference_policy(tmp_path):
         "raw_payload_policy": "source_refs_only",
         "omission_policy": "explicit_failure_codes",
     }
-    assert env["failure_codes"] == ["budget_exceeded"]
+    assert env["failure_codes"] == ["budget_exceeded", "budget_overflow"]
     assert all(item["failure_code"] for item in env["omitted"])
     assert {item["failure_code"] for item in env["omitted"]} == {"budget_exceeded"}
 
@@ -91,7 +91,7 @@ def test_context_envelope_marks_budget_omissions(tmp_path):
     assert env["retained"]
     assert env["omitted"]
     assert any(item["reason"] == "budget_exceeded" for item in env["omitted"])
-    assert env["failure_codes"] == ["budget_exceeded"]
+    assert env["failure_codes"] == ["budget_exceeded", "budget_overflow"]
 
 
 def test_context_envelope_carries_selection_and_freshness_receipts(tmp_path):
@@ -129,3 +129,24 @@ def test_context_envelope_cli_json(tmp_path, capsys):
     assert env["schema"] == "project-telos.context-envelope/v1"
     assert env["focus"]["repo"] == "app"
     assert env["budget"]["token_budget"] == 500
+
+
+def test_forced_first_item_overflow_is_reported_not_capped(tmp_path):
+    # token_budget=1 forces the first repo (retained even over budget). The
+    # reported approx_tokens must be the TRUE cost, not capped to the budget,
+    # and a budget_overflow failure code must fire so the verdict is not MATCH.
+    graph = build_graph(_workspace(tmp_path))
+    env = build_context_envelope(graph, root=tmp_path, token_budget=1)
+    assert env["budget"]["approx_tokens"] > 1, "the true cost must not be capped to the budget"
+    assert "budget_overflow" in env["failure_codes"]
+    assert env["verification_verdict"] == "UNVERIFIABLE"
+
+
+def test_packet_tokens_distinct_from_retained_and_names_the_scope(tmp_path):
+    graph = build_graph(_workspace(tmp_path))
+    env = build_context_envelope(graph, root=tmp_path, token_budget=1000)
+    b = env["budget"]
+    # approx_tokens bounds the retained selection; packet_approx_tokens is the
+    # whole emitted dict, which carries more, so it is >= the retained cost
+    assert "packet_approx_tokens" in b
+    assert b["packet_approx_tokens"] >= b["approx_tokens"]
