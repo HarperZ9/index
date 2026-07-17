@@ -65,6 +65,59 @@ def test_forged_edge_with_consistent_hash_is_still_rejected(tmp_path):
     assert any(f["rule"] == "edge-not-in-graph" for f in report["findings"])
 
 
+def test_phantom_edge_in_architecture_diagram_drifts(tmp_path):
+    # The architecture page draws the module graph as rendered svg/mermaid
+    # strings. An adversary injects an edge into the diagram the code does not
+    # have and re-seals the page hash. Only re-rendering from the tree can
+    # catch it; the diagram is a verified-map surface and must not pass MATCH.
+    from index_graph.wiki.seal import canonical_sha
+    root, pack = _fresh(tmp_path)
+    assert verify_wiki(pack, root)["verdict"] == "MATCH"
+    arch = next(p for p in pack["pages"] if p["kind"] == "architecture")
+    # inject a phantom edge into both rendered strings
+    arch["mermaid"] = arch["mermaid"] + "\n    nX -->|high| nY"
+    arch["svg"] = arch["svg"].replace("</svg>", "<line id='phantom'/></svg>")
+    for entry in pack["manifest"]["pages"]:
+        if entry["id"] == arch["id"]:
+            entry["sha256"] = canonical_sha(arch)  # consistent re-seal
+    report = verify_wiki(pack, root)
+    assert not any(f["rule"] == "page-tampered" for f in report["findings"])
+    assert report["verdict"] == "DRIFT"
+    assert any(f["rule"] == "architecture-diagram-drift" for f in report["findings"])
+
+
+def test_overview_coverage_lie_drifts(tmp_path):
+    # The overview asserts coverage.complete and counts that no structured
+    # check re-derived. Flip complete to a lie and reseal: only re-derivation
+    # from the tree can catch it.
+    from index_graph.wiki.seal import canonical_sha
+    root, pack = _fresh(tmp_path)
+    ov = next(p for p in pack["pages"] if p["kind"] == "overview")
+    ov["module_count"] = ov["module_count"] + 99   # a count the tree does not have
+    for entry in pack["manifest"]["pages"]:
+        if entry["id"] == ov["id"]:
+            entry["sha256"] = canonical_sha(ov)
+    report = verify_wiki(pack, root)
+    assert report["verdict"] == "DRIFT"
+    assert any(f["rule"] == "overview-not-in-graph" for f in report["findings"])
+
+
+def test_tampered_doc_body_drifts(tmp_path):
+    # Docs prose is sealed but was never re-read from source: a fabricated
+    # "authored by humans" body passes MATCH after a reseal. verify must
+    # re-derive docs from the tree.
+    from index_graph.wiki.seal import canonical_sha
+    root, pack = _fresh(tmp_path)
+    dp = next(p for p in pack["pages"] if p["kind"] == "docs")
+    dp["docs"][0]["html"] = "<p>fabricated prose not in the source markdown</p>"
+    for entry in pack["manifest"]["pages"]:
+        if entry["id"] == dp["id"]:
+            entry["sha256"] = canonical_sha(dp)
+    report = verify_wiki(pack, root)
+    assert report["verdict"] == "DRIFT"
+    assert any(f["rule"] == "docs-not-in-source" for f in report["findings"])
+
+
 def test_repo_moved_commit_is_drift(tmp_path):
     root = make_repo(tmp_path / "demo")
     git_commit_all(root)

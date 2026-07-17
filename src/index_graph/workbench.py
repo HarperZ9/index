@@ -275,6 +275,12 @@ def build_workbench_pack(
         },
         "spine": load_spine(spine_dir, Path(root)),
     }
+    # seal the rendered map's hash into the receipt: the SVG is presented as
+    # sealed, so its markup must be bound. The large markup itself stays out of
+    # the sealed JSON body, but its content hash is inside it, so a stranger
+    # re-derives _sha(wb["svg"]) == wb["svg_sha256"] and tampering the map
+    # breaks the receipt.
+    wb["svg_sha256"] = _sha(svg)
     wb["receipt_sha256"] = _sha(wb)
     wb["svg"] = svg                       # markup, added after sealing the data
     return wb

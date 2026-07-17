@@ -19,7 +19,8 @@ def cmd_check(args) -> int:
     root = require_dir(args.root)
     config = load_config(args.config, root)
     crit = config.architecture
-    paths = repo_paths(root)
+    scan_skipped: list = []
+    paths = repo_paths(root, skipped=scan_skipped)
     graph = build_graph(paths)
     pack = to_json(graph)
     names = set(pack.get("roles", {}).keys())
@@ -50,12 +51,30 @@ def cmd_check(args) -> int:
         {"rule": f.rule, "detail": f.detail, "edge": f.edge, "evidence": f.evidence}
         for f in check_graph(pack, crit)
     ]
+    # a scan narrowed by unreadable directories could not see the whole tree:
+    # a criterion-quality gap (UNVERIFIABLE), never a MATCH over a partial scan
+    if scan_skipped:
+        findings.append({
+            "rule": "scan_incomplete",
+            "detail": f"repo discovery skipped {len(scan_skipped)} unreadable "
+                      f"director(y/ies): {sorted(scan_skipped)[:3]}",
+            "edge": None, "evidence": None})
     internal_content = _check_internals(args, crit, paths, findings)
-    # require_unmatched is a criterion-quality gap (UNVERIFIABLE), not a breach;
-    # capture real_violations BEFORE layer findings are appended (order matters).
-    real_violations = any(f["rule"] != "require_unmatched" for f in findings)
+    # an internal graph the analyzer could not fully build (parse errors /
+    # unreadable files) must not yield a MATCH: the map would certify structure
+    # it could not fully see.
+    internal_incomplete = internal_content is not None and any(
+        not repo.get("coverage", {}).get("complete", True)
+        for repo in internal_content.values())
+    # a *_unmatched rule or a scan_incomplete gap is a criterion-quality gap
+    # (UNVERIFIABLE), not a breach; capture real_violations BEFORE layer
+    # findings are appended (order matters).
+    _gap_rules = {"scan_incomplete"}
+    real_violations = any(
+        not f["rule"].endswith("_unmatched") and f["rule"] not in _gap_rules
+        for f in findings)
     unmatched = _check_layers(crit, names, findings)
-    verdict = _check_verdict(real_violations, unmatched, findings)
+    verdict = _check_verdict(real_violations, unmatched, findings, internal_incomplete)
     cert = _check_certificate(
         args, crit, pack, internal_content, findings, verdict, fresh_stamp, fresh_flag
     )
@@ -117,11 +136,17 @@ def _check_layers(crit, names, findings) -> list[str]:
     return unmatched
 
 
-def _check_verdict(real_violations, unmatched, findings) -> str:
+def _check_verdict(real_violations, unmatched, findings, internal_incomplete=False) -> str:
     # a confirmed breach outranks an unverifiable criterion
     if real_violations:
         return "DRIFT"
-    if unmatched or any(f["rule"] == "require_unmatched" for f in findings):
+    # a *_unmatched criterion gap, an unmatched layer, an internal graph the
+    # analyzer could not fully build, or a scan narrowed by unreadable
+    # directories all read UNVERIFIABLE: a MATCH must not be issued over a
+    # graph or scan that is not fully derivable
+    if (unmatched or internal_incomplete
+            or any(f["rule"].endswith("_unmatched")
+                   or f["rule"] == "scan_incomplete" for f in findings)):
         return "UNVERIFIABLE"
     return "MATCH"
 

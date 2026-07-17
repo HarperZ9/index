@@ -32,6 +32,42 @@ def _is_getattr(func: ast.AST) -> bool:
     return isinstance(func, ast.Name) and func.id == "getattr"
 
 
+def _scope_locals(func: ast.AST) -> frozenset:
+    """Names bound in a function's own scope: parameters plus every name stored
+    (assignment, for-target, with-alias, walrus, except-alias, nested def/class
+    name) within its body, NOT descending into nested function/lambda scopes
+    (those open their own scope). A call on any of these is a local value, so it
+    must not resolve to a module-level def of the same name."""
+    names: set[str] = set()
+    args = getattr(func, "args", None)
+    if isinstance(args, ast.arguments):
+        for a in (*getattr(args, "posonlyargs", []), *args.args, *args.kwonlyargs):
+            names.add(a.arg)
+        if args.vararg:
+            names.add(args.vararg.arg)
+        if args.kwarg:
+            names.add(args.kwarg.arg)
+
+    def walk(node: ast.AST) -> None:
+        for child in ast.iter_child_nodes(node):
+            if isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda)):
+                # a nested def/lambda opens its own scope, but its NAME is a
+                # local binding in this scope
+                if isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                    names.add(child.name)
+                continue
+            if isinstance(child, ast.ClassDef):
+                names.add(child.name)
+                continue
+            if isinstance(child, ast.Name) and isinstance(child.ctx, ast.Store):
+                names.add(child.id)
+            walk(child)
+
+    for stmt in getattr(func, "body", []):
+        walk(stmt)
+    return frozenset(names)
+
+
 class _Walker:
     """Walk one module's AST, emitting a SymbolCall per resolvable/unresolvable
     call site and recording dynamic-dispatch sites as coverage gaps."""
@@ -51,47 +87,56 @@ class _Walker:
         self.dynamic: list[tuple[str, int]] = []
 
     def visit_body(self, body, enclosing: str | None, parent_id: str | None,
-                   class_id: str | None) -> None:
+                   class_id: str | None, scope: frozenset = frozenset()) -> None:
         """`enclosing` is the caller symbol calls are attributed to; `parent_id`
         is the lexical id used to build child symbol ids (matches definitions.py);
-        `class_id` is the nearest enclosing class, for `self.m()` resolution."""
+        `class_id` is the nearest enclosing class, for `self.m()` resolution;
+        `scope` is the set of names bound in enclosing function scopes, so a call
+        on a locally-bound name that shadows a module def is not mis-resolved."""
         for node in body:
-            self._visit(node, enclosing, parent_id, class_id)
+            self._visit(node, enclosing, parent_id, class_id, scope)
 
     def _visit(self, node: ast.AST, enclosing: str | None, parent_id: str | None,
-               class_id: str | None) -> None:
+               class_id: str | None, scope: frozenset = frozenset()) -> None:
         if isinstance(node, ast.ClassDef):
             base = parent_id or self.module_id
             cid = f"{base}::{node.name}"
             # class-level statements have no caller symbol; class_id becomes cid
-            self.visit_body(node.body, enclosing=None, parent_id=cid, class_id=cid)
+            self.visit_body(node.body, enclosing=None, parent_id=cid, class_id=cid,
+                            scope=scope)
             return
         if isinstance(node, _FUNC):
             base = parent_id or self.module_id
             sym_id = f"{base}::{node.name}"
+            # a name bound in THIS function (parameter, assignment, for-target,
+            # with-alias, ...) shadows a module-level def of the same name, so a
+            # bare call on it is a local value, not the module symbol. Union with
+            # enclosing scopes so a closure over an outer local is honored too.
+            inner = scope | _scope_locals(node)
             # class_id persists into the function body so `self.m()` resolves
             # against the enclosing class (also for nested closures in a method).
             self.visit_body(node.body, enclosing=sym_id, parent_id=sym_id,
-                            class_id=class_id)
+                            class_id=class_id, scope=inner)
             return
         # a plain statement: collect its calls, but hand any nested def/class
         # back to _visit so their bodies are attributed to the right symbol.
-        self._scan(node, enclosing, parent_id, class_id)
+        self._scan(node, enclosing, parent_id, class_id, scope)
 
     def _scan(self, node: ast.AST, enclosing: str | None, parent_id: str | None,
-              class_id: str | None) -> None:
+              class_id: str | None, scope: frozenset = frozenset()) -> None:
         """Recurse a statement's expression tree, emitting calls attributed to
         `enclosing`, but re-dispatch nested defs/classes to `_visit` (they open a
         new caller scope) so their inner calls are not mis-attributed."""
         for child in ast.iter_child_nodes(node):
             if isinstance(child, _DEF):
-                self._visit(child, enclosing, parent_id, class_id)
+                self._visit(child, enclosing, parent_id, class_id, scope)
                 continue
             if isinstance(child, ast.Call):
-                self._call(child, enclosing, class_id)
-            self._scan(child, enclosing, parent_id, class_id)
+                self._call(child, enclosing, class_id, scope)
+            self._scan(child, enclosing, parent_id, class_id, scope)
 
-    def _call(self, node: ast.Call, enclosing: str | None, class_id: str | None) -> None:
+    def _call(self, node: ast.Call, enclosing: str | None, class_id: str | None,
+              scope: frozenset = frozenset()) -> None:
         if enclosing is None:
             return  # module/class-level calls have no caller symbol to attribute
         func = node.func
@@ -99,15 +144,22 @@ class _Walker:
             self.dynamic.append((self.rel, node.lineno))
             return
         if isinstance(func, ast.Name):
-            self._resolve_name(func.id, node.lineno, enclosing)
+            self._resolve_name(func.id, node.lineno, enclosing, scope)
         elif isinstance(func, ast.Attribute):
             self._resolve_attr(func, node.lineno, enclosing, class_id)
         else:
             # a call on a subscript/call result: a variable function, dynamic
             self.dynamic.append((self.rel, node.lineno))
 
-    def _resolve_name(self, name: str, lineno: int, enclosing: str) -> None:
+    def _resolve_name(self, name: str, lineno: int, enclosing: str,
+                      scope: frozenset = frozenset()) -> None:
         raw = _line_text(self.lines, lineno)
+        if name in scope:
+            # a locally-bound name shadows any module def or import: the callee
+            # is a runtime value, statically unknown, never an exact edge
+            self._emit(enclosing, None, name, lineno, raw,
+                       "local_binding_unresolved", "low")
+            return
         local = self.local_defs.get(name)
         if local is not None:
             self._emit(enclosing, local, name, lineno, raw, "exact", "high")

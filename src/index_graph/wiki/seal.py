@@ -154,6 +154,29 @@ def verify_wiki(artifact: object, root: Path | str, *, recheck: str = "") -> dic
         findings.append({"rule": "commit-moved",
                          "detail": f"wiki is pinned to {pinned} "
                                    f"but the current tree is at {current}"})
+    else:
+        # Several pages assert content that no structured edge/hash check
+        # re-derives once the manifest is resealed: the architecture DIAGRAM
+        # (rendered svg/mermaid strings), the OVERVIEW facts (coverage, counts,
+        # entry points), and the DOCS prose (sealed but never re-read from
+        # source). Re-derive the whole pack from the tree (deterministic) and
+        # confirm each such page is exactly its fresh re-render. Only compared
+        # at the pinned commit, so a moved tree is named by commit-moved, not
+        # double-counted here.
+        from .pack import build_wiki_pack
+        fresh = {p.get("kind"): p for p in build_wiki_pack(root)["pages"]}
+        _CHECKS = (("architecture", "architecture-diagram-drift",
+                    "the architecture diagram depicts structure the code does not have"),
+                   ("overview", "overview-not-in-graph",
+                    "the overview asserts facts the graph derived from the tree does not have"),
+                   ("docs", "docs-not-in-source",
+                    "a docs page asserts prose not re-derivable from the source markdown"))
+        for kind, rule, detail in _CHECKS:
+            stored = next((p for p in artifact["pages"]
+                           if p.get("kind") == kind), None)
+            fresh_page = fresh.get(kind)
+            if stored is not None and fresh_page is not None and stored != fresh_page:
+                findings.append({"rule": rule, "detail": detail})
     return _report("MATCH" if not findings else "DRIFT", findings,
                    pages_checked=len(artifact["pages"]),
                    edges_checked=len(claimed) + len(claimed_symbol), recheck=recheck)

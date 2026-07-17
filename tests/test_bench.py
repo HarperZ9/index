@@ -82,3 +82,13 @@ def test_faithfulness_in_cli_human_output(tmp_path, capsys):
     assert main(["bench", "--root", str(tmp_path)]) == 0
     out = capsys.readouterr().out
     assert "faithfulness" in out and "grounded in file:line" in out
+
+
+def test_edge_grounding_is_null_on_a_workspace_with_no_internal_edges(tmp_path):
+    # a single repo with no internal dependency edges grounded nothing: the
+    # faithfulness must be an honest null, not a vacuous 1.0
+    _repo(tmp_path / "solo", "solo")
+    rep = bench_workspace({"solo": tmp_path / "solo"})
+    f = rep["faithfulness"]
+    assert f["internal_edges"] == 0
+    assert f["edge_grounding"] is None

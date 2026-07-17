@@ -32,3 +32,21 @@ def test_fourth_verdict_rejected():
     with pytest.raises(ValueError):
         build_certificate("check", content={}, criterion=None, verdict="TRUSTED",
                           findings=[], recheck="x", tool_version="2.0.0")
+
+
+def test_check_verdict_downgrades_match_on_incomplete_internal_graph():
+    from index_graph.cli_handlers.certify import _check_verdict
+    # a clean criterion but an internal graph the analyzer could not fully
+    # build must not certify MATCH: it read structure it could not fully see
+    assert _check_verdict(False, [], [], internal_incomplete=False) == "MATCH"
+    assert _check_verdict(False, [], [], internal_incomplete=True) == "UNVERIFIABLE"
+
+
+def test_check_verdict_treats_unmatched_rules_as_unverifiable_not_breach():
+    from index_graph.cli_handlers.certify import _check_verdict
+    # a *_unmatched criterion gap is UNVERIFIABLE, never a MATCH or a DRIFT
+    findings = [{"rule": "forbid_unmatched", "detail": "x"}]
+    assert _check_verdict(False, [], findings) == "UNVERIFIABLE"
+    # a real breach still outranks everything
+    breach = [{"rule": "forbid", "detail": "y"}]
+    assert _check_verdict(True, [], breach) == "DRIFT"

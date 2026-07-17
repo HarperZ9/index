@@ -92,19 +92,25 @@ def _workspace_signature(root: Path) -> str:
             parts.append(f"{cfg.name}:missing")
         else:
             parts.append(f"{cfg.name}:{stat.st_mtime_ns}:{stat.st_size}")
+    # Recurse over every graph-relevant file, not just top-level entries: a
+    # content edit moves NO directory mtime and a nested add moves only the
+    # immediate parent's, so the old iterdir() scan was invariant to virtually
+    # every graph-relevant change and served a stale map as fresh. Reuse the
+    # shipped resolver-driven walk (the same primitive freshness/LSP use).
     try:
-        entries = sorted(root.iterdir(), key=lambda p: p.name.lower())
+        from .freshness.fingerprint import relevant_files
+        rels = []
+        for path in relevant_files(root):
+            try:
+                stat = path.stat()
+                rel = path.relative_to(root).as_posix()
+            except (OSError, ValueError):
+                continue
+            rels.append(f"{rel}:{stat.st_mtime_ns}:{stat.st_size}")
+        for entry in sorted(rels):
+            parts.append(entry)
     except OSError as exc:
         parts.append(f"root-error:{type(exc).__name__}:{exc}")
-        return _sha256_text("|".join(parts))
-    for entry in entries:
-        try:
-            stat = entry.stat()
-        except OSError:
-            parts.append(f"{entry.name}:unstatable")
-            continue
-        kind = "d" if entry.is_dir() else "f"
-        parts.append(f"{entry.name}:{kind}:{stat.st_mtime_ns}:{stat.st_size}")
     return _sha256_text("|".join(parts))
 
 

@@ -163,3 +163,16 @@ def test_cli_workbench_writes_html(workspace, tmp_path, capsys):
     page = Path(Args.out).read_text(encoding="utf-8")
     assert "index · workbench" in page and "Context Lens" in page
     assert "workbench ->" in capsys.readouterr().out
+
+
+def test_receipt_seals_the_rendered_svg(workspace):
+    from index_graph.workbench import _sha
+    wb = _build(workspace)
+    # the SVG the page presents as sealed must be bound by the receipt: its
+    # hash is in the sealed body and re-derivable from the markup
+    assert "svg_sha256" in wb
+    assert wb["svg_sha256"] == _sha(wb["svg"])
+    # tampering the SVG markup breaks the sealed hash
+    tampered = dict(wb)
+    tampered["svg"] = wb["svg"].replace("</svg>", "<rect id='phantom'/></svg>")
+    assert _sha(tampered["svg"]) != wb["svg_sha256"]
