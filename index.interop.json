@@ -1,0 +1,74 @@
+{
+  "organ": "index",
+  "invoke": {
+    "cli": "index",
+    "mcp_server": "index_graph.mcp:serve",
+    "python_import": "index_graph"
+  },
+  "emits": [
+    {
+      "capability": "project-telos.flagship-action/v1",
+      "title": "flagship-action envelope",
+      "module": "src/index_graph/flagship.py:envelope",
+      "summary": "",
+      "consumable_as": []
+    },
+    {
+      "capability": "project-telos.context-envelope/v1",
+      "title": "budgeted context envelope",
+      "module": "src/index_graph/context/envelope.py:build_context_envelope",
+      "summary": "",
+      "consumable_as": []
+    },
+    {
+      "capability": "index.verification/1",
+      "title": "structural-claim verdict",
+      "module": "src/index_graph/verify.py:build_verification",
+      "summary": "",
+      "consumable_as": []
+    },
+    {
+      "capability": "index.invalidation-pin/1",
+      "title": "freshness pin",
+      "module": "src/index_graph/freshness/invalidate.py:mint_pin",
+      "summary": "",
+      "consumable_as": []
+    },
+    {
+      "capability": "index.wiki/1",
+      "title": "sealed commit-pinned wiki",
+      "module": "src/index_graph/wiki/pack.py:build_wiki_pack",
+      "summary": "",
+      "consumable_as": []
+    }
+  ],
+  "consumes": [
+    {
+      "capability": "project-telos.flagship-action/v1",
+      "title": "peer envelopes into the operator spine",
+      "module": "src/index_graph/workbench.py:load_spine",
+      "summary": "",
+      "consumable_as": []
+    },
+    {
+      "capability": "index.invalidation-pin/1",
+      "title": "pin to diff against the tree",
+      "module": "src/index_graph/freshness/invalidate.py:invalidation_report",
+      "summary": "",
+      "consumable_as": []
+    },
+    {
+      "capability": "index.wiki/1",
+      "title": "sealed wiki to re-verify",
+      "module": "src/index_graph/wiki/seal.py:verify_wiki",
+      "summary": "",
+      "consumable_as": []
+    }
+  ],
+  "evidence": [
+    "src/index_graph/flagship.py",
+    "src/index_graph/context/envelope.py",
+    "src/index_graph/verify.py",
+    "src/index_graph/workbench.py"
+  ]
+}
