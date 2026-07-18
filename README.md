@@ -1,4 +1,4 @@
-<p align="center"><img src=".github/assets/banner.svg" alt="index: Maps a multi-repo workspace in seconds on the nine-ecosystem reference tree it ships with (self-measured): nine ecosystems, dependency and symbol graphs, fully offline, zero dependencies." width="100%"></p>
+<p align="center"><img src=".github/assets/zentropy-banner.png" alt="index: Maps a multi-repo workspace in seconds on the nine-ecosystem reference tree it ships with (self-measured): nine ecosystems, dependency and symbol graphs, fully offline, zero dependencies." width="100%"></p>
 
 **Maps a multi-repo workspace in seconds on the nine-ecosystem reference tree it ships with (self-measured): nine ecosystems, dependency and symbol graphs, fully offline, zero dependencies.**
 
@@ -177,3 +177,7 @@ decided by external checks, never reputation; every result re-runnable;
 honest nulls first-class; ownership earned by comprehension; learning woven
 into the work. The full text lives in [CREDO.md](CREDO.md).
 The long form of this belief: [The Unbundling](https://github.com/HarperZ9/flywheel/blob/fix/release-model-identity/docs/essays/2026-07-13-the-unbundling.md).
+
+---
+
+**[Zentropy Labs](https://github.com/ZentropyLabs-ai)** · order out of entropy. An independent lab building evidence-first tools that leave a re-checkable artifact behind. Built by Zain Dana Harper in Seattle. The full workbench is at [Project Telos](https://harperz9.github.io).
