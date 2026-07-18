@@ -1,7 +1,7 @@
 """The README first screen answers what/who/problem/try-now in product
 language: the single-repo wiki leads, the naming triple is visible, a
-rendered demo is linked, and the operator-spine material sits below the
-value demonstration."""
+rendered demo is linked, and the machine-readable command reference sits
+below the value demonstration."""
 from pathlib import Path
 
 README = Path(__file__).resolve().parents[1] / "README.md"
@@ -35,11 +35,13 @@ def test_first_screen_links_a_rendered_demo_artifact():
     assert "examples/atlas-demo.html" in first
 
 
-def test_operator_spine_material_sits_below_the_value_demonstration():
+def test_machine_readable_command_reference_sits_below_the_value_demonstration():
     text = _text()
     first = _first_screen()
-    assert "Operator surface" not in first
-    assert "operator-spine" not in first
+    assert "## Command reference" not in first
+    assert "index status --json" not in first
     # moved below, not deleted
+    assert "## Command reference" in text
     assert "index status --json" in text
-    assert text.index("index wiki") < text.index("Operator surface")
+    assert text.index("index wiki") < text.index("## Command reference")
+    assert text.index("## Command reference") < text.index("index status --json")
