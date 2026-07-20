@@ -101,7 +101,7 @@ index freshness --cert CERT [--root ROOT] [--json]
 index invalidate [--root ROOT] (--out PIN | --pin PIN) [--json]
 index verify    [--root ROOT] [--depends "A -> B" | --exists NAME] [--json]
 index router    [--root ROOT] [--out FILE]
-index bench     [--root ROOT] [--json]
+index bench     [--root ROOT] [--json] [--no-cache]
 index status | doctor | demo [--json]
 index mcp
 ```
@@ -110,7 +110,7 @@ The full flag reference, the importable Python API, and worked examples live in 
 
 ## Command reference
 
-For hosts and unattended workflows, `index status --json`, `index doctor --json`, and `index demo --json` expose the machine-readable action envelope, and `index mcp` serves the same map, context, envelope, selection, wiki, symbol, and verification surfaces as native MCP tools. The status payload advertises the shared CLI/MCP/plugin/IDE contracts, so an agent host can discover what this installation supports before calling it:
+**Operator surface.** For hosts and unattended workflows, `index status --json`, `index doctor --json`, and `index demo --json` expose the machine-readable action envelope, and `index mcp` serves the same map, context, envelope, selection, wiki, symbol, and verification surfaces as native MCP tools. The status payload advertises the shared CLI/MCP/plugin/IDE contracts, so an agent host can discover what this installation supports before calling it:
 
 ```bash
 # from a source checkout
@@ -133,12 +133,14 @@ The verify step prints `verdict=MATCH pages=31 edges=127` and exits 0 (page and 
 
 ## Configuration
 
-Everything works with zero configuration. An optional `.index.toml` at the workspace root adds path-based repo classification, scan tuning (`jobs`, `prune`), privacy rules for remote URLs, and the `[architecture]` block above. See [`example.index.toml`](example.index.toml) for the full schema.
+Everything works with zero configuration. An optional `.index.toml` at the workspace root adds path-based repo classification, scan tuning (`jobs`, `prune`, `descend_into_repos`, `include_root_repo`), privacy rules for remote URLs, and the `[architecture]` block above. See [`example.index.toml`](example.index.toml) for the full schema.
 
 ## What you can count on
 
 - Evidence on every edge: no dependency edge exists without a file and line behind it, and a confidence grade. Two independent signals (manifest and observed import) grade each one.
 - Deterministic output: the same input gives the same bytes. No timestamps, no randomness.
+- Cold-path cache: repo-level resolver facts are cached behind graph-relevant
+  fingerprints, so unchanged repos do not rebuild on every workspace graph run.
 - Zero runtime dependencies, including the markdown renderer, the SVG layout, and the LSP framing. A test keeps it that way; the suite currently collects 585 tests.
 - Self-contained and safe with untrusted docs: one HTML file, no external URLs, markdown escaped as it renders, with hostile-content fixtures in the tests.
 - Private by default: paths are root-relative, the local root reduces to a short hash, and credential-shaped fragments in remote URLs are redacted.

@@ -54,6 +54,27 @@ def test_bench_cli_json(tmp_path, capsys):
     assert rep["recheck"].startswith("index bench")
 
 
+def test_bench_cli_json_uses_workspace_cache(tmp_path, capsys, monkeypatch):
+    _repo(tmp_path / "app", "app", dep="lib")
+    _repo(tmp_path / "lib", "lib")
+    monkeypatch.setenv("INDEX_CACHE_DIR", str(tmp_path.parent / f"{tmp_path.name}-cache"))
+    monkeypatch.setenv("INDEX_CACHE_TTL_SECONDS", "900")
+
+    assert main(["bench", "--root", str(tmp_path), "--json"]) == 0
+    first = json.loads(capsys.readouterr().out)
+
+    import index_graph.bench as bench_pkg
+
+    def fail_if_cache_misses(_paths, **_kwargs):
+        raise AssertionError("bench cache miss")
+
+    monkeypatch.setattr(bench_pkg, "bench_workspace", fail_if_cache_misses)
+    assert main(["bench", "--root", str(tmp_path), "--json"]) == 0
+    second = json.loads(capsys.readouterr().out)
+
+    assert second == first
+
+
 def test_bench_cli_human(tmp_path, capsys):
     _repo(tmp_path / "app", "app")
     rc = main(["bench", "--root", str(tmp_path)])

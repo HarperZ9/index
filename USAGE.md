@@ -144,6 +144,8 @@ class   = "internal"
 jobs    = 16            # parallel git workers (default: a CPU heuristic)
 prune   = ["vendor"]   # ADDED to the built-in safety set (.git, node_modules, .venv, ...)
 markers = ["go.mod"]   # REPLACES the default marker-file list when present
+descend_into_repos = false  # false prunes traversal below discovered repo roots
+include_root_repo  = false  # false treats a multi-repo scan root as a container
 
 [privacy]
 omit_origin_classes = ["internal"]   # blank the `origin` for repos of these classes
@@ -773,7 +775,7 @@ The report is sharper than the freshness fold. A README edit invalidates the cer
 A recurring claim is that a structural map is cheaper for an agent than reading the code. `index bench` lets you check that on your own workspace instead of taking it on faith.
 
 ```text
-index bench --root ROOT [--json]
+index bench --root ROOT [--json] [--no-cache]
 ```
 
 It measures the bytes index reads, the manifests and source files of every ecosystem it walks to build the graph, against the bytes of the single structural pack it emits, and reports the reduction:
@@ -784,7 +786,7 @@ token economy: index's structural pack vs the source it reads
   index pack        716,288 bytes  (~179,072 tokens)  69.6x smaller
 ```
 
-Bytes are exact and model-agnostic. The token figures use the common ~4 bytes/token approximation, and the reduction ratio divides out that constant, so the headline number does not depend on any tokenizer. `--json` emits a re-checkable `index.bench/1` report with the byte counts, the ratio, and the command to re-run. The pack answers structural questions, who depends on whom, the roles, the cycles; reading the code is still what you do for behavior, so this is the cost of the structural answer, not a claim that the pack replaces the source.
+Bytes are exact and model-agnostic. The token figures use the common ~4 bytes/token approximation, and the reduction ratio divides out that constant, so the headline number does not depend on any tokenizer. `--json` emits a re-checkable `index.bench/1` report with the byte counts, the ratio, and the command to re-run. Bench output uses Index's filesystem cache by default so repeated agent workflows can reuse the same workspace-wide report inside the freshness window. The graph builder also caches each repo's resolver facts behind a graph-relevant fingerprint, so an unchanged repo is fingerprinted but not reparsed on the next process run. Pass `--no-cache` or set `INDEX_CACHE_TTL_SECONDS=0` for a cold text-output measurement; `--no-cache` also bypasses the repo graph cache. Set `INDEX_GRAPH_REPO_CACHE_DIR` to move the per-repo graph cache. The pack answers structural questions, who depends on whom, the roles, the cycles; reading the code is still what you do for behavior, so this is the cost of the structural answer, not a claim that the pack replaces the source.
 
 ## Agent protocol face (`mcp`)
 

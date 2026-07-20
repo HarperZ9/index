@@ -13,6 +13,8 @@ class   = "internal"
 [scan]
 jobs    = 16
 prune   = ["vendor", "target"]   # added to the built-in safety set
+descend_into_repos = false       # true discovers repos nested inside repo roots
+include_root_repo  = false       # true keeps the scan root as a repo in multi-repo workspaces
 
 [privacy]
 omit_origin_classes = ["internal"]

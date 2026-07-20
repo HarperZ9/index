@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from index_graph.cli_handlers._common import repo_paths
 from index_graph.config import Config, Rule
 from index_graph.scan import build_map, discover_repos
 
@@ -15,6 +16,81 @@ def test_discover_prunes_and_sorts(tmp_path: Path):
     (tmp_path / "target" / "debug" / "crate" / ".git").mkdir(parents=True)
     found = [p.relative_to(tmp_path).as_posix() for p in discover_repos(tmp_path, Config())]
     assert found == ["public/a", "public/b"]  # sorted; node_modules pruned
+
+
+def test_discover_does_not_descend_inside_repo_roots_by_default(tmp_path: Path):
+    _make_repo(tmp_path / "public" / "app")
+    _make_repo(tmp_path / "public" / "app" / "vendor" / "nested")
+
+    found = [p.relative_to(tmp_path).as_posix() for p in discover_repos(tmp_path, Config())]
+
+    assert found == ["public/app"]
+
+
+def test_discover_can_opt_into_nested_repos_inside_repo_roots(tmp_path: Path):
+    _make_repo(tmp_path / "public" / "app")
+    _make_repo(tmp_path / "public" / "app" / "vendor" / "nested")
+
+    found = [
+        p.relative_to(tmp_path).as_posix()
+        for p in discover_repos(tmp_path, Config(descend_into_repos=True))
+    ]
+
+    assert found == ["public/app", "public/app/vendor/nested"]
+
+
+def test_discover_descends_from_scan_root_even_when_root_is_a_repo(tmp_path: Path):
+    _make_repo(tmp_path)
+    _make_repo(tmp_path / "public" / "app")
+    _make_repo(tmp_path / "public" / "app" / "vendor" / "nested")
+
+    found = [p.relative_to(tmp_path).as_posix() for p in discover_repos(tmp_path, Config())]
+
+    assert found == [".", "public/app"]
+
+
+def test_repo_paths_preserves_duplicate_basenames_with_relative_keys(tmp_path: Path):
+    _make_repo(tmp_path / "public" / "index")
+    _make_repo(tmp_path / "protected" / "index")
+    _make_repo(tmp_path / "public" / "forum")
+
+    found = repo_paths(tmp_path)
+
+    assert found["forum"] == tmp_path / "public" / "forum"
+    assert found["public/index"] == tmp_path / "public" / "index"
+    assert found["protected/index"] == tmp_path / "protected" / "index"
+    assert len(found) == 3
+
+
+def test_repo_paths_treats_multi_repo_scan_root_as_container(tmp_path: Path):
+    _make_repo(tmp_path)
+    _make_repo(tmp_path / "public" / "app")
+
+    found = repo_paths(tmp_path)
+
+    assert found == {"app": tmp_path / "public" / "app"}
+
+
+def test_repo_paths_can_include_scan_root_when_configured(tmp_path: Path):
+    _make_repo(tmp_path)
+    _make_repo(tmp_path / "public" / "app")
+    (tmp_path / ".index.toml").write_text(
+        "[scan]\ninclude_root_repo = true\n",
+        encoding="utf-8",
+    )
+
+    found = repo_paths(tmp_path)
+
+    assert found[tmp_path.name] == tmp_path
+    assert found["app"] == tmp_path / "public" / "app"
+
+
+def test_repo_paths_includes_root_when_it_is_the_only_repo(tmp_path: Path):
+    _make_repo(tmp_path)
+
+    found = repo_paths(tmp_path)
+
+    assert found == {tmp_path.name: tmp_path}
 
 
 def test_build_map_portable_omits_absolute_paths(tmp_path: Path):
