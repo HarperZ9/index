@@ -967,6 +967,107 @@ def test_overlapping_repositories_emit_unique_sorted_stat_evidence(tmp_path):
         assert paths == sorted(set(paths))
 
 
+def test_ranked_repositories_emit_canonical_manifest_and_cache(tmp_path):
+    repositories = []
+    for rel_path in ("public/zeta", "public/alpha"):
+        repo = tmp_path / rel_path
+        (repo / ".git").mkdir(parents=True)
+        (repo / "mod.py").write_text("x = 1\n", encoding="utf-8")
+        repositories.append(
+            RepoCandidate(rel_path, repo, rel_path, "explicit")
+        )
+    manifest = build_manifest(
+        tmp_path,
+        repositories,
+        WorkBudget.start(5000),
+        scope_snapshot=_snapshot(
+            candidates=("public/zeta", "public/alpha")
+        ),
+        strict=False,
+    )
+    assert manifest["repositories"] == ["public/alpha", "public/zeta"]
+    assert manifest["scope_snapshot"]["candidate_ids"] == [
+        "public/alpha", "public/zeta",
+    ]
+    assert list(manifest["graph_signatures"]) == [
+        "public/alpha", "public/zeta",
+    ]
+    payload = _receipt()
+    payload["scope"]["paths"] = ["public/zeta", "public/alpha"]
+    payload["selection"]["candidates"] = ["public/zeta", "public/alpha"]
+    payload["selection"]["selected"] = ["public/zeta", "public/alpha"]
+    payload["reconciliation"] = _reconciliation(2)
+    cache = RouteCache(tmp_path / "cache")
+    cache.put(
+        "ranked-manifest",
+        payload=payload,
+        markdown="",
+        manifest=manifest,
+    )
+    entry = cache.get("ranked-manifest")
+    assert entry is not None
+    assert entry["payload"]["selection"]["selected"] == [
+        "public/zeta", "public/alpha",
+    ]
+
+
+def test_strict_partial_accepts_matching_null_signatures(tmp_path):
+    scope = _scope(tmp_path)
+    readings = iter((0.0, 2.0))
+    manifest = build_manifest(
+        tmp_path,
+        scope,
+        WorkBudget.start(1000, clock=lambda: next(readings)),
+        scope_snapshot=_snapshot(),
+        strict=True,
+    )
+    assert manifest["complete"] is False
+    assert manifest["strict_signature"] is None
+    payload = _receipt("PARTIAL")
+    payload["freshness"].update({
+        "mode": "strict",
+        "source_signature": None,
+        "recursive_complete": False,
+    })
+    for key in list(payload["scope"]):
+        if key.endswith("complete"):
+            payload["scope"][key] = False
+    cache = RouteCache(tmp_path / "cache")
+    cache.put(
+        "strict-partial",
+        payload=payload,
+        markdown="",
+        manifest=manifest,
+    )
+    assert cache.get("strict-partial") is not None
+
+
+def test_missing_nullable_manifest_signature_is_cache_miss(tmp_path):
+    scope = _scope(tmp_path)
+    manifest = build_manifest(
+        tmp_path,
+        scope,
+        WorkBudget.start(5000),
+        scope_snapshot=_snapshot(),
+        strict=True,
+    )
+    manifest.pop("strict_signature")
+    payload = _receipt("PARTIAL")
+    payload["freshness"].update({
+        "mode": "strict",
+        "source_signature": None,
+        "recursive_complete": False,
+    })
+    cache = RouteCache(tmp_path / "cache")
+    cache.put(
+        "missing-signature",
+        payload=payload,
+        markdown="",
+        manifest=manifest,
+    )
+    assert cache.get("missing-signature") is None
+
+
 @pytest.mark.parametrize(
     ("field", "value"),
     [

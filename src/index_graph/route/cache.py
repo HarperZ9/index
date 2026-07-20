@@ -24,6 +24,12 @@ _RECEIPT_FIELDS = {
     "selection", "documents", "evidence", "reconciliation", "recheck",
 }
 _VERDICTS = {"MATCH", "PARTIAL", "STALE", "UNVERIFIABLE"}
+_MANIFEST_FIELDS = {
+    "schema", "complete", "root_id", "config_id", "scope_snapshot",
+    "repositories", "directories", "files", "graph_signatures",
+    "markdown_paths_signature", "document_digests", "strict_signature",
+    "last_strict_verified_at",
+}
 
 
 def cache_identity(root: Path, request) -> str:
@@ -264,12 +270,14 @@ def _compatible_payload_manifest(payload: dict, manifest: dict) -> bool:
         return False
     if set(payload["selection"]["selected"]) != set(manifest["repositories"]):
         return False
-    if payload["freshness"]["mode"] == "strict" and (
-        not isinstance(manifest["strict_signature"], str)
-        or payload["freshness"]["source_signature"]
-        != manifest["strict_signature"]
-    ):
-        return False
+    if payload["freshness"]["mode"] == "strict":
+        signature = manifest.get("strict_signature")
+        if payload["freshness"]["source_signature"] != signature:
+            return False
+        if (
+            manifest["complete"] or verdict == "MATCH"
+        ) and not isinstance(signature, str):
+            return False
     if verdict == "MATCH":
         return (
             manifest["complete"]
@@ -318,7 +326,10 @@ def _valid_stat_record(record: object, *, file_record: bool) -> bool:
 
 
 def _valid_manifest(manifest: object) -> bool:
-    if not isinstance(manifest, dict):
+    if (
+        not isinstance(manifest, dict)
+        or not _MANIFEST_FIELDS.issubset(manifest)
+    ):
         return False
     snapshot = manifest.get("scope_snapshot")
     graph_signatures = manifest.get("graph_signatures")

@@ -408,6 +408,9 @@ def build_manifest(
     repositories = list(repositories)
     scan = _scan_repositories(root, repositories, budget, strict=strict)
     snapshot = deepcopy(scope_snapshot)
+    candidate_ids = snapshot.get("candidate_ids")
+    if isinstance(candidate_ids, list):
+        snapshot["candidate_ids"] = sorted(set(candidate_ids))
     map_error = None
     if snapshot.get("kind") in {"workspace-map", "map"}:
         map_evidence, map_error = _map_evidence(root, snapshot)
@@ -454,6 +457,11 @@ def build_manifest(
         )
         else None
     )
+    repository_ids = sorted(candidate.id for candidate in repositories)
+    graph_signatures = {
+        repo_id: scan["graph_signatures"][repo_id]
+        for repo_id in repository_ids
+    }
     return {
         "schema": MANIFEST_SCHEMA,
         "complete": (
@@ -465,10 +473,10 @@ def build_manifest(
         "root_id": _root_id(root),
         "config_id": config_id,
         "scope_snapshot": snapshot,
-        "repositories": [candidate.id for candidate in repositories],
+        "repositories": repository_ids,
         "directories": scan["directories"],
         "files": scan["files"],
-        "graph_signatures": scan["graph_signatures"],
+        "graph_signatures": graph_signatures,
         "markdown_paths_signature": markdown_signature,
         "document_digests": document_digests,
         "strict_signature": strict_signature,
