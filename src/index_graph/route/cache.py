@@ -10,11 +10,20 @@ import tempfile
 from time import time
 
 from .. import __version__
-from .freshness import MANIFEST_SCHEMA
+from .freshness import (
+    MANIFEST_SCHEMA,
+    is_normalized_relative_path,
+    validate_manifest_paths,
+)
 from .model import ROUTE_SCHEMA
 
 CACHE_SCHEMA = "index.route-cache-entry/v1"
-_MEMORY: dict[str, dict] = {}
+_MEMORY: dict[tuple[str, str], dict] = {}
+_RECEIPT_FIELDS = {
+    "schema", "verdict", "root", "query", "freshness", "budget", "scope",
+    "selection", "documents", "evidence", "reconciliation", "recheck",
+}
+_VERDICTS = {"MATCH", "PARTIAL", "STALE", "UNVERIFIABLE"}
 
 
 def cache_identity(root: Path, request) -> str:
@@ -45,18 +54,252 @@ def _valid_entry(entry: object) -> bool:
         entry.get("schema") == CACHE_SCHEMA
         and isinstance(created_at, (int, float))
         and not isinstance(created_at, bool)
-        and isinstance(payload, dict)
-        and payload.get("schema") == ROUTE_SCHEMA
+        and _valid_payload(payload)
         and _valid_manifest(manifest)
+        and _compatible_payload_manifest(payload, manifest)
         and isinstance(entry.get("markdown"), str)
     )
+
+
+def _nonnegative_int(value: object) -> bool:
+    return isinstance(value, int) and not isinstance(value, bool) and value >= 0
+
+
+def _valid_route_item(value: object, *, allow_root: bool = False) -> bool:
+    return (
+        isinstance(value, dict)
+        and is_normalized_relative_path(
+            value.get("path"), allow_root=allow_root
+        )
+        and isinstance(value.get("reason_code"), str)
+        and isinstance(value.get("rule_ref"), str)
+        and isinstance(value.get("evidence"), dict)
+    )
+
+
+def _valid_route_items(values: object, *, allow_root: bool = False) -> bool:
+    return (
+        isinstance(values, list)
+        and all(
+            _valid_route_item(item, allow_root=allow_root)
+            for item in values
+        )
+        and len([item["path"] for item in values])
+        == len({item["path"] for item in values})
+    )
+
+
+def _valid_reconciliation(value: object) -> bool:
+    if not isinstance(value, dict):
+        return False
+    counts = value.get("counts")
+    return (
+        value.get("verdict") in {"MATCH", "DRIFT"}
+        and isinstance(counts, dict)
+        and set(counts) == {
+            "candidates", "selected", "rejected", "omitted",
+        }
+        and all(_nonnegative_int(item) for item in counts.values())
+        and isinstance(value.get("failures"), list)
+        and all(isinstance(item, dict) for item in value["failures"])
+    )
+
+
+def _reconciliation_accounts(
+    reconciliation: dict,
+    candidates: list[str],
+    selected: list[str],
+    rejected: list[dict],
+    omitted: list[dict],
+) -> bool:
+    booked = selected + [
+        item["path"] for item in rejected + omitted
+    ]
+    return (
+        reconciliation["counts"] == {
+            "candidates": len(candidates),
+            "selected": len(selected),
+            "rejected": len(rejected),
+            "omitted": len(omitted),
+        }
+        and len(booked) == len(set(booked))
+        and sorted(candidates) == sorted(booked)
+    )
+
+
+def _valid_payload(payload: object) -> bool:
+    if not isinstance(payload, dict) or set(payload) != _RECEIPT_FIELDS:
+        return False
+    freshness = payload.get("freshness")
+    budget = payload.get("budget")
+    scope = payload.get("scope")
+    selection = payload.get("selection")
+    documents = payload.get("documents")
+    recheck = payload.get("recheck")
+    if not (
+        payload.get("schema") == ROUTE_SCHEMA
+        and payload.get("verdict") in _VERDICTS
+        and payload.get("root") == "."
+        and isinstance(payload.get("query"), str)
+        and isinstance(freshness, dict)
+        and freshness.get("mode") in {"bounded", "strict"}
+        and isinstance(freshness.get("validation"), str)
+        and (
+            freshness.get("cache_age_ms") is None
+            or _nonnegative_int(freshness.get("cache_age_ms"))
+        )
+        and (
+            freshness.get("source_signature") is None
+            or isinstance(freshness.get("source_signature"), str)
+        )
+        and isinstance(freshness.get("recursive_complete"), bool)
+        and isinstance(budget, dict)
+        and set(budget) == {
+            "requested_ms", "elapsed_ms", "repositories_visited",
+            "directories_visited", "candidate_documents_observed",
+            "document_bodies_opened", "files_validated", "exhausted_at",
+        }
+        and all(
+            _nonnegative_int(budget[key])
+            for key in set(budget) - {"exhausted_at"}
+        )
+        and (
+            budget["exhausted_at"] is None
+            or isinstance(budget["exhausted_at"], str)
+        )
+        and isinstance(scope, dict)
+        and all(
+            _nonnegative_int(scope.get(key))
+            for key in ("max_repos", "max_docs", "budget_ms")
+        )
+        and isinstance(scope.get("paths"), list)
+        and all(
+            is_normalized_relative_path(path, allow_root=True)
+            for path in scope["paths"]
+        )
+        and any(
+            key.endswith("complete") and isinstance(value, bool)
+            for key, value in scope.items()
+        )
+        and all(
+            not key.endswith("complete") or isinstance(value, bool)
+            for key, value in scope.items()
+        )
+        and isinstance(selection, dict)
+        and set(selection) == {
+            "candidates", "selected", "rejected", "omitted",
+        }
+        and all(
+            isinstance(selection[key], list)
+            for key in ("candidates", "selected", "rejected", "omitted")
+        )
+        and all(
+            is_normalized_relative_path(path, allow_root=True)
+            for key in ("candidates", "selected")
+            for path in selection[key]
+        )
+        and all(
+            len(selection[key]) == len(set(selection[key]))
+            for key in ("candidates", "selected")
+        )
+        and all(
+            _valid_route_items(selection[key], allow_root=True)
+            for key in ("rejected", "omitted")
+        )
+        and isinstance(documents, dict)
+        and set(documents) == {
+            "selected", "rejected", "omitted", "reconciliation",
+        }
+        and isinstance(documents["selected"], list)
+        and len(documents["selected"]) == len(set(documents["selected"]))
+        and all(
+            is_normalized_relative_path(path)
+            for path in documents["selected"]
+        )
+        and all(
+            _valid_route_items(documents[key])
+            for key in ("rejected", "omitted")
+        )
+        and _valid_reconciliation(documents["reconciliation"])
+        and isinstance(payload.get("evidence"), dict)
+        and isinstance(payload["evidence"].get("router_pack"), dict)
+        and _valid_reconciliation(payload.get("reconciliation"))
+        and isinstance(recheck, dict)
+        and set(recheck) == {"cli", "mcp"}
+        and all(isinstance(value, str) and value for value in recheck.values())
+    ):
+        return False
+    document_candidates = documents["selected"] + [
+        item["path"]
+        for item in documents["rejected"] + documents["omitted"]
+    ]
+    return (
+        _reconciliation_accounts(
+            payload["reconciliation"],
+            selection["candidates"],
+            selection["selected"],
+            selection["rejected"],
+            selection["omitted"],
+        )
+        and _reconciliation_accounts(
+            documents["reconciliation"],
+            document_candidates,
+            documents["selected"],
+            documents["rejected"],
+            documents["omitted"],
+        )
+    )
+
+
+def _compatible_payload_manifest(payload: dict, manifest: dict) -> bool:
+    verdict = payload["verdict"]
+    snapshot = manifest["scope_snapshot"]
+    if not manifest["complete"] and verdict == "MATCH":
+        return False
+    if (
+        snapshot["kind"] in {"workspace-map", "map"}
+        and not snapshot["complete"]
+        and verdict != "PARTIAL"
+    ):
+        return False
+    if set(payload["selection"]["selected"]) != set(manifest["repositories"]):
+        return False
+    if payload["freshness"]["mode"] == "strict" and (
+        not isinstance(manifest["strict_signature"], str)
+        or payload["freshness"]["source_signature"]
+        != manifest["strict_signature"]
+    ):
+        return False
+    if verdict == "MATCH":
+        return (
+            manifest["complete"]
+            and snapshot["complete"]
+            and payload["freshness"]["recursive_complete"]
+            and payload["budget"]["exhausted_at"] is None
+            and all(
+                value
+                for key, value in payload["scope"].items()
+                if key.endswith("complete")
+            )
+            and payload["reconciliation"]["verdict"] == "MATCH"
+            and not payload["reconciliation"]["failures"]
+            and payload["documents"]["reconciliation"]["verdict"] == "MATCH"
+            and not payload["documents"]["reconciliation"]["failures"]
+            and not payload["selection"]["rejected"]
+            and not payload["selection"]["omitted"]
+            and not payload["documents"]["rejected"]
+            and not payload["documents"]["omitted"]
+        )
+    return True
 
 
 def _valid_stat_record(record: object, *, file_record: bool) -> bool:
     if not isinstance(record, dict):
         return False
     valid = (
-        isinstance(record.get("path"), str)
+        is_normalized_relative_path(
+            record.get("path"), allow_root=not file_record
+        )
         and isinstance(record.get("mtime_ns"), int)
         and not isinstance(record.get("mtime_ns"), bool)
         and isinstance(record.get("size"), int)
@@ -119,7 +362,7 @@ def _valid_manifest(manifest: object) -> bool:
         )
     ):
         return False
-    return all(
+    return validate_manifest_paths(manifest) and all(
         value is None or isinstance(value, expected)
         for value, expected in (
             (manifest.get("markdown_paths_signature"), str),
@@ -142,9 +385,13 @@ class RouteCache:
     def path_for(self, key: str) -> Path:
         return self.directory / f"{key}.json"
 
+    def _memory_key(self, key: str) -> tuple[str, str]:
+        return str(self.directory.resolve()), key
+
     def get(self, key: str) -> dict | None:
-        if key in _MEMORY:
-            entry = _MEMORY[key]
+        memory_key = self._memory_key(key)
+        if memory_key in _MEMORY:
+            entry = _MEMORY[memory_key]
             return deepcopy(entry) if _valid_entry(entry) else None
         try:
             entry = json.loads(self.path_for(key).read_text(encoding="utf-8"))
@@ -152,7 +399,7 @@ class RouteCache:
             return None
         if not _valid_entry(entry):
             return None
-        _MEMORY[key] = deepcopy(entry)
+        _MEMORY[memory_key] = deepcopy(entry)
         return deepcopy(entry)
 
     def put(self, key: str, *, payload: dict, markdown: str, manifest: dict) -> None:
@@ -163,7 +410,7 @@ class RouteCache:
             "markdown": markdown,
             "manifest": deepcopy(manifest),
         }
-        _MEMORY[key] = deepcopy(entry)
+        _MEMORY[self._memory_key(key)] = deepcopy(entry)
         temporary: Path | None = None
         try:
             path = self.path_for(key)

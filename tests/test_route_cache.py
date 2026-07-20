@@ -1,9 +1,11 @@
 import json
 import os
+from copy import deepcopy
 from pathlib import Path
 from time import time
 
 import index_graph.route.freshness as freshness_module
+import pytest
 from index_graph.freshness import repo_fingerprint
 from index_graph.route.budget import WorkBudget
 from index_graph.route.cache import RouteCache, cache_identity
@@ -26,6 +28,73 @@ def _snapshot(kind="explicit", candidates=("public/index",), complete=True):
         "candidate_ids": list(candidates),
         "complete": complete,
         "map": None,
+    }
+
+
+def _reconciliation(count=1):
+    return {
+        "verdict": "MATCH",
+        "counts": {
+            "candidates": count,
+            "selected": count,
+            "rejected": 0,
+            "omitted": 0,
+        },
+        "failures": [],
+    }
+
+
+def _receipt(verdict="MATCH"):
+    return {
+        "schema": ROUTE_SCHEMA,
+        "verdict": verdict,
+        "root": ".",
+        "query": "",
+        "freshness": {
+            "mode": "bounded",
+            "validation": "BUILT",
+            "cache_age_ms": None,
+            "source_signature": None,
+            "recursive_complete": True,
+        },
+        "budget": {
+            "requested_ms": 5000,
+            "elapsed_ms": 1,
+            "repositories_visited": 1,
+            "directories_visited": 2,
+            "candidate_documents_observed": 0,
+            "document_bodies_opened": 0,
+            "files_validated": 1,
+            "exhausted_at": None,
+        },
+        "scope": {
+            "paths": ["public/index"],
+            "max_repos": 12,
+            "max_docs": 8,
+            "budget_ms": 5000,
+            "complete": True,
+            "documents_complete": True,
+            "graph_complete": True,
+            "manifest_complete": True,
+        },
+        "selection": {
+            "candidates": ["public/index"],
+            "selected": ["public/index"],
+            "rejected": [],
+            "omitted": [],
+        },
+        "documents": {
+            "selected": [],
+            "rejected": [],
+            "omitted": [],
+            "reconciliation": _reconciliation(0),
+        },
+        "evidence": {"router_pack": {}},
+        "reconciliation": _reconciliation(),
+        "recheck": {
+            "cli": "index route --root . --path public/index",
+            "mcp": "index.route",
+        },
     }
 
 
@@ -257,6 +326,267 @@ def test_strict_document_interruption_uses_docs_open_boundary(tmp_path):
     assert result["unchecked"]["documents"] == 1
 
 
+def _assert_unknown_evidence(result, *, boundary):
+    assert result["status"] == "UNKNOWN"
+    assert result["boundary"] == boundary
+    assert result["reason"] == "unreadable"
+    assert all(value >= 0 for value in result["checked"].values())
+    assert all(value >= 0 for value in result["unchecked"].values())
+
+
+def test_unreadable_config_identity_is_unknown(tmp_path, monkeypatch):
+    scope = _scope(tmp_path)
+    config = tmp_path / ".index.toml"
+    config.write_text("[scan]\njobs=1\n", encoding="utf-8")
+    manifest = build_manifest(
+        tmp_path,
+        scope,
+        WorkBudget.start(5000),
+        scope_snapshot=_snapshot(),
+        strict=True,
+    )
+    original = Path.read_bytes
+
+    def denied(path):
+        if path == config:
+            raise PermissionError("denied")
+        return original(path)
+
+    monkeypatch.setattr(Path, "read_bytes", denied)
+    _assert_unknown_evidence(
+        validate_manifest(
+            tmp_path, manifest, WorkBudget.start(5000), strict=True
+        ),
+        boundary="freshness.config",
+    )
+
+
+def test_unreadable_workspace_map_identity_is_unknown(tmp_path, monkeypatch):
+    scope = _scope(tmp_path)
+    workspace_map = tmp_path / "WORKSPACE-REPO-MAP.json"
+    workspace_map.write_text('{"schema_version":1}', encoding="utf-8")
+    manifest = build_manifest(
+        tmp_path,
+        scope,
+        WorkBudget.start(5000),
+        scope_snapshot=_snapshot(kind="workspace-map"),
+        strict=True,
+    )
+    original = Path.read_bytes
+
+    def denied(path):
+        if path == workspace_map:
+            raise PermissionError("denied")
+        return original(path)
+
+    monkeypatch.setattr(Path, "read_bytes", denied)
+    _assert_unknown_evidence(
+        validate_manifest(
+            tmp_path, manifest, WorkBudget.start(5000), strict=True
+        ),
+        boundary="freshness.workspace-map",
+    )
+
+
+def test_strict_walk_permission_error_is_unknown(tmp_path, monkeypatch):
+    scope = _scope(tmp_path)
+    manifest = build_manifest(
+        tmp_path,
+        scope,
+        WorkBudget.start(5000),
+        scope_snapshot=_snapshot(),
+        strict=True,
+    )
+
+    def denied_walk(_root, *, onerror):
+        onerror(PermissionError("denied"))
+        return iter(())
+
+    monkeypatch.setattr(freshness_module.os, "walk", denied_walk)
+    _assert_unknown_evidence(
+        validate_manifest(
+            tmp_path, manifest, WorkBudget.start(5000), strict=True
+        ),
+        boundary="manifest.walk",
+    )
+
+
+def test_strict_repository_stat_permission_error_is_unknown(
+    tmp_path, monkeypatch
+):
+    scope = _scope(tmp_path)
+    manifest = build_manifest(
+        tmp_path,
+        scope,
+        WorkBudget.start(5000),
+        scope_snapshot=_snapshot(),
+        strict=True,
+    )
+    repository = scope[0].path
+    original = Path.stat
+
+    def denied(path, *args, **kwargs):
+        if path == repository:
+            raise PermissionError("denied")
+        return original(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "stat", denied)
+    _assert_unknown_evidence(
+        validate_manifest(
+            tmp_path, manifest, WorkBudget.start(5000), strict=True
+        ),
+        boundary="manifest.repository",
+    )
+
+
+def test_strict_walk_missing_subtree_is_drift(tmp_path, monkeypatch):
+    scope = _scope(tmp_path)
+    manifest = build_manifest(
+        tmp_path,
+        scope,
+        WorkBudget.start(5000),
+        scope_snapshot=_snapshot(),
+        strict=True,
+    )
+
+    def missing_walk(_root, *, onerror):
+        onerror(FileNotFoundError("removed"))
+        return iter(())
+
+    monkeypatch.setattr(freshness_module.os, "walk", missing_walk)
+    assert validate_manifest(
+        tmp_path, manifest, WorkBudget.start(5000), strict=True
+    )["status"] == "DRIFT"
+
+
+def test_strict_relevant_file_permission_error_is_unknown(tmp_path, monkeypatch):
+    scope = _scope(tmp_path)
+    manifest = build_manifest(
+        tmp_path,
+        scope,
+        WorkBudget.start(5000),
+        scope_snapshot=_snapshot(),
+        strict=True,
+    )
+    source = scope[0].path / "src/mod.py"
+    original = Path.read_bytes
+
+    def denied(path):
+        if path == source:
+            raise PermissionError("denied")
+        return original(path)
+
+    monkeypatch.setattr(Path, "read_bytes", denied)
+    _assert_unknown_evidence(
+        validate_manifest(
+            tmp_path, manifest, WorkBudget.start(5000), strict=True
+        ),
+        boundary="manifest.content",
+    )
+
+
+def test_unreadable_build_never_emits_complete_graph_signature(
+    tmp_path, monkeypatch
+):
+    scope = _scope(tmp_path)
+    source = scope[0].path / "src/mod.py"
+    original = Path.read_bytes
+
+    def denied(path):
+        if path == source:
+            raise PermissionError("denied")
+        return original(path)
+
+    monkeypatch.setattr(Path, "read_bytes", denied)
+    manifest = build_manifest(
+        tmp_path,
+        scope,
+        WorkBudget.start(5000),
+        scope_snapshot=_snapshot(),
+        strict=True,
+    )
+    assert manifest["complete"] is False
+    assert manifest["graph_signatures"]["public/index"] is None
+    assert manifest["strict_signature"] is None
+
+
+def test_strict_document_permission_error_is_unknown(tmp_path, monkeypatch):
+    scope = _scope(tmp_path)
+    readme = scope[0].path / "README.md"
+    readme.write_text("# Alpha\n", encoding="utf-8")
+    manifest = build_manifest(
+        tmp_path,
+        scope,
+        WorkBudget.start(5000),
+        scope_snapshot=_snapshot(),
+        strict=True,
+        document_bodies={"public/index/README.md": "# Alpha\n"},
+    )
+    original = Path.read_text
+
+    def denied(path, *args, **kwargs):
+        if path == readme:
+            raise PermissionError("denied")
+        return original(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "read_text", denied)
+    _assert_unknown_evidence(
+        validate_manifest(
+            tmp_path, manifest, WorkBudget.start(5000), strict=True
+        ),
+        boundary="docs.open",
+    )
+
+
+def test_strict_document_encoding_error_is_unknown(tmp_path, monkeypatch):
+    scope = _scope(tmp_path)
+    readme = scope[0].path / "README.md"
+    readme.write_text("# Alpha\n", encoding="utf-8")
+    manifest = build_manifest(
+        tmp_path,
+        scope,
+        WorkBudget.start(5000),
+        scope_snapshot=_snapshot(),
+        strict=True,
+        document_bodies={"public/index/README.md": "# Alpha\n"},
+    )
+    original = Path.read_text
+
+    def invalid(path, *args, **kwargs):
+        if path == readme:
+            raise UnicodeError("invalid UTF-8")
+        return original(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "read_text", invalid)
+    _assert_unknown_evidence(
+        validate_manifest(
+            tmp_path, manifest, WorkBudget.start(5000), strict=True
+        ),
+        boundary="docs.open",
+    )
+
+
+def test_strict_document_invalid_utf8_is_unknown(tmp_path):
+    scope = _scope(tmp_path)
+    readme = scope[0].path / "README.md"
+    readme.write_text("# Alpha\n", encoding="utf-8")
+    manifest = build_manifest(
+        tmp_path,
+        scope,
+        WorkBudget.start(5000),
+        scope_snapshot=_snapshot(),
+        strict=True,
+        document_bodies={"public/index/README.md": "# Alpha\n"},
+    )
+    readme.write_bytes(b"\xff\xfe")
+    _assert_unknown_evidence(
+        validate_manifest(
+            tmp_path, manifest, WorkBudget.start(5000), strict=True
+        ),
+        boundary="docs.open",
+    )
+
+
 def test_bounded_manifest_does_not_create_unvalidated_document_evidence(tmp_path):
     scope = _scope(tmp_path)
     readme = scope[0].path / "README.md"
@@ -391,24 +721,413 @@ def test_route_cache_ignores_malformed_manifest_collections(tmp_path):
     assert cache.get(key) is None
 
 
+def test_route_cache_rejects_schema_only_receipt(tmp_path):
+    cache = RouteCache(tmp_path / "cache")
+    scope = _scope(tmp_path)
+    manifest = build_manifest(
+        tmp_path,
+        scope,
+        WorkBudget.start(5000),
+        scope_snapshot=_snapshot(),
+        strict=False,
+    )
+    cache.put(
+        "schema-only",
+        payload={"schema": ROUTE_SCHEMA},
+        markdown="",
+        manifest=manifest,
+    )
+    assert cache.get("schema-only") is None
+
+
+def test_route_cache_rejects_malformed_reconciliation(tmp_path):
+    cache = RouteCache(tmp_path / "cache")
+    scope = _scope(tmp_path)
+    manifest = build_manifest(
+        tmp_path,
+        scope,
+        WorkBudget.start(5000),
+        scope_snapshot=_snapshot(),
+        strict=False,
+    )
+    payload = _receipt()
+    payload["reconciliation"]["counts"]["selected"] = "one"
+    cache.put(
+        "bad-reconciliation",
+        payload=payload,
+        markdown="",
+        manifest=manifest,
+    )
+    assert cache.get("bad-reconciliation") is None
+
+
+def test_route_cache_accepts_ranked_receipt_and_root_selection_item(tmp_path):
+    cache = RouteCache(tmp_path / "cache")
+    scope = _scope(tmp_path)
+    manifest = build_manifest(
+        tmp_path,
+        scope,
+        WorkBudget.start(5000),
+        scope_snapshot=_snapshot(
+            candidates=(".", "public/index")
+        ),
+        strict=False,
+    )
+    payload = _receipt("PARTIAL")
+    payload["selection"]["candidates"] = ["public/index", "."]
+    payload["selection"]["omitted"] = [{
+        "path": ".",
+        "reason_code": "max-repos",
+        "rule_ref": "route.max_repos:1",
+        "evidence": {},
+    }]
+    payload["documents"]["selected"] = [
+        "public/index/z.md",
+        "public/index/a.md",
+    ]
+    payload["documents"]["reconciliation"] = _reconciliation(2)
+    payload["reconciliation"] = {
+        "verdict": "MATCH",
+        "counts": {
+            "candidates": 2,
+            "selected": 1,
+            "rejected": 0,
+            "omitted": 1,
+        },
+        "failures": [],
+    }
+    cache.put(
+        "ranked-receipt",
+        payload=payload,
+        markdown="",
+        manifest=manifest,
+    )
+    assert cache.get("ranked-receipt") is not None
+
+
+def test_route_cache_rejects_semantically_corrupt_match(tmp_path):
+    cache = RouteCache(tmp_path / "cache")
+    scope = _scope(tmp_path)
+    manifest = build_manifest(
+        tmp_path,
+        scope,
+        WorkBudget.start(5000),
+        scope_snapshot=_snapshot(),
+        strict=False,
+    )
+    payload = _receipt("MATCH")
+    payload["scope"]["complete"] = False
+    payload["reconciliation"]["counts"]["selected"] = 0
+    cache.put(
+        "corrupt-match",
+        payload=payload,
+        markdown="",
+        manifest=manifest,
+    )
+    assert cache.get("corrupt-match") is None
+
+
+def test_route_cache_rejects_duplicate_document_items(tmp_path):
+    cache = RouteCache(tmp_path / "cache")
+    scope = _scope(tmp_path)
+    manifest = build_manifest(
+        tmp_path,
+        scope,
+        WorkBudget.start(5000),
+        scope_snapshot=_snapshot(),
+        strict=False,
+    )
+    item = {
+        "path": "public/index/README.md",
+        "reason_code": "max-docs",
+        "rule_ref": "route.docs.max-docs",
+        "evidence": {},
+    }
+    payload = _receipt("PARTIAL")
+    payload["documents"]["omitted"] = [item, deepcopy(item)]
+    cache.put(
+        "duplicate-doc-items",
+        payload=payload,
+        markdown="",
+        manifest=manifest,
+    )
+    assert cache.get("duplicate-doc-items") is None
+
+
+def test_route_cache_rejects_match_with_incomplete_manifest(tmp_path):
+    cache = RouteCache(tmp_path / "cache")
+    scope = _scope(tmp_path)
+    manifest = build_manifest(
+        tmp_path,
+        scope,
+        WorkBudget.start(5000),
+        scope_snapshot=_snapshot(),
+        strict=False,
+    )
+    manifest["complete"] = False
+    cache.put(
+        "incomplete-match",
+        payload=_receipt("MATCH"),
+        markdown="",
+        manifest=manifest,
+    )
+    assert cache.get("incomplete-match") is None
+
+
+def test_route_cache_only_reuses_incomplete_map_as_partial(tmp_path):
+    cache = RouteCache(tmp_path / "cache")
+    scope = _scope(tmp_path)
+    workspace_map = tmp_path / "WORKSPACE-REPO-MAP.json"
+    workspace_map.write_text('{"schema_version":1}', encoding="utf-8")
+    manifest = build_manifest(
+        tmp_path,
+        scope,
+        WorkBudget.start(5000),
+        scope_snapshot=_snapshot(kind="workspace-map", complete=False),
+        strict=False,
+    )
+    match = _receipt("MATCH")
+    cache.put(
+        "map-match", payload=match, markdown="", manifest=manifest
+    )
+    assert cache.get("map-match") is None
+    partial = deepcopy(match)
+    partial["verdict"] = "PARTIAL"
+    cache.put(
+        "map-partial", payload=partial, markdown="", manifest=manifest
+    )
+    assert cache.get("map-partial") is not None
+
+
+def test_route_cache_allows_redacted_nonfilesystem_candidate_id(tmp_path):
+    cache = RouteCache(tmp_path / "cache")
+    scope = _scope(tmp_path)
+    redacted = "outside-root:0123456789abcdef"
+    manifest = build_manifest(
+        tmp_path,
+        scope,
+        WorkBudget.start(5000),
+        scope_snapshot=_snapshot(
+            candidates=(redacted, "public/index")
+        ),
+        strict=False,
+    )
+    payload = _receipt("PARTIAL")
+    payload["selection"]["candidates"] = [redacted, "public/index"]
+    payload["selection"]["rejected"] = [{
+        "path": redacted,
+        "reason_code": "outside-root",
+        "rule_ref": "route.explicit.root",
+        "evidence": {},
+    }]
+    payload["reconciliation"] = {
+        "verdict": "MATCH",
+        "counts": {
+            "candidates": 2,
+            "selected": 1,
+            "rejected": 1,
+            "omitted": 0,
+        },
+        "failures": [],
+    }
+    cache.put(
+        "redacted-candidate",
+        payload=payload,
+        markdown="",
+        manifest=manifest,
+    )
+    assert cache.get("redacted-candidate") is not None
+
+
+def test_overlapping_repositories_emit_unique_sorted_stat_evidence(tmp_path):
+    parent = _scope(tmp_path)[0]
+    nested = parent.path / "nested"
+    (nested / ".git").mkdir(parents=True)
+    (nested / "nested.py").write_text("x = 1\n", encoding="utf-8")
+    repositories = [
+        parent,
+        RepoCandidate(
+            "public/index/nested",
+            nested,
+            "public/index/nested",
+            "explicit",
+        ),
+    ]
+    manifest = build_manifest(
+        tmp_path,
+        repositories,
+        WorkBudget.start(5000),
+        scope_snapshot=_snapshot(
+            candidates=("public/index", "public/index/nested")
+        ),
+        strict=True,
+    )
+    for field in ("directories", "files"):
+        paths = [record["path"] for record in manifest[field]]
+        assert paths == sorted(set(paths))
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("repository", "../private"),
+        ("candidate", "C:\\private"),
+        ("document", "/private.md"),
+        ("graph", "public//index"),
+        ("map", "../WORKSPACE-REPO-MAP.json"),
+        ("stat", "public/index/../private"),
+    ],
+)
+def test_route_cache_rejects_nonportable_manifest_paths(
+    tmp_path, field, value
+):
+    cache = RouteCache(tmp_path / "cache")
+    scope = _scope(tmp_path)
+    manifest = build_manifest(
+        tmp_path,
+        scope,
+        WorkBudget.start(5000),
+        scope_snapshot=_snapshot(),
+        strict=False,
+    )
+    if field == "repository":
+        manifest["repositories"][0] = value
+    elif field == "candidate":
+        manifest["scope_snapshot"]["candidate_ids"][0] = value
+    elif field == "document":
+        manifest["document_digests"][value] = "a" * 64
+    elif field == "graph":
+        manifest["graph_signatures"] = {value: None}
+    elif field == "map":
+        manifest["scope_snapshot"]["map"] = {
+            "path": value,
+            "sha256": "a" * 64,
+        }
+    else:
+        manifest["directories"][0]["path"] = value
+    cache.put(
+        f"bad-{field}", payload=_receipt(), markdown="", manifest=manifest
+    )
+    assert cache.get(f"bad-{field}") is None
+
+
+def test_route_cache_rejects_duplicate_manifest_evidence(tmp_path):
+    cache = RouteCache(tmp_path / "cache")
+    scope = _scope(tmp_path)
+    manifest = build_manifest(
+        tmp_path,
+        scope,
+        WorkBudget.start(5000),
+        scope_snapshot=_snapshot(),
+        strict=False,
+    )
+    manifest["directories"].append(deepcopy(manifest["directories"][0]))
+    cache.put(
+        "duplicate-evidence",
+        payload=_receipt(),
+        markdown="",
+        manifest=manifest,
+    )
+    assert cache.get("duplicate-evidence") is None
+
+
+def test_route_cache_rejects_unsorted_manifest_evidence(tmp_path):
+    cache = RouteCache(tmp_path / "cache")
+    scope = _scope(tmp_path)
+    readme = scope[0].path / "README.md"
+    readme.write_text("# Index\n", encoding="utf-8")
+    manifest = build_manifest(
+        tmp_path,
+        scope,
+        WorkBudget.start(5000),
+        scope_snapshot=_snapshot(),
+        strict=False,
+    )
+    manifest["files"].reverse()
+    cache.put(
+        "unsorted-evidence",
+        payload=_receipt(),
+        markdown="",
+        manifest=manifest,
+    )
+    assert cache.get("unsorted-evidence") is None
+
+
+def test_validate_manifest_rejects_traversal_before_stat(tmp_path, monkeypatch):
+    scope = _scope(tmp_path)
+    manifest = build_manifest(
+        tmp_path,
+        scope,
+        WorkBudget.start(5000),
+        scope_snapshot=_snapshot(),
+        strict=False,
+    )
+    manifest["files"][0]["path"] = "../private"
+    original = Path.stat
+
+    def guarded(path, *args, **kwargs):
+        if ".." in path.parts:
+            raise AssertionError("manifest traversal escaped root")
+        return original(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "stat", guarded)
+    assert validate_manifest(
+        tmp_path, manifest, WorkBudget.start(5000), strict=False
+    )["status"] == "DRIFT"
+
+
+def test_validate_manifest_rejects_malformed_path_types(tmp_path):
+    scope = _scope(tmp_path)
+    manifest = build_manifest(
+        tmp_path,
+        scope,
+        WorkBudget.start(5000),
+        scope_snapshot=_snapshot(),
+        strict=False,
+    )
+    manifest["repositories"] = [None, "public/index"]
+    assert validate_manifest(
+        tmp_path, manifest, WorkBudget.start(5000), strict=False
+    )["status"] == "DRIFT"
+
+
+def test_route_cache_memory_is_namespaced_by_directory(tmp_path):
+    first = RouteCache(tmp_path / "first")
+    second = RouteCache(tmp_path / "second")
+    first.clear_memory()
+    scope = _scope(tmp_path)
+    manifest = build_manifest(
+        tmp_path,
+        scope,
+        WorkBudget.start(5000),
+        scope_snapshot=_snapshot(),
+        strict=False,
+    )
+    first.put(
+        "shared-key", payload=_receipt(), markdown="first", manifest=manifest
+    )
+    assert second.get("shared-key") is None
+
+
 def test_route_cache_returns_deep_copies(tmp_path):
     cache = RouteCache(tmp_path / "cache")
     cache.clear_memory()
-    payload = {"schema": ROUTE_SCHEMA, "selected": [{"path": "public/index"}]}
+    payload = _receipt()
+    scope = _scope(tmp_path)
     manifest = build_manifest(
         tmp_path,
-        [],
+        scope,
         WorkBudget.start(5000),
-        scope_snapshot=_snapshot(candidates=()),
+        scope_snapshot=_snapshot(),
         strict=False,
     )
     cache.put("copies", payload=payload, markdown="ok", manifest=manifest)
     first = cache.get("copies")
     assert first is not None
-    first["payload"]["selected"][0]["path"] = "mutated"
+    first["payload"]["selection"]["selected"][0] = "mutated"
     second = cache.get("copies")
     assert second is not None
-    assert second["payload"]["selected"][0]["path"] == "public/index"
+    assert second["payload"]["selection"]["selected"][0] == "public/index"
 
 
 def test_route_cache_validates_memory_entries(tmp_path):
