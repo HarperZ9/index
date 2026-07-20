@@ -266,6 +266,22 @@ def test_unusable_workspace_map_falls_back_without_leaking_content(
     assert "secret-row" not in str(result.source)
 
 
+@pytest.mark.parametrize("markers", [None, "README.md", ["README.md", 1]])
+def test_invalid_workspace_map_markers_fall_back_safely(tmp_path, markers):
+    _repo(tmp_path, "public/index")
+    root_hash = hashlib.sha256(str(tmp_path.resolve()).encode("utf-8")).hexdigest()[:16]
+    (tmp_path / "WORKSPACE-REPO-MAP.json").write_text(json.dumps({
+        "schema_version": 1,
+        "root_sha256_prefix": root_hash,
+        "repositories": [{"path": "public/index", "markers": markers}],
+    }), encoding="utf-8")
+    result = resolve_scope(RouteRequest.create(tmp_path), WorkBudget.start(5000))
+    assert [candidate.id for candidate in result.selected] == ["public/index"]
+    assert result.source["kind"] == "discovery"
+    assert result.source["validation"] == "UNUSABLE"
+    assert result.source["map_unusable"]["detail"] == "row"
+
+
 def test_invalid_utf8_workspace_map_falls_back_with_safe_evidence(tmp_path):
     _repo(tmp_path, "public/index")
     (tmp_path / "WORKSPACE-REPO-MAP.json").write_bytes(b'{"schema_version": \xff}')

@@ -266,6 +266,13 @@ def _map_data(root: Path) -> tuple[dict | None, dict | None]:
         not isinstance(row, Mapping)
         or not isinstance(row.get("path"), str)
         or not row["path"].strip()
+        or (
+            "markers" in row
+            and (
+                not isinstance(row["markers"], list)
+                or not all(isinstance(marker, str) for marker in row["markers"])
+            )
+        )
         for row in repositories
     ):
         return None, _map_unusable("row")
