@@ -42,6 +42,8 @@ class WorkBudget:
         self, boundary: str, *, counter: str | None = None, amount: int = 1
     ) -> bool:
         """Reserve work at *boundary*, recording the first deadline exhaustion."""
+        if amount < 0:
+            raise ValueError("amount must be >= 0")
         if self.exhausted_at is not None or self.clock() >= self.deadline:
             self.exhausted_at = self.exhausted_at or boundary
             return False

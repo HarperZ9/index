@@ -3,6 +3,7 @@ from pathlib import Path
 import pytest
 
 from index_graph.route.budget import WorkBudget
+from index_graph.route import FRESHNESS_MODES, REASON_CODES, VERDICTS
 from index_graph.route.model import RouteRequest, reconcile_route, route_item
 from index_graph.route.reads import DocumentReader
 
@@ -20,6 +21,27 @@ def test_route_request_defaults_and_normalization(tmp_path):
     assert request.max_docs == 8
     assert request.budget_ms == 5000
     assert request.freshness == "bounded"
+
+
+def test_route_request_resolves_paths_to_root_relative_posix_and_deduplicates(tmp_path):
+    nested = tmp_path / "public" / "index"
+    nested.mkdir(parents=True)
+    request = RouteRequest.create(
+        tmp_path,
+        paths=[
+            nested,
+            "public/./index",
+            "public\\index",
+            "public/other/..",
+        ],
+    )
+    assert request.paths == ("public/index", "public")
+
+
+@pytest.mark.parametrize("path", ["../outside", Path("../outside").resolve()])
+def test_route_request_rejects_paths_resolved_outside_root(tmp_path, path):
+    with pytest.raises(ValueError, match="outside-root"):
+        RouteRequest.create(tmp_path, paths=[path])
 
 
 @pytest.mark.parametrize(
@@ -51,9 +73,36 @@ def test_work_budget_callback_uses_the_supplied_counter():
     assert budget.counters["files_validated"] == 1
 
 
+def test_work_budget_rejects_negative_checkpoint_amount():
+    budget = WorkBudget.start(5000)
+    with pytest.raises(ValueError, match="amount"):
+        budget.checkpoint("scope.repo", counter="repositories_visited", amount=-1)
+    assert budget.counters["repositories_visited"] == 0
+
+
+def test_route_module_exports_public_route_vocabularies():
+    assert FRESHNESS_MODES == frozenset({"bounded", "strict"})
+    assert VERDICTS == frozenset({"MATCH", "PARTIAL", "STALE", "UNVERIFIABLE"})
+    assert "outside-root" in REASON_CODES
+
+
 def test_route_item_requires_stable_reason_codes():
     with pytest.raises(ValueError, match="reason_code"):
         route_item("README.md", "ad-hoc", "test")
+
+
+@pytest.mark.parametrize(
+    "path",
+    ["/README.md", "C:/README.md", "docs\\README.md", "./README.md", "docs/../README.md"],
+)
+def test_route_item_rejects_nonportable_path_spellings(path):
+    with pytest.raises(ValueError, match="path"):
+        route_item(path, "not-found", "test")
+
+
+def test_route_item_emits_normalized_root_relative_posix_path():
+    item = route_item("docs/README.md", "not-found", "test")
+    assert item["path"] == "docs/README.md"
 
 
 def test_route_reconciliation_detects_no_silent_drop():

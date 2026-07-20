@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Iterable, Sequence
 
 
@@ -60,11 +60,22 @@ class RouteRequest:
             raise ValueError("budget_ms must be >= 1")
         if freshness not in FRESHNESS_MODES:
             raise ValueError("freshness must be bounded or strict")
-        normalized = tuple(
-            dict.fromkeys(str(path).replace("\\", "/") for path in paths)
-        )
+        resolved_root = Path(root).resolve()
+        normalized_paths = []
+        for path in paths:
+            candidate = Path(path)
+            resolved_path = (
+                candidate.resolve()
+                if candidate.is_absolute()
+                else (resolved_root / candidate).resolve()
+            )
+            try:
+                normalized_paths.append(resolved_path.relative_to(resolved_root).as_posix())
+            except ValueError as error:
+                raise ValueError(f"outside-root path: {path}") from error
+        normalized = tuple(dict.fromkeys(normalized_paths))
         return cls(
-            Path(root).resolve(),
+            resolved_root,
             query.strip(),
             normalized,
             max_repos,
@@ -76,6 +87,19 @@ class RouteRequest:
 
 def route_item(path: str, reason_code: str, rule_ref: str, **evidence: object) -> dict:
     """Build a receipt item using only the stable route reason vocabulary."""
+    if not isinstance(path, str):
+        raise ValueError("path must be a normalized root-relative POSIX path")
+    posix_path = PurePosixPath(path)
+    windows_path = PureWindowsPath(path)
+    if (
+        "\\" in path
+        or posix_path.is_absolute()
+        or windows_path.is_absolute()
+        or windows_path.drive
+        or any(part == ".." for part in posix_path.parts)
+        or posix_path.as_posix() != path
+    ):
+        raise ValueError("path must be a normalized root-relative POSIX path")
     if reason_code not in REASON_CODES:
         raise ValueError(f"unknown route reason_code: {reason_code}")
     return {
