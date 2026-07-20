@@ -54,9 +54,19 @@ def select_documents(
     reader: DocumentReader | None = None,
 ) -> DocumentResult:
     """Select parsed markdown only from the supplied repository scope."""
+    if max_docs < 0:
+        raise ValueError("max_docs must be >= 0")
     root_path = Path(root).resolve()
+    if reader is not None:
+        if reader.root != root_path:
+            raise ValueError("reader root must match root")
+        if reader.max_docs != max_docs:
+            raise ValueError("reader max_docs must match max_docs")
+        if reader.budget is not budget:
+            raise ValueError("reader budget must match budget")
     active_reader = reader or DocumentReader(root_path, max_docs, budget)
     candidates: list[str] = []
+    seen_candidates: set[str] = set()
     outside_selected: set[str] = set()
     enumeration_complete = True
     enumeration_boundary: str | None = None
@@ -89,9 +99,12 @@ def select_documents(
             )
             for filename in sorted(filenames):
                 if filename.lower().endswith(_DOC_SUFFIXES):
-                    budget.counters["candidate_documents_observed"] += 1
                     path = Path(dirpath) / filename
                     rel_path = path.relative_to(root_path).as_posix()
+                    if rel_path in seen_candidates:
+                        continue
+                    seen_candidates.add(rel_path)
+                    budget.counters["candidate_documents_observed"] += 1
                     if not _is_within(path, repository_path):
                         candidates.append(rel_path)
                         outside_selected.add(rel_path)
