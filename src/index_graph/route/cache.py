@@ -15,7 +15,7 @@ from .freshness import (
     is_normalized_relative_path,
     validate_manifest_paths,
 )
-from .model import ROUTE_SCHEMA
+from .model import REASON_CODES, ROUTE_SCHEMA
 
 CACHE_SCHEMA = "index.route-cache-entry/v1"
 _MEMORY: dict[tuple[str, str], dict] = {}
@@ -78,7 +78,9 @@ def _valid_route_item(value: object, *, allow_root: bool = False) -> bool:
             value.get("path"), allow_root=allow_root
         )
         and isinstance(value.get("reason_code"), str)
+        and value["reason_code"] in REASON_CODES
         and isinstance(value.get("rule_ref"), str)
+        and bool(value["rule_ref"].strip())
         and isinstance(value.get("evidence"), dict)
     )
 
@@ -99,15 +101,26 @@ def _valid_reconciliation(value: object) -> bool:
     if not isinstance(value, dict):
         return False
     counts = value.get("counts")
+    failures = value.get("failures")
     return (
-        value.get("verdict") in {"MATCH", "DRIFT"}
+        isinstance(value.get("verdict"), str)
+        and value["verdict"] in {"MATCH", "DRIFT"}
         and isinstance(counts, dict)
         and set(counts) == {
             "candidates", "selected", "rejected", "omitted",
         }
         and all(_nonnegative_int(item) for item in counts.values())
-        and isinstance(value.get("failures"), list)
-        and all(isinstance(item, dict) for item in value["failures"])
+        and isinstance(failures, list)
+        and all(
+            isinstance(item, dict)
+            and set(item) == {"code", "detail"}
+            and isinstance(item["code"], str)
+            and bool(item["code"].strip())
+            and isinstance(item["detail"], str)
+            and bool(item["detail"].strip())
+            for item in failures
+        )
+        and ((value["verdict"] == "MATCH") == (not failures))
     )
 
 
@@ -144,11 +157,13 @@ def _valid_payload(payload: object) -> bool:
     recheck = payload.get("recheck")
     if not (
         payload.get("schema") == ROUTE_SCHEMA
-        and payload.get("verdict") in _VERDICTS
+        and isinstance(payload.get("verdict"), str)
+        and payload["verdict"] in _VERDICTS
         and payload.get("root") == "."
         and isinstance(payload.get("query"), str)
         and isinstance(freshness, dict)
-        and freshness.get("mode") in {"bounded", "strict"}
+        and isinstance(freshness.get("mode"), str)
+        and freshness["mode"] in {"bounded", "strict"}
         and isinstance(freshness.get("validation"), str)
         and (
             freshness.get("cache_age_ms") is None
@@ -260,6 +275,9 @@ def _valid_payload(payload: object) -> bool:
 def _compatible_payload_manifest(payload: dict, manifest: dict) -> bool:
     verdict = payload["verdict"]
     snapshot = manifest["scope_snapshot"]
+    selection = payload["selection"]
+    scope = payload["scope"]
+    budget = payload["budget"]
     if not manifest["complete"] and verdict == "MATCH":
         return False
     if (
@@ -268,7 +286,15 @@ def _compatible_payload_manifest(payload: dict, manifest: dict) -> bool:
         and verdict != "PARTIAL"
     ):
         return False
-    if set(payload["selection"]["selected"]) != set(manifest["repositories"]):
+    if set(selection["selected"]) != set(manifest["repositories"]):
+        return False
+    if len(selection["selected"]) > scope["max_repos"]:
+        return False
+    if budget["document_bodies_opened"] > scope["max_docs"]:
+        return False
+    if len(manifest["document_digests"]) > scope["max_docs"]:
+        return False
+    if budget["requested_ms"] != scope["budget_ms"]:
         return False
     if payload["freshness"]["mode"] == "strict":
         signature = manifest.get("strict_signature")
@@ -280,21 +306,22 @@ def _compatible_payload_manifest(payload: dict, manifest: dict) -> bool:
             return False
     if verdict == "MATCH":
         return (
-            manifest["complete"]
+            set(selection["candidates"]) == set(snapshot["candidate_ids"])
+            and manifest["complete"]
             and snapshot["complete"]
             and payload["freshness"]["recursive_complete"]
-            and payload["budget"]["exhausted_at"] is None
+            and budget["exhausted_at"] is None
             and all(
                 value
-                for key, value in payload["scope"].items()
+                for key, value in scope.items()
                 if key.endswith("complete")
             )
             and payload["reconciliation"]["verdict"] == "MATCH"
             and not payload["reconciliation"]["failures"]
             and payload["documents"]["reconciliation"]["verdict"] == "MATCH"
             and not payload["documents"]["reconciliation"]["failures"]
-            and not payload["selection"]["rejected"]
-            and not payload["selection"]["omitted"]
+            and not selection["rejected"]
+            and not selection["omitted"]
             and not payload["documents"]["rejected"]
             and not payload["documents"]["omitted"]
         )

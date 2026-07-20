@@ -703,6 +703,31 @@ def test_route_cache_ignores_malformed_nested_types(tmp_path):
     assert cache.get(key) is None
 
 
+@pytest.mark.parametrize("field", ["verdict", "freshness-mode"])
+def test_route_cache_ignores_unhashable_receipt_enums(tmp_path, field):
+    cache = RouteCache(tmp_path / "cache")
+    scope = _scope(tmp_path)
+    manifest = build_manifest(
+        tmp_path,
+        scope,
+        WorkBudget.start(5000),
+        scope_snapshot=_snapshot(),
+        strict=False,
+    )
+    payload = _receipt()
+    if field == "verdict":
+        payload["verdict"] = []
+    else:
+        payload["freshness"]["mode"] = []
+    cache.put(
+        f"unhashable-{field}",
+        payload=payload,
+        markdown="",
+        manifest=manifest,
+    )
+    assert cache.get(f"unhashable-{field}") is None
+
+
 def test_route_cache_ignores_malformed_manifest_collections(tmp_path):
     cache = RouteCache(tmp_path / "cache")
     key = "malformed-manifest"
@@ -1066,6 +1091,153 @@ def test_missing_nullable_manifest_signature_is_cache_miss(tmp_path):
         manifest=manifest,
     )
     assert cache.get("missing-signature") is None
+
+
+def test_match_candidates_equal_manifest_candidate_universe(tmp_path):
+    scope = _scope(tmp_path)
+    manifest = build_manifest(
+        tmp_path,
+        scope,
+        WorkBudget.start(5000),
+        scope_snapshot=_snapshot(
+            candidates=("public/extra", "public/index")
+        ),
+        strict=False,
+    )
+    cache = RouteCache(tmp_path / "cache")
+    cache.put(
+        "candidate-mismatch",
+        payload=_receipt("MATCH"),
+        markdown="",
+        manifest=manifest,
+    )
+    assert cache.get("candidate-mismatch") is None
+
+
+@pytest.mark.parametrize(
+    "case",
+    [
+        "max-repos",
+        "opened-docs",
+        "manifest-docs",
+        "budget-ms",
+    ],
+)
+def test_route_cache_enforces_declared_limits(tmp_path, case):
+    scope = _scope(tmp_path)
+    manifest = build_manifest(
+        tmp_path,
+        scope,
+        WorkBudget.start(5000),
+        scope_snapshot=_snapshot(),
+        strict=False,
+    )
+    payload = _receipt("PARTIAL")
+    if case == "max-repos":
+        payload["scope"]["max_repos"] = 0
+    elif case == "opened-docs":
+        payload["scope"]["max_docs"] = 0
+        payload["budget"]["document_bodies_opened"] = 1
+    elif case == "manifest-docs":
+        payload["scope"]["max_docs"] = 0
+        manifest["document_digests"] = {
+            "public/index/README.md": "a" * 64,
+        }
+    else:
+        payload["budget"]["requested_ms"] = 4999
+    cache = RouteCache(tmp_path / "cache")
+    cache.put(
+        f"limit-{case}",
+        payload=payload,
+        markdown="",
+        manifest=manifest,
+    )
+    assert cache.get(f"limit-{case}") is None
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("reason_code", "invented"),
+        ("reason_code", []),
+        ("rule_ref", ""),
+        ("rule_ref", "   "),
+    ],
+)
+def test_route_cache_validates_route_item_vocabulary(
+    tmp_path, field, value
+):
+    scope = _scope(tmp_path)
+    manifest = build_manifest(
+        tmp_path,
+        scope,
+        WorkBudget.start(5000),
+        scope_snapshot=_snapshot(
+            candidates=("public/index", "public/zeta")
+        ),
+        strict=False,
+    )
+    payload = _receipt("PARTIAL")
+    payload["selection"]["candidates"] = ["public/index", "public/zeta"]
+    item = {
+        "path": "public/zeta",
+        "reason_code": "max-repos",
+        "rule_ref": "route.max_repos:1",
+        "evidence": {},
+    }
+    item[field] = value
+    payload["selection"]["omitted"] = [item]
+    payload["reconciliation"] = {
+        "verdict": "MATCH",
+        "counts": {
+            "candidates": 2,
+            "selected": 1,
+            "rejected": 0,
+            "omitted": 1,
+        },
+        "failures": [],
+    }
+    cache = RouteCache(tmp_path / "cache")
+    cache.put(
+        f"route-item-{field}",
+        payload=payload,
+        markdown="",
+        manifest=manifest,
+    )
+    assert cache.get(f"route-item-{field}") is None
+
+
+@pytest.mark.parametrize(
+    ("verdict", "failures"),
+    [
+        ("MATCH", [{"code": "failure", "detail": "present"}]),
+        ("DRIFT", []),
+        ("DRIFT", [{"code": 1, "detail": []}]),
+        ([], []),
+    ],
+)
+def test_reconciliation_failure_shape_matches_verdict(
+    tmp_path, verdict, failures
+):
+    scope = _scope(tmp_path)
+    manifest = build_manifest(
+        tmp_path,
+        scope,
+        WorkBudget.start(5000),
+        scope_snapshot=_snapshot(),
+        strict=False,
+    )
+    payload = _receipt("PARTIAL")
+    payload["reconciliation"]["verdict"] = verdict
+    payload["reconciliation"]["failures"] = failures
+    cache = RouteCache(tmp_path / "cache")
+    cache.put(
+        f"failure-{verdict}-{len(failures)}",
+        payload=payload,
+        markdown="",
+        manifest=manifest,
+    )
+    assert cache.get(f"failure-{verdict}-{len(failures)}") is None
 
 
 @pytest.mark.parametrize(
