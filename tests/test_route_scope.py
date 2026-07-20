@@ -74,6 +74,15 @@ def test_explicit_path_outside_root_is_rejected_without_leaking_its_path(tmp_pat
     }
 
 
+def test_repeated_malformed_explicit_path_is_booked_once(tmp_path):
+    outside = _repo(tmp_path.parent, "outside-route-duplicate")
+    request = replace(RouteRequest.create(tmp_path), paths=(str(outside), str(outside)))
+    result = resolve_scope(request, WorkBudget.start(5000))
+    assert len(result.candidates) == 1
+    assert len(result.rejected) == 1
+    assert result.reconciliation["verdict"] == "MATCH"
+
+
 def test_valid_workspace_map_seeds_candidates_without_global_scan(tmp_path):
     _repo(tmp_path, "public/index")
     root_hash = hashlib.sha256(str(tmp_path.resolve()).encode("utf-8")).hexdigest()[:16]
@@ -92,6 +101,19 @@ def test_valid_workspace_map_seeds_candidates_without_global_scan(tmp_path):
     assert "query:index" in result.selected[0].signals
     assert result.complete is False
     assert result.source["validation"] == "UNVERIFIED"
+
+
+def test_repeated_malformed_map_row_is_booked_once(tmp_path):
+    root_hash = hashlib.sha256(str(tmp_path.resolve()).encode("utf-8")).hexdigest()[:16]
+    (tmp_path / "WORKSPACE-REPO-MAP.json").write_text(json.dumps({
+        "schema_version": 1,
+        "root_sha256_prefix": root_hash,
+        "repositories": [{"path": "../outside"}, {"path": "../outside"}],
+    }), encoding="utf-8")
+    result = resolve_scope(RouteRequest.create(tmp_path), WorkBudget.start(5000))
+    assert len(result.candidates) == 1
+    assert len(result.rejected) == 1
+    assert result.reconciliation["verdict"] == "MATCH"
 
 
 def test_map_metadata_remains_available_during_query_rescoring(tmp_path):
@@ -120,6 +142,24 @@ def test_strict_mode_validates_map_against_repository_discovery(tmp_path):
     result = resolve_scope(request, WorkBudget.start(5000))
     assert result.complete is True
     assert result.source["validation"] == "FRESH"
+
+
+def test_strict_map_with_invalid_row_uses_discovery_and_records_safe_drift(tmp_path):
+    _repo(tmp_path, "public/index")
+    root_hash = hashlib.sha256(str(tmp_path.resolve()).encode("utf-8")).hexdigest()[:16]
+    (tmp_path / "WORKSPACE-REPO-MAP.json").write_text(json.dumps({
+        "schema_version": 1,
+        "root_sha256_prefix": root_hash,
+        "repositories": [{"path": "public/index"}, {"path": "../outside"}],
+    }), encoding="utf-8")
+    result = resolve_scope(
+        RouteRequest.create(tmp_path, freshness="strict"), WorkBudget.start(5000)
+    )
+    assert [candidate.id for candidate in result.candidates] == ["public/index"]
+    assert result.rejected == ()
+    assert result.source["validation"] == "DRIFT"
+    assert result.source["map_rejections"][0]["reason_code"] == "outside-root"
+    assert "../outside" not in str(result.source["map_rejections"])
 
 
 def test_query_scoring_uses_bounded_readme_title_and_matching_annotation(tmp_path):
@@ -156,6 +196,42 @@ def test_readme_budget_exhaustion_marks_scope_incomplete(tmp_path):
     result = resolve_scope(request, budget)
     assert result.complete is False
     assert budget.exhausted_at == "docs.open"
+    assert result.source["omissions"] == [{
+        "reason_code": "budget-exhausted",
+        "rule_ref": "route.query.readme",
+        "boundary": "docs.open",
+    }]
+
+
+def test_discovery_budget_exhaustion_records_source_evidence_without_a_map(tmp_path):
+    ticks = iter((0.0, 0.005))
+    budget = WorkBudget.start(5, clock=lambda: next(ticks))
+    result = resolve_scope(RouteRequest.create(tmp_path), budget)
+    assert result.complete is False
+    assert result.source["omissions"] == [{
+        "reason_code": "budget-exhausted",
+        "rule_ref": "route.discovery",
+        "boundary": "scan.directory",
+    }]
+
+
+def test_strict_map_discovery_exhaustion_records_source_evidence(tmp_path):
+    root_hash = hashlib.sha256(str(tmp_path.resolve()).encode("utf-8")).hexdigest()[:16]
+    (tmp_path / "WORKSPACE-REPO-MAP.json").write_text(json.dumps({
+        "schema_version": 1,
+        "root_sha256_prefix": root_hash,
+        "repositories": [],
+    }), encoding="utf-8")
+    ticks = iter((0.0, 0.005))
+    budget = WorkBudget.start(5, clock=lambda: next(ticks))
+    result = resolve_scope(RouteRequest.create(tmp_path, freshness="strict"), budget)
+    assert result.complete is False
+    assert result.source["validation"] == "UNKNOWN"
+    assert result.source["omissions"] == [{
+        "reason_code": "budget-exhausted",
+        "rule_ref": "route.strict.discovery",
+        "boundary": "scan.directory",
+    }]
 
 
 def test_max_repos_omits_with_receipts(tmp_path):

@@ -170,6 +170,25 @@ def _source(kind: str, validation: str, map_data: dict | None = None) -> dict:
     return source
 
 
+def _dedupe_rejections(
+    rejections: list[tuple[RepoCandidate, dict]]
+) -> list[tuple[RepoCandidate, dict]]:
+    return list({candidate.id: (candidate, receipt) for candidate, receipt in rejections}.values())
+
+
+def _record_budget_omission(source: dict, rule_ref: str, budget: WorkBudget) -> None:
+    source.setdefault("omissions", []).append({
+        "reason_code": "budget-exhausted",
+        "rule_ref": rule_ref,
+        "boundary": budget.exhausted_at,
+    })
+
+
+def _record_map_rejections(source: dict, rejections: list[tuple[RepoCandidate, dict]]) -> None:
+    if rejections:
+        source["map_rejections"] = [receipt for _, receipt in _dedupe_rejections(rejections)]
+
+
 def resolve_scope(
     request: RouteRequest, budget: WorkBudget, *, reader: DocumentReader | None = None
 ) -> ScopeResult:
@@ -209,6 +228,7 @@ def resolve_scope(
             )
             candidates = sorted({candidate.id: candidate for candidate in candidates}.values(), key=lambda item: item.id)
             source = _source("workspace-map", "UNVERIFIED", map_data)
+            _record_map_rejections(source, initial_rejections)
             complete = False
             if request.freshness == "strict":
                 discovered = discover_repos(
@@ -219,6 +239,8 @@ def resolve_scope(
                 )
                 if budget.exhausted:
                     source = _source("workspace-map", "UNKNOWN", map_data)
+                    _record_map_rejections(source, initial_rejections)
+                    _record_budget_omission(source, "route.strict.discovery", budget)
                 else:
                     discovered_candidates = [
                         _candidate(request.root, path, "discovery", {
@@ -229,12 +251,13 @@ def resolve_scope(
                     map_ids = {candidate.id for candidate in candidates if candidate.path is not None}
                     discovered_ids = {candidate.id for candidate in discovered_candidates}
                     complete = True
-                    if map_ids == discovered_ids:
+                    if map_ids == discovered_ids and not initial_rejections:
                         source = _source("workspace-map", "FRESH", map_data)
                     else:
                         candidates = discovered_candidates
-                        initial_rejections = []
                         source = _source("workspace-map", "DRIFT", map_data)
+                        _record_map_rejections(source, initial_rejections)
+                        initial_rejections = []
         else:
             discovered = discover_repos(
                 request.root,
@@ -251,9 +274,12 @@ def resolve_scope(
             if budget.exhausted:
                 complete = False
             source = _source("discovery", "FRESH" if complete else "UNKNOWN")
+            if budget.exhausted:
+                _record_budget_omission(source, "route.discovery", budget)
 
     candidates = [_score(candidate, request.query) for candidate in candidates]
     candidates.sort(key=lambda candidate: (-candidate.score, candidate.id))
+    initial_rejections = _dedupe_rejections(initial_rejections)
     rejected = [item for _, item in initial_rejections]
     rejected_ids = {candidate.id for candidate, _ in initial_rejections}
     omitted: list[dict] = []
@@ -298,6 +324,7 @@ def resolve_scope(
             }
             if budget.exhausted:
                 complete = False
+                _record_budget_omission(source, "route.query.readme", budget)
             additions = _candidate(
                 request.root, candidate.path, candidate.source, metadata
             )
