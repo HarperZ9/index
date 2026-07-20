@@ -4,6 +4,7 @@ from dataclasses import replace
 
 import pytest
 
+import index_graph.route.scope as route_scope
 from index_graph.route.budget import WorkBudget
 from index_graph.route.model import RouteRequest
 from index_graph.route.scope import resolve_scope
@@ -83,6 +84,28 @@ def test_repeated_malformed_explicit_path_is_booked_once(tmp_path):
     assert result.reconciliation["verdict"] == "MATCH"
 
 
+def test_outside_explicit_aliases_are_lexically_deduplicated(tmp_path):
+    request = replace(
+        RouteRequest.create(tmp_path),
+        paths=("../outside", "../folder/../outside"),
+    )
+    result = resolve_scope(request, WorkBudget.start(5000))
+    assert len(result.candidates) == 1
+    assert len(result.rejected) == 1
+    assert result.reconciliation["verdict"] == "MATCH"
+
+
+def test_foreign_drive_aliases_are_safely_deduplicated(tmp_path):
+    request = replace(
+        RouteRequest.create(tmp_path),
+        paths=(r"Z:\outside", r"z:/folder/../outside"),
+    )
+    result = resolve_scope(request, WorkBudget.start(5000))
+    assert len(result.candidates) == 1
+    assert len(result.rejected) == 1
+    assert result.reconciliation["verdict"] == "MATCH"
+
+
 def test_valid_workspace_map_seeds_candidates_without_global_scan(tmp_path):
     _repo(tmp_path, "public/index")
     root_hash = hashlib.sha256(str(tmp_path.resolve()).encode("utf-8")).hexdigest()[:16]
@@ -114,6 +137,68 @@ def test_repeated_malformed_map_row_is_booked_once(tmp_path):
     assert len(result.candidates) == 1
     assert len(result.rejected) == 1
     assert result.reconciliation["verdict"] == "MATCH"
+
+
+def test_outside_map_aliases_are_lexically_deduplicated(tmp_path):
+    root_hash = hashlib.sha256(str(tmp_path.resolve()).encode("utf-8")).hexdigest()[:16]
+    (tmp_path / "WORKSPACE-REPO-MAP.json").write_text(json.dumps({
+        "schema_version": 1,
+        "root_sha256_prefix": root_hash,
+        "repositories": [{"path": "../outside"}, {"path": "../folder/../outside"}],
+    }), encoding="utf-8")
+    result = resolve_scope(RouteRequest.create(tmp_path), WorkBudget.start(5000))
+    assert len(result.candidates) == 1
+    assert len(result.rejected) == 1
+    assert result.reconciliation["verdict"] == "MATCH"
+
+
+def test_unshortlisted_map_rows_are_never_canonically_resolved(tmp_path, monkeypatch):
+    _repo(tmp_path, "public/a")
+    _repo(tmp_path, "public/z")
+    root_hash = hashlib.sha256(str(tmp_path.resolve()).encode("utf-8")).hexdigest()[:16]
+    (tmp_path / "WORKSPACE-REPO-MAP.json").write_text(json.dumps({
+        "schema_version": 1,
+        "root_sha256_prefix": root_hash,
+        "repositories": [{"path": "public/a"}, {"path": "public/z"}],
+    }), encoding="utf-8")
+    original_resolve = route_scope.Path.resolve
+    resolved = []
+
+    def track_resolve(path, *args, **kwargs):
+        resolved.append(path)
+        return original_resolve(path, *args, **kwargs)
+
+    monkeypatch.setattr(route_scope.Path, "resolve", track_resolve)
+    result = resolve_scope(RouteRequest.create(tmp_path, max_repos=1), WorkBudget.start(5000))
+    assert [candidate.id for candidate in result.selected] == ["public/a"]
+    assert tmp_path / "public/z" not in resolved
+
+
+@pytest.mark.parametrize(
+    ("map_text", "detail"),
+    [
+        ("{", "invalid-json"),
+        ("[]", "top-level"),
+        ('{"schema_version": 1, "repositories": [{"not_path": "secret-row"}]}', "row"),
+        ('{"schema_version": 1, "repositories": [], "annotations": []}', "annotations"),
+        ('{"schema_version": 2, "repositories": []}', "schema-version"),
+    ],
+)
+def test_unusable_workspace_map_falls_back_without_leaking_content(
+    tmp_path, map_text, detail
+):
+    _repo(tmp_path, "public/index")
+    (tmp_path / "WORKSPACE-REPO-MAP.json").write_text(map_text, encoding="utf-8")
+    result = resolve_scope(RouteRequest.create(tmp_path), WorkBudget.start(5000))
+    assert [candidate.id for candidate in result.selected] == ["public/index"]
+    assert result.source["kind"] == "discovery"
+    assert result.source["validation"] == "UNUSABLE"
+    assert result.source["map_unusable"] == {
+        "reason_code": "stale-manifest",
+        "rule_ref": "route.workspace_map",
+        "detail": detail,
+    }
+    assert "secret-row" not in str(result.source)
 
 
 def test_map_metadata_remains_available_during_query_rescoring(tmp_path):

@@ -3,9 +3,11 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
+from collections.abc import Mapping
 from dataclasses import dataclass, replace
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 
 from ..config import load_config
 from ..scan import discover_repos
@@ -78,17 +80,78 @@ def _receipt(candidate: RepoCandidate, reason: str, rule: str, **evidence: objec
     return route_item(candidate.id, reason, rule, **evidence)
 
 
+def _portable_case(value: str) -> str:
+    return value.casefold() if os.name == "nt" else value
+
+
+def _collapsed_path(value: str) -> str:
+    parts: list[str] = []
+    for part in value.split("/"):
+        if part in ("", "."):
+            continue
+        if part == "..":
+            if parts:
+                parts.pop()
+            continue
+        parts.append(_portable_case(part))
+    return "/".join(parts)
+
+
+def _lexical_relative(raw_path: str) -> tuple[str | None, bool]:
+    """Return a portable relative spelling and whether it escapes the root."""
+    normalized = raw_path.strip().replace("\\", "/")
+    windows_path = PureWindowsPath(raw_path)
+    if (
+        windows_path.is_absolute()
+        or bool(windows_path.drive)
+        or PurePosixPath(normalized).is_absolute()
+    ):
+        return None, True
+    parts: list[str] = []
+    outside = False
+    for part in normalized.split("/"):
+        if part in ("", "."):
+            continue
+        if part == "..":
+            if parts:
+                parts.pop()
+            else:
+                outside = True
+            continue
+        parts.append(_portable_case(part))
+    return "/".join(parts) or ".", outside
+
+
+def _redacted_candidate(raw_path: str, source: str) -> RepoCandidate:
+    relative, outside = _lexical_relative(raw_path)
+    normalized = raw_path.strip().replace("\\", "/")
+    windows_path = PureWindowsPath(raw_path)
+    if outside and relative is not None:
+        descriptor = relative
+    elif windows_path.drive:
+        descriptor = f"drive:{_portable_case(windows_path.drive)}:{_collapsed_path(normalized[len(windows_path.drive):])}"
+    elif PurePosixPath(normalized).is_absolute():
+        descriptor = f"absolute:{_collapsed_path(normalized)}"
+    else:
+        descriptor = _portable_case(normalized)
+    digest = hashlib.sha256(descriptor.encode("utf-8")).hexdigest()[:16]
+    identifier = f"outside-root:{digest}"
+    return RepoCandidate(identifier, None, identifier, source)
+
+
+def _coarse_candidate(
+    root: Path, rel_path: str, source: str, metadata: dict | None = None
+) -> RepoCandidate:
+    path = root if rel_path == "." else root.joinpath(*rel_path.split("/"))
+    return _candidate(root, path, source, metadata)
+
+
 def _safe_explicit_candidate(root: Path, raw_path: str) -> tuple[RepoCandidate, dict | None]:
-    candidate_path = Path(raw_path)
-    resolved = candidate_path.resolve() if candidate_path.is_absolute() else (root / candidate_path).resolve()
-    try:
-        return _candidate(root, resolved, "explicit"), None
-    except ValueError:
-        digest = hashlib.sha256(raw_path.encode("utf-8")).hexdigest()[:16]
-        redacted = RepoCandidate(
-            f"outside-root:{digest}", None, f"outside-root:{digest}", "explicit"
-        )
+    relative, outside = _lexical_relative(raw_path)
+    if outside or relative is None:
+        redacted = _redacted_candidate(raw_path, "explicit")
         return redacted, _receipt(redacted, "outside-root", "route.explicit.root")
+    return _coarse_candidate(root, relative, "explicit"), None
 
 
 def _map_candidates(
@@ -97,25 +160,24 @@ def _map_candidates(
     candidates: list[RepoCandidate] = []
     rejected: list[tuple[RepoCandidate, dict]] = []
     for row in data.get("repositories", ()):
-        raw_path = str(row.get("path", ""))
-        try:
-            path = (root / raw_path).resolve()
-            candidate = _candidate(
+        raw_path = row["path"]
+        relative, outside = _lexical_relative(raw_path)
+        if outside or relative is None:
+            candidate = _redacted_candidate(raw_path, "workspace-map")
+            rejected.append(
+                (candidate, _receipt(candidate, "outside-root", "route.map.root"))
+            )
+        else:
+            candidate = _coarse_candidate(
                 root,
-                path,
+                relative,
                 "workspace-map",
                 {
                     **row,
-                    "annotations": _annotation_values(annotations.get(raw_path)),
+                    "annotations": _annotation_values(
+                        annotations.get(relative, annotations.get(raw_path))
+                    ),
                 },
-            )
-        except ValueError:
-            digest = hashlib.sha256(raw_path.encode("utf-8")).hexdigest()[:16]
-            candidate = RepoCandidate(
-                f"outside-root:{digest}", None, f"outside-root:{digest}", "workspace-map"
-            )
-            rejected.append(
-                (candidate, _receipt(candidate, "outside-root", "route.map.root"))
             )
         candidates.append(candidate)
     return candidates, rejected
@@ -129,17 +191,42 @@ def _annotation_values(value: object) -> tuple[str, ...]:
     return (str(value),)
 
 
-def _map_data(root: Path) -> tuple[dict | None, Path | None]:
+def _map_data(root: Path) -> tuple[dict | None, dict | None]:
     map_path = root / "WORKSPACE-REPO-MAP.json"
     if not map_path.is_file():
         return None, None
     try:
         data = json.loads(map_path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
-        return None, map_path
+        return None, _map_unusable("invalid-json")
+    if not isinstance(data, Mapping):
+        return None, _map_unusable("top-level")
+    if data.get("schema_version") != 1:
+        return None, _map_unusable("schema-version")
+    repositories = data.get("repositories")
+    if not isinstance(repositories, list):
+        return None, _map_unusable("repositories")
+    annotations = data.get("annotations", {})
+    if not isinstance(annotations, Mapping):
+        return None, _map_unusable("annotations")
+    if any(
+        not isinstance(row, Mapping)
+        or not isinstance(row.get("path"), str)
+        or not row["path"].strip()
+        for row in repositories
+    ):
+        return None, _map_unusable("row")
     if data.get("root_sha256_prefix") != _root_id(root):
-        return None, map_path
-    return data, map_path
+        return None, _map_unusable("root-hash")
+    return dict(data), None
+
+
+def _map_unusable(detail: str) -> dict:
+    return {
+        "reason_code": "stale-manifest",
+        "rule_ref": "route.workspace_map",
+        "detail": detail,
+    }
 
 
 def _readme_title(reader: DocumentReader, repository: Path) -> str | None:
@@ -150,16 +237,20 @@ def _readme_title(reader: DocumentReader, repository: Path) -> str | None:
     return match.group(1) if match else None
 
 
-def _validated(candidate: RepoCandidate) -> tuple[bool, str | None]:
+def _validated(root: Path, candidate: RepoCandidate) -> tuple[Path | None, str | None]:
     assert candidate.path is not None
     try:
-        if not candidate.path.exists():
-            return False, "not-found"
-        if not (candidate.path / ".git").exists():
-            return False, "not-repository"
+        path = candidate.path.resolve()
+        path.relative_to(root)
+        if not path.exists():
+            return None, "not-found"
+        if not (path / ".git").exists():
+            return None, "not-repository"
     except OSError:
-        return False, "unreadable"
-    return True, None
+        return None, "unreadable"
+    except ValueError:
+        return None, "outside-root"
+    return path, None
 
 
 def _source(kind: str, validation: str, map_data: dict | None = None) -> dict:
@@ -219,7 +310,7 @@ def resolve_scope(
         candidates = [candidates_by_id[candidate_id] for candidate_id in sorted(candidates_by_id)]
         source = _source("explicit", "DIRECT")
     else:
-        map_data, map_path = _map_data(request.root)
+        map_data, map_unusable = _map_data(request.root)
         if map_data is not None:
             candidates, initial_rejections = _map_candidates(
                 request.root,
@@ -273,7 +364,12 @@ def resolve_scope(
             ]
             if budget.exhausted:
                 complete = False
-            source = _source("discovery", "FRESH" if complete else "UNKNOWN")
+            source = _source(
+                "discovery",
+                "UNUSABLE" if map_unusable else ("FRESH" if complete else "UNKNOWN"),
+            )
+            if map_unusable:
+                source["map_unusable"] = map_unusable
             if budget.exhausted:
                 _record_budget_omission(source, "route.discovery", budget)
 
@@ -310,12 +406,13 @@ def resolve_scope(
             break
         if candidate.path is None:
             continue
-        valid, reason = _validated(candidate)
-        if not valid:
+        validated_path, reason = _validated(request.root, candidate)
+        if validated_path is None:
             rejected_candidate = replace(candidate, path=None)
             result_candidates[candidate.id] = rejected_candidate
             rejected.append(_receipt(rejected_candidate, reason or "unreadable", "route.scope.validate"))
             continue
+        candidate = replace(candidate, path=validated_path)
         enriched = candidate
         if request.query:
             metadata = {
