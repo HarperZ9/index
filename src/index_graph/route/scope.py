@@ -84,56 +84,77 @@ def _portable_case(value: str) -> str:
     return value.casefold() if os.name == "nt" else value
 
 
-def _collapsed_path(value: str) -> str:
+def _lexical_segments(value: str, *, anchored: bool) -> tuple[int, list[str]]:
     parts: list[str] = []
+    parents = 0
     for part in value.split("/"):
         if part in ("", "."):
             continue
         if part == "..":
             if parts:
                 parts.pop()
+            elif not anchored:
+                parents += 1
             continue
         parts.append(_portable_case(part))
-    return "/".join(parts)
+    return parents, parts
 
 
-def _lexical_relative(raw_path: str) -> tuple[str | None, bool]:
-    """Return a portable relative spelling and whether it escapes the root."""
-    normalized = raw_path.strip().replace("\\", "/")
-    windows_path = PureWindowsPath(raw_path)
-    if (
-        windows_path.is_absolute()
-        or bool(windows_path.drive)
-        or PurePosixPath(normalized).is_absolute()
-    ):
-        return None, True
-    parts: list[str] = []
-    outside = False
-    for part in normalized.split("/"):
-        if part in ("", "."):
-            continue
-        if part == "..":
-            if parts:
-                parts.pop()
-            else:
-                outside = True
-            continue
-        parts.append(_portable_case(part))
-    return "/".join(parts) or ".", outside
-
-
-def _redacted_candidate(raw_path: str, source: str) -> RepoCandidate:
-    relative, outside = _lexical_relative(raw_path)
-    normalized = raw_path.strip().replace("\\", "/")
-    windows_path = PureWindowsPath(raw_path)
-    if outside and relative is not None:
-        descriptor = relative
-    elif windows_path.drive:
-        descriptor = f"drive:{_portable_case(windows_path.drive)}:{_collapsed_path(normalized[len(windows_path.drive):])}"
-    elif PurePosixPath(normalized).is_absolute():
-        descriptor = f"absolute:{_collapsed_path(normalized)}"
+def _absolute_parts(value: str) -> tuple[str, list[str]]:
+    normalized = value.strip().replace("\\", "/")
+    if os.name == "nt":
+        path = PureWindowsPath(value)
+        anchor = _portable_case(path.drive)
+        suffix = normalized[len(path.drive):].lstrip("/")
     else:
-        descriptor = _portable_case(normalized)
+        anchor = "/"
+        suffix = normalized.lstrip("/")
+    _, parts = _lexical_segments(suffix, anchored=True)
+    return anchor, parts
+
+
+def _lexical_relative(root: Path, raw_path: str, *, allow_absolute: bool) -> tuple[str | None, str]:
+    """Return a root-relative spelling or a safe lexical outside descriptor."""
+    normalized = raw_path.strip().replace("\\", "/")
+    windows_path = PureWindowsPath(raw_path)
+    posix_path = PurePosixPath(normalized)
+    host_absolute = (
+        windows_path.is_absolute() if os.name == "nt" else posix_path.is_absolute()
+    )
+    foreign_absolute = (
+        posix_path.is_absolute() if os.name == "nt" else windows_path.is_absolute()
+    )
+    if host_absolute and allow_absolute:
+        root_anchor, root_parts = _absolute_parts(str(root))
+        target_anchor, target_parts = _absolute_parts(raw_path)
+        if root_anchor == target_anchor:
+            common = 0
+            for root_part, target_part in zip(root_parts, target_parts):
+                if root_part != target_part:
+                    break
+                common += 1
+            descriptor_parts = [".."] * (len(root_parts) - common) + target_parts[common:]
+            descriptor = "/".join(descriptor_parts) or "."
+            if common == len(root_parts):
+                return "/".join(target_parts[common:]) or ".", descriptor
+            return None, descriptor
+        return None, f"drive:{target_anchor}:{'/'.join(target_parts)}"
+    if host_absolute or foreign_absolute or bool(windows_path.drive):
+        if windows_path.drive:
+            _, parts = _lexical_segments(
+                normalized[len(windows_path.drive):], anchored=True
+            )
+            return None, f"drive:{_portable_case(windows_path.drive)}:{'/'.join(parts)}"
+        _, parts = _lexical_segments(normalized, anchored=True)
+        return None, f"absolute:{'/'.join(parts)}"
+    parents, parts = _lexical_segments(normalized, anchored=False)
+    descriptor = "/".join([".."] * parents + parts) or "."
+    if parents:
+        return None, descriptor
+    return "/".join(parts) or ".", descriptor
+
+
+def _redacted_candidate(descriptor: str, source: str) -> RepoCandidate:
     digest = hashlib.sha256(descriptor.encode("utf-8")).hexdigest()[:16]
     identifier = f"outside-root:{digest}"
     return RepoCandidate(identifier, None, identifier, source)
@@ -147,9 +168,9 @@ def _coarse_candidate(
 
 
 def _safe_explicit_candidate(root: Path, raw_path: str) -> tuple[RepoCandidate, dict | None]:
-    relative, outside = _lexical_relative(raw_path)
-    if outside or relative is None:
-        redacted = _redacted_candidate(raw_path, "explicit")
+    relative, descriptor = _lexical_relative(root, raw_path, allow_absolute=True)
+    if relative is None:
+        redacted = _redacted_candidate(descriptor, "explicit")
         return redacted, _receipt(redacted, "outside-root", "route.explicit.root")
     return _coarse_candidate(root, relative, "explicit"), None
 
@@ -161,9 +182,9 @@ def _map_candidates(
     rejected: list[tuple[RepoCandidate, dict]] = []
     for row in data.get("repositories", ()):
         raw_path = row["path"]
-        relative, outside = _lexical_relative(raw_path)
-        if outside or relative is None:
-            candidate = _redacted_candidate(raw_path, "workspace-map")
+        relative, descriptor = _lexical_relative(root, raw_path, allow_absolute=False)
+        if relative is None:
+            candidate = _redacted_candidate(descriptor, "workspace-map")
             rejected.append(
                 (candidate, _receipt(candidate, "outside-root", "route.map.root"))
             )
@@ -197,6 +218,8 @@ def _map_data(root: Path) -> tuple[dict | None, dict | None]:
         return None, None
     try:
         data = json.loads(map_path.read_text(encoding="utf-8"))
+    except UnicodeError:
+        return None, _map_unusable("invalid-encoding")
     except (OSError, json.JSONDecodeError):
         return None, _map_unusable("invalid-json")
     if not isinstance(data, Mapping):
@@ -246,7 +269,7 @@ def _validated(root: Path, candidate: RepoCandidate) -> tuple[Path | None, str |
             return None, "not-found"
         if not (path / ".git").exists():
             return None, "not-repository"
-    except OSError:
+    except (OSError, RuntimeError):
         return None, "unreadable"
     except ValueError:
         return None, "outside-root"

@@ -25,6 +25,14 @@ def test_explicit_path_is_root_relative_and_avoids_siblings(tmp_path):
     assert [candidate.id for candidate in result.candidates] == ["public/index"]
 
 
+def test_defensive_absolute_explicit_path_beneath_root_is_selected(tmp_path):
+    repo = _repo(tmp_path, "public/index")
+    request = replace(RouteRequest.create(tmp_path), paths=(str(repo),))
+    result = resolve_scope(request, WorkBudget.start(5000))
+    assert [candidate.id for candidate in result.selected] == ["public/index"]
+    assert result.selected[0].path == repo.resolve()
+
+
 def test_explicit_dot_selects_repository_at_root(tmp_path):
     (tmp_path / ".git").mkdir()
     request = RouteRequest.create(tmp_path, paths=["."])
@@ -92,6 +100,26 @@ def test_outside_explicit_aliases_are_lexically_deduplicated(tmp_path):
     result = resolve_scope(request, WorkBudget.start(5000))
     assert len(result.candidates) == 1
     assert len(result.rejected) == 1
+    assert result.reconciliation["verdict"] == "MATCH"
+
+
+def test_relative_and_absolute_outside_aliases_share_a_redacted_identity(tmp_path):
+    outside = tmp_path.parent / "outside"
+    request = replace(
+        RouteRequest.create(tmp_path), paths=("../outside", str(outside))
+    )
+    result = resolve_scope(request, WorkBudget.start(5000))
+    assert len(result.candidates) == 1
+    assert len(result.rejected) == 1
+
+
+def test_distinct_outside_parent_depths_remain_distinct(tmp_path):
+    request = replace(
+        RouteRequest.create(tmp_path), paths=("../outside", "../../outside")
+    )
+    result = resolve_scope(request, WorkBudget.start(5000))
+    assert len(result.candidates) == 2
+    assert len(result.rejected) == 2
     assert result.reconciliation["verdict"] == "MATCH"
 
 
@@ -201,6 +229,14 @@ def test_unusable_workspace_map_falls_back_without_leaking_content(
     assert "secret-row" not in str(result.source)
 
 
+def test_invalid_utf8_workspace_map_falls_back_with_safe_evidence(tmp_path):
+    _repo(tmp_path, "public/index")
+    (tmp_path / "WORKSPACE-REPO-MAP.json").write_bytes(b'{"schema_version": \xff}')
+    result = resolve_scope(RouteRequest.create(tmp_path), WorkBudget.start(5000))
+    assert [candidate.id for candidate in result.selected] == ["public/index"]
+    assert result.source["map_unusable"]["detail"] == "invalid-encoding"
+
+
 def test_map_metadata_remains_available_during_query_rescoring(tmp_path):
     _repo(tmp_path, "public/index")
     root_hash = hashlib.sha256(str(tmp_path.resolve()).encode("utf-8")).hexdigest()[:16]
@@ -270,6 +306,23 @@ def test_max_docs_zero_prevents_scope_readme_open(tmp_path):
     result = resolve_scope(request, budget)
     assert result.selected[0].score == 0
     assert budget.counters["document_bodies_opened"] == 0
+
+
+def test_resolve_loop_is_rejected_as_unreadable(tmp_path, monkeypatch):
+    repo = _repo(tmp_path, "public/index")
+    request = RouteRequest.create(tmp_path, paths=["public/index"])
+    original_resolve = route_scope.Path.resolve
+
+    def loop_on_repository(path, *args, **kwargs):
+        if path == repo:
+            raise RuntimeError("symlink loop")
+        return original_resolve(path, *args, **kwargs)
+
+    monkeypatch.setattr(route_scope.Path, "resolve", loop_on_repository)
+    result = resolve_scope(request, WorkBudget.start(5000))
+    assert result.selected == ()
+    assert result.rejected[0]["reason_code"] == "unreadable"
+    assert result.reconciliation["verdict"] == "MATCH"
 
 
 def test_readme_budget_exhaustion_marks_scope_incomplete(tmp_path):
