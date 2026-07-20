@@ -90,6 +90,65 @@ def test_build_graph_uses_supplied_document_reader(tmp_path):
     assert graph.repos[0].description == "Expected description."
 
 
+def test_build_graph_caps_non_markdown_readme_with_supplied_reader(tmp_path):
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    readme = repo / "README.rst"
+    readme.write_text("# Repo\n\nUncapped source description.\n", encoding="utf-8")
+    seen = []
+
+    def reader(path):
+        seen.append(path)
+        return "# Repo\n\nCapped reader description.\n"
+
+    graph = build_graph({"repo": repo}, resolvers=(), document_reader=reader)
+    assert seen == [readme]
+    assert graph.repos[0].description == "Capped reader description."
+
+
+def test_build_graph_reports_exact_nested_walk_exhaustion(tmp_path):
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    (repo / "module.py").write_text("x = 1\n", encoding="utf-8")
+
+    class WalkingResolver:
+        name = "walking"
+
+        def matches(self, root):
+            return any(walk_files(root, suffixes=(".py",)))
+
+        def exposed_names(self, root):
+            return set()
+
+        def raw_edges(self, root):
+            return []
+
+    graph = build_graph(
+        {"repo": repo},
+        resolvers=(WalkingResolver(),),
+        checkpoint=lambda boundary: boundary != "graph.walk.directory",
+    )
+    assert graph.warnings[-1] == "budget-exhausted:graph.walk.directory"
+
+
+def test_build_graph_omits_roles_for_unvisited_repositories(tmp_path):
+    repos = {name: tmp_path / name for name in ("first", "second")}
+    for repo in repos.values():
+        repo.mkdir()
+    repo_calls = 0
+
+    def checkpoint(boundary):
+        nonlocal repo_calls
+        if boundary == "graph.repo":
+            repo_calls += 1
+            return repo_calls == 1
+        return True
+
+    graph = build_graph(repos, resolvers=(), checkpoint=checkpoint)
+    assert [repo.name for repo in graph.repos] == ["first"]
+    assert set(graph.roles) == {"first"}
+
+
 def test_walk_files_orders_reverse_created_directories_and_files(tmp_path):
     for dirname in ("zeta", "alpha"):
         directory = tmp_path / dirname

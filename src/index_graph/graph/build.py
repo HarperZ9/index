@@ -40,7 +40,7 @@ def _description(repo_root: Path, document_reader=None) -> str:
         p = repo_root / readme
         if p.is_file():
             try:
-                if document_reader is not None and p.suffix.lower() == ".md":
+                if document_reader is not None:
                     text = document_reader(p)
                     if text is None:
                         continue
@@ -161,5 +161,5 @@ def build_graph(
     edges, warnings = resolve_edges(repo_raw, index)
     if exhausted_boundary is not None:
         warnings.append(f"budget-exhausted:{exhausted_boundary}")
-    roles = derive_roles(set(repo_paths), edges, markers)
+    roles = derive_roles({node.name for node in nodes}, edges, markers)
     return DependencyGraph(tuple(nodes), tuple(edges), roles, tuple(warnings))
