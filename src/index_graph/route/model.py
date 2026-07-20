@@ -63,7 +63,21 @@ class RouteRequest:
         resolved_root = Path(root).resolve()
         normalized_paths = []
         for path in paths:
-            candidate = Path(path)
+            raw_path = str(path)
+            windows_path = PureWindowsPath(raw_path)
+            candidate = Path(raw_path.replace("\\", "/"))
+            host_rooted_windows_path = bool(
+                getattr(resolved_root, "drive", "")
+            ) and bool(windows_path.root)
+            looks_absolute_or_drive_rooted = (
+                windows_path.is_absolute()
+                or bool(windows_path.drive)
+                or PurePosixPath(raw_path).is_absolute()
+            )
+            if looks_absolute_or_drive_rooted and not (
+                candidate.is_absolute() or host_rooted_windows_path
+            ):
+                raise ValueError(f"outside-root path: {path}")
             resolved_path = (
                 candidate.resolve()
                 if candidate.is_absolute()

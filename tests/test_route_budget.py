@@ -1,7 +1,8 @@
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 import pytest
 
+import index_graph.route.model as route_model
 from index_graph.route.budget import WorkBudget
 from index_graph.route import FRESHNESS_MODES, REASON_CODES, VERDICTS
 from index_graph.route.model import RouteRequest, reconcile_route, route_item
@@ -42,6 +43,21 @@ def test_route_request_resolves_paths_to_root_relative_posix_and_deduplicates(tm
 def test_route_request_rejects_paths_resolved_outside_root(tmp_path, path):
     with pytest.raises(ValueError, match="outside-root"):
         RouteRequest.create(tmp_path, paths=[path])
+
+
+def test_route_request_parses_windows_spelling_with_simulated_posix_host(monkeypatch):
+    class SimulatedPosixPath(PurePosixPath):
+        def resolve(self):
+            return self
+
+    monkeypatch.setattr(route_model, "Path", SimulatedPosixPath)
+    request = RouteRequest.create(
+        "/workspace",
+        paths=[r"docs\README.md", "docs/README.md"],
+    )
+    assert request.paths == ("docs/README.md",)
+    with pytest.raises(ValueError, match="outside-root"):
+        RouteRequest.create("/workspace", paths=[r"C:\foreign\README.md"])
 
 
 @pytest.mark.parametrize(
