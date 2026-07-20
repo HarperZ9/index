@@ -52,6 +52,23 @@ def test_explicit_paths_are_deduplicated_and_sorted(tmp_path):
     ]
 
 
+def test_unicode_candidate_path_preserves_filesystem_spelling(tmp_path):
+    repo = _repo(tmp_path, "public/straße")
+    request = RouteRequest.create(tmp_path, paths=["public/straße"])
+    result = resolve_scope(request, WorkBudget.start(5000))
+    assert [candidate.id for candidate in result.selected] == ["public/straße"]
+    assert result.selected[0].path == repo.resolve()
+
+
+def test_windows_flavored_candidates_deduplicate_without_changing_spelling(tmp_path):
+    _repo(tmp_path, "public/Repo")
+    request = replace(
+        RouteRequest.create(tmp_path), paths=("public/Repo", "public/repo")
+    )
+    result = resolve_scope(request, WorkBudget.start(5000))
+    assert [candidate.id for candidate in result.selected] == ["public/Repo"]
+
+
 def test_explicit_config_annotation_affects_the_bounded_shortlist(tmp_path):
     _repo(tmp_path, "public/a")
     _repo(tmp_path, "public/b")
@@ -134,6 +151,23 @@ def test_foreign_drive_aliases_are_safely_deduplicated(tmp_path):
     assert result.reconciliation["verdict"] == "MATCH"
 
 
+def test_foreign_windows_aliases_deduplicate_under_posix_host(tmp_path, monkeypatch):
+    monkeypatch.setattr(route_scope.os, "name", "posix")
+    first = route_scope._lexical_relative(tmp_path, r"Z:\Repo", allow_absolute=True)
+    second = route_scope._lexical_relative(tmp_path, r"z:/repo", allow_absolute=True)
+    assert first == second
+
+
+def test_foreign_posix_paths_keep_case_distinct_on_windows(tmp_path):
+    request = replace(
+        RouteRequest.create(tmp_path), paths=("/Outside/Repo", "/outside/repo")
+    )
+    result = resolve_scope(request, WorkBudget.start(5000))
+    assert len(result.candidates) == 2
+    assert len(result.rejected) == 2
+    assert result.reconciliation["verdict"] == "MATCH"
+
+
 def test_valid_workspace_map_seeds_candidates_without_global_scan(tmp_path):
     _repo(tmp_path, "public/index")
     root_hash = hashlib.sha256(str(tmp_path.resolve()).encode("utf-8")).hexdigest()[:16]
@@ -210,6 +244,7 @@ def test_unshortlisted_map_rows_are_never_canonically_resolved(tmp_path, monkeyp
         ('{"schema_version": 1, "repositories": [{"not_path": "secret-row"}]}', "row"),
         ('{"schema_version": 1, "repositories": [], "annotations": []}', "annotations"),
         ('{"schema_version": 2, "repositories": []}', "schema-version"),
+        ('{"schema_version": true, "repositories": []}', "schema-version"),
     ],
 )
 def test_unusable_workspace_map_falls_back_without_leaking_content(

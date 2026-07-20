@@ -80,10 +80,6 @@ def _receipt(candidate: RepoCandidate, reason: str, rule: str, **evidence: objec
     return route_item(candidate.id, reason, rule, **evidence)
 
 
-def _portable_case(value: str) -> str:
-    return value.casefold() if os.name == "nt" else value
-
-
 def _lexical_segments(value: str, *, anchored: bool) -> tuple[int, list[str]]:
     parts: list[str] = []
     parents = 0
@@ -96,15 +92,36 @@ def _lexical_segments(value: str, *, anchored: bool) -> tuple[int, list[str]]:
             elif not anchored:
                 parents += 1
             continue
-        parts.append(_portable_case(part))
+        parts.append(part)
     return parents, parts
 
 
-def _absolute_parts(value: str) -> tuple[str, list[str]]:
+def _root_flavor(root: Path) -> str:
+    return "windows" if PureWindowsPath(str(root)).drive else "posix"
+
+
+def _path_flavor(root: Path, raw_path: str) -> str:
+    windows_path = PureWindowsPath(raw_path)
+    if windows_path.is_absolute() or windows_path.drive or "\\" in raw_path:
+        return "windows"
+    if PurePosixPath(raw_path.replace("\\", "/")).is_absolute():
+        return "posix"
+    return _root_flavor(root)
+
+
+def _comparison(value: str, flavor: str) -> str:
+    return value.lower() if flavor == "windows" else value
+
+
+def _descriptor(parts: list[str], flavor: str, *, parents: int = 0) -> str:
+    return "/".join([".."] * parents + [_comparison(part, flavor) for part in parts]) or "."
+
+
+def _absolute_parts(value: str, flavor: str) -> tuple[str, list[str]]:
     normalized = value.strip().replace("\\", "/")
-    if os.name == "nt":
+    if flavor == "windows":
         path = PureWindowsPath(value)
-        anchor = _portable_case(path.drive)
+        anchor = _comparison(path.drive, flavor)
         suffix = normalized[len(path.drive):].lstrip("/")
     else:
         anchor = "/"
@@ -118,37 +135,36 @@ def _lexical_relative(root: Path, raw_path: str, *, allow_absolute: bool) -> tup
     normalized = raw_path.strip().replace("\\", "/")
     windows_path = PureWindowsPath(raw_path)
     posix_path = PurePosixPath(normalized)
-    host_absolute = (
-        windows_path.is_absolute() if os.name == "nt" else posix_path.is_absolute()
-    )
-    foreign_absolute = (
-        posix_path.is_absolute() if os.name == "nt" else windows_path.is_absolute()
-    )
-    if host_absolute and allow_absolute:
-        root_anchor, root_parts = _absolute_parts(str(root))
-        target_anchor, target_parts = _absolute_parts(raw_path)
+    flavor = _path_flavor(root, raw_path)
+    root_flavor = _root_flavor(root)
+    absolute = windows_path.is_absolute() if flavor == "windows" else posix_path.is_absolute()
+    if absolute and flavor == root_flavor and allow_absolute:
+        root_anchor, root_parts = _absolute_parts(str(root), root_flavor)
+        target_anchor, target_parts = _absolute_parts(raw_path, flavor)
         if root_anchor == target_anchor:
             common = 0
             for root_part, target_part in zip(root_parts, target_parts):
-                if root_part != target_part:
+                if _comparison(root_part, flavor) != _comparison(target_part, flavor):
                     break
                 common += 1
             descriptor_parts = [".."] * (len(root_parts) - common) + target_parts[common:]
-            descriptor = "/".join(descriptor_parts) or "."
+            descriptor = _descriptor(
+                descriptor_parts, flavor,
+            )
             if common == len(root_parts):
                 return "/".join(target_parts[common:]) or ".", descriptor
             return None, descriptor
-        return None, f"drive:{target_anchor}:{'/'.join(target_parts)}"
-    if host_absolute or foreign_absolute or bool(windows_path.drive):
+        return None, f"drive:{target_anchor}:{_descriptor(target_parts, flavor)}"
+    if absolute or bool(windows_path.drive):
         if windows_path.drive:
             _, parts = _lexical_segments(
                 normalized[len(windows_path.drive):], anchored=True
             )
-            return None, f"drive:{_portable_case(windows_path.drive)}:{'/'.join(parts)}"
+            return None, f"drive:{_comparison(windows_path.drive, 'windows')}:{_descriptor(parts, 'windows')}"
         _, parts = _lexical_segments(normalized, anchored=True)
-        return None, f"absolute:{'/'.join(parts)}"
+        return None, f"absolute:{_descriptor(parts, flavor)}"
     parents, parts = _lexical_segments(normalized, anchored=False)
-    descriptor = "/".join([".."] * parents + parts) or "."
+    descriptor = _descriptor(parts, flavor, parents=parents)
     if parents:
         return None, descriptor
     return "/".join(parts) or ".", descriptor
@@ -165,6 +181,15 @@ def _coarse_candidate(
 ) -> RepoCandidate:
     path = root if rel_path == "." else root.joinpath(*rel_path.split("/"))
     return _candidate(root, path, source, metadata)
+
+
+def _candidate_key(root: Path, candidate: RepoCandidate) -> str:
+    if candidate.path is None:
+        return candidate.id
+    _, descriptor = _lexical_relative(
+        root, candidate.rel_path, allow_absolute=False
+    )
+    return descriptor
 
 
 def _safe_explicit_candidate(root: Path, raw_path: str) -> tuple[RepoCandidate, dict | None]:
@@ -224,7 +249,12 @@ def _map_data(root: Path) -> tuple[dict | None, dict | None]:
         return None, _map_unusable("invalid-json")
     if not isinstance(data, Mapping):
         return None, _map_unusable("top-level")
-    if data.get("schema_version") != 1:
+    schema_version = data.get("schema_version")
+    if (
+        isinstance(schema_version, bool)
+        or not isinstance(schema_version, int)
+        or schema_version != 1
+    ):
         return None, _map_unusable("schema-version")
     repositories = data.get("repositories")
     if not isinstance(repositories, list):
@@ -327,10 +357,15 @@ def resolve_scope(
                         ),
                     },
                 )
-            candidates_by_id[candidate.id] = candidate
+            candidates_by_id.setdefault(
+                _candidate_key(request.root, candidate), candidate
+            )
             if rejection is not None:
                 initial_rejections.append((candidate, rejection))
-        candidates = [candidates_by_id[candidate_id] for candidate_id in sorted(candidates_by_id)]
+        candidates = [
+            candidates_by_id[candidate_id]
+            for candidate_id in sorted(candidates_by_id)
+        ]
         source = _source("explicit", "DIRECT")
     else:
         map_data, map_unusable = _map_data(request.root)
@@ -340,7 +375,12 @@ def resolve_scope(
                 map_data,
                 {**map_data.get("annotations", {}), **config.annotations},
             )
-            candidates = sorted({candidate.id: candidate for candidate in candidates}.values(), key=lambda item: item.id)
+            candidates_by_key: dict[str, RepoCandidate] = {}
+            for candidate in candidates:
+                candidates_by_key.setdefault(
+                    _candidate_key(request.root, candidate), candidate
+                )
+            candidates = sorted(candidates_by_key.values(), key=lambda item: item.id)
             source = _source("workspace-map", "UNVERIFIED", map_data)
             _record_map_rejections(source, initial_rejections)
             complete = False
