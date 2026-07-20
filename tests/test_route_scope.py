@@ -1,6 +1,8 @@
 import hashlib
 import json
+import os
 from dataclasses import replace
+from pathlib import PurePosixPath
 
 import pytest
 
@@ -298,6 +300,33 @@ def test_strict_mode_validates_map_against_repository_discovery(tmp_path):
     result = resolve_scope(request, WorkBudget.start(5000))
     assert result.complete is True
     assert result.source["validation"] == "FRESH"
+
+
+@pytest.mark.skipif(os.name != "nt", reason="Windows filesystem comparison")
+def test_strict_map_case_only_path_difference_is_fresh_on_windows(tmp_path):
+    _repo(tmp_path, "public/index")
+    root_hash = hashlib.sha256(str(tmp_path.resolve()).encode("utf-8")).hexdigest()[:16]
+    (tmp_path / "WORKSPACE-REPO-MAP.json").write_text(json.dumps({
+        "schema_version": 1,
+        "root_sha256_prefix": root_hash,
+        "repositories": [{"path": "public/INDEX"}],
+    }), encoding="utf-8")
+    result = resolve_scope(
+        RouteRequest.create(tmp_path, freshness="strict"), WorkBudget.start(5000)
+    )
+    assert result.source["validation"] == "FRESH"
+    assert [candidate.id for candidate in result.selected] == ["public/INDEX"]
+
+
+def test_posix_candidate_comparison_key_keeps_case_distinct():
+    root = PurePosixPath("/workspace")
+    upper = route_scope.RepoCandidate(
+        "public/INDEX", root / "public/INDEX", "public/INDEX", "test"
+    )
+    lower = route_scope.RepoCandidate(
+        "public/index", root / "public/index", "public/index", "test"
+    )
+    assert route_scope._candidate_key(root, upper) != route_scope._candidate_key(root, lower)
 
 
 def test_strict_map_with_invalid_row_uses_discovery_and_records_safe_drift(tmp_path):

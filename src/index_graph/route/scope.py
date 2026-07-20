@@ -402,8 +402,15 @@ def resolve_scope(
                         })
                         for path in discovered
                     ]
-                    map_ids = {candidate.id for candidate in candidates if candidate.path is not None}
-                    discovered_ids = {candidate.id for candidate in discovered_candidates}
+                    map_ids = {
+                        _candidate_key(request.root, candidate)
+                        for candidate in candidates
+                        if candidate.path is not None
+                    }
+                    discovered_ids = {
+                        _candidate_key(request.root, candidate)
+                        for candidate in discovered_candidates
+                    }
                     complete = True
                     if map_ids == discovered_ids and not initial_rejections:
                         source = _source("workspace-map", "FRESH", map_data)
