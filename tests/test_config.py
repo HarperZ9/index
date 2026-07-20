@@ -33,12 +33,15 @@ def test_default_config_is_neutral():
     assert cfg.portable is True
     assert cfg.omit_origin_classes == frozenset()
     assert ".git" in cfg.prune
+    assert cfg.descend_into_repos is False
+    assert cfg.include_root_repo is False
 
 
 def test_load_config_parses_rules_scan_privacy_output(tmp_path):
     (tmp_path / ".index.toml").write_text(
         '[[rule]]\npattern = "public/**"\nclass = "public"\n'
         '[scan]\njobs = 4\nprune = ["vendor"]\n'
+        'descend_into_repos = true\ninclude_root_repo = true\n'
         '[privacy]\nomit_origin_classes = ["protected"]\n'
         '[output]\nportable = false\nannotations = { note = "x" }\n',
         encoding="utf-8",
@@ -48,6 +51,8 @@ def test_load_config_parses_rules_scan_privacy_output(tmp_path):
     assert cfg.rules[0].regex.match("public/demo")
     assert cfg.jobs == 4
     assert "vendor" in cfg.prune and ".git" in cfg.prune  # extends, never replaces
+    assert cfg.descend_into_repos is True
+    assert cfg.include_root_repo is True
     assert cfg.omit_origin_classes == frozenset({"protected"})
     assert cfg.portable is False
     assert cfg.annotations == {"note": "x"}

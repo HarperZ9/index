@@ -332,6 +332,8 @@ def _add_bench_parser(sub) -> None:
     )
     bn.add_argument("--root", type=Path, default=Path.cwd())
     bn.add_argument("--json", action="store_true")
+    bn.add_argument("--no-cache", action="store_true",
+                    help="disable the workspace bench filesystem cache for this run")
 
 
 def _add_serve_parser(sub) -> None:

@@ -83,8 +83,13 @@ def _workspace_inputs(root: Path) -> tuple[dict[str, Path], dict]:
     from ..context.pack import to_json
     from ..drift import snapshot_pack
     from ..graph.build import build_graph
-    from ..scan import discover_repos
-    repo_paths = {p.name: p for p in discover_repos(Path(root), load_config(None, Path(root)))}
+    from ..scan import discover_repos, repo_key_map
+    config = load_config(None, Path(root))
+    repo_paths = repo_key_map(
+        Path(root),
+        discover_repos(Path(root), config),
+        include_root_repo=config.include_root_repo,
+    )
     return repo_paths, snapshot_pack(to_json(build_graph(repo_paths)))
 
 

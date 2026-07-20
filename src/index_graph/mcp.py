@@ -265,9 +265,14 @@ def _tool_defs() -> list[dict]:
 
 
 def _repo_paths(root: Path) -> dict:
-    from .scan import discover_repos
     from .config import load_config
-    return {p.name: p for p in discover_repos(root, load_config(None, root))}
+    from .scan import discover_repos, repo_key_map
+    config = load_config(None, root)
+    return repo_key_map(
+        root,
+        discover_repos(root, config),
+        include_root_repo=config.include_root_repo,
+    )
 
 
 def _symbol_matches(sym, query: str) -> bool:

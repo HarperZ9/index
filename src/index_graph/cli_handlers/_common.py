@@ -7,7 +7,7 @@ import subprocess
 from pathlib import Path
 
 from ..config import load_config
-from ..scan import discover_repos
+from ..scan import discover_repos, repo_key_map
 
 
 def repo_paths(root: Path, *, skipped: list | None = None) -> dict[str, Path]:
@@ -15,7 +15,11 @@ def repo_paths(root: Path, *, skipped: list | None = None) -> dict[str, Path]:
     # `skipped`, when given, collects directories the scan could not read, so a
     # narrowed scan is a receiptable fact rather than a stderr-only warning.
     config = load_config(None, root)
-    return {p.name: p for p in discover_repos(root, config, skipped=skipped)}
+    return repo_key_map(
+        root,
+        discover_repos(root, config, skipped=skipped),
+        include_root_repo=config.include_root_repo,
+    )
 
 
 def require_dir(root: Path) -> Path:

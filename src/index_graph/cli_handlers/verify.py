@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 
 from .. import __version__
+from ..cache import cached_text
 from ..context.pack import to_json
 from ..graph.build import build_graph
 from ._common import repo_paths, require_dir
@@ -164,45 +165,68 @@ def _freshness_emit(args, report) -> int:
 
 
 def cmd_bench(args) -> int:
+    root = require_dir(args.root)
+    text = cached_text(
+        "bench",
+        root,
+        {"json": bool(args.json)},
+        lambda: _bench_output(args, root),
+        enabled=not getattr(args, "no_cache", False),
+    )
+    print(text)
+    return 0
+
+
+def _bench_output(args, root) -> str:
     from ..bench import bench_workspace
 
-    root = require_dir(args.root)
-    report = bench_workspace(repo_paths(root))
+    report = bench_workspace(
+        repo_paths(root),
+        use_graph_cache=not getattr(args, "no_cache", False),
+    )
     report["recheck"] = f"index bench --root {args.root}"
     if args.json:
-        print(json.dumps(report, indent=2, sort_keys=True))
-    else:
-        st, pk = report["source_bytes"], report["pack_bytes"]
-        red = report["reduction"]
-        red_txt = f"  {red}x smaller" if red else ""
-        print("token economy: index's structural pack vs the source it reads")
-        print(
-            f"  source read   {st:>11,} bytes  (~{report['approx_tokens_source']:,} "
-            f"tokens)  {report['source_files']} files in {report['repos']} repos"
-        )
-        print(
+        return json.dumps(report, indent=2, sort_keys=True)
+    return _bench_human_text(report)
+
+
+def _bench_human_text(report: dict) -> str:
+    st, pk = report["source_bytes"], report["pack_bytes"]
+    red = report["reduction"]
+    red_txt = f"  {red}x smaller" if red else ""
+    lines = [
+        "token economy: index's structural pack vs the source it reads",
+        (
+            f"  source read   {st:>11,} bytes  "
+            f"(~{report['approx_tokens_source']:,} tokens)  "
+            f"{report['source_files']} files in {report['repos']} repos"
+        ),
+        (
             f"  index pack    {pk:>11,} bytes  "
             f"(~{report['approx_tokens_pack']:,} tokens){red_txt}"
+        ),
+    ]
+    f = report["faithfulness"]
+    if f["edge_grounding"] is None:
+        lines.append(
+            f"  faithfulness  n/a: {f['internal_edges']} internal edges "
+            "(nothing to ground)"
         )
-        f = report["faithfulness"]
-        if f["edge_grounding"] is None:
-            print(f"  faithfulness  n/a: {f['internal_edges']} internal edges "
-                  "(nothing to ground)")
-        else:
-            print(
-                f"  faithfulness  {f['edge_grounding'] * 100:.0f}% of "
-                f"{f['internal_edges']} kept edges grounded in file:line source "
-                f"(the reduction fabricates nothing)"
-            )
-        print(
-            f"  note: ~{report['bytes_per_token']} bytes/token is an approximation; "
-            "the reduction ratio does not depend on it."
+    else:
+        lines.append(
+            f"  faithfulness  {f['edge_grounding'] * 100:.0f}% of "
+            f"{f['internal_edges']} kept edges grounded in file:line source "
+            "(the reduction fabricates nothing)"
         )
-        print(
-            "        the pack answers structural questions (depends-on, roles, "
-            "cycles); reading the code is still needed for behavior."
-        )
-    return 0
+    lines.append(
+        f"  note: ~{report['bytes_per_token']} bytes/token is an approximation; "
+        "the reduction ratio does not depend on it."
+    )
+    lines.append(
+        "        the pack answers structural questions (depends-on, roles, "
+        "cycles); reading the code is still needed for behavior."
+    )
+    return "\n".join(lines)
 
 
 def cmd_mcp(args) -> int:

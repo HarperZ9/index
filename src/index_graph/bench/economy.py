@@ -65,7 +65,7 @@ def _grounding(pack: dict) -> dict:
     }
 
 
-def bench_workspace(repo_paths: dict[str, Path]) -> dict:
+def bench_workspace(repo_paths: dict[str, Path], *, use_graph_cache: bool = True) -> dict:
     """The bytes index reads vs the bytes of the structural pack it emits, AND
     the faithfulness of that reduction (every kept edge grounded in source).
 
@@ -73,7 +73,7 @@ def bench_workspace(repo_paths: dict[str, Path]) -> dict:
     other index verdict.
     """
     src_bytes, n_files = _source_bytes(repo_paths)
-    pack = to_json(build_graph(repo_paths))
+    pack = to_json(build_graph(repo_paths, use_cache=use_graph_cache))
     pack_bytes = _compact_bytes(pack)
     reduction = round(src_bytes / pack_bytes, 1) if pack_bytes else None
     return {

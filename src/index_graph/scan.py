@@ -6,6 +6,7 @@ import hashlib
 import json
 import os
 import sys
+from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from pathlib import Path
@@ -27,6 +28,7 @@ def _warn(message: str) -> None:
 
 def discover_repos(root: Path, config: Config, *,
                    skipped: list | None = None) -> list[Path]:
+    root = Path(root)
     prune = config.prune
     repos: set[Path] = set()
     def _onerror(exc: OSError) -> None:
@@ -39,10 +41,41 @@ def discover_repos(root: Path, config: Config, *,
 
     for dirpath, dirnames, filenames in os.walk(root, onerror=_onerror):
         current = Path(dirpath)
-        if ".git" in dirnames or ".git" in filenames:
+        is_repo = ".git" in dirnames or ".git" in filenames
+        if is_repo:
             repos.add(current)
+            if current != root and not config.descend_into_repos:
+                dirnames[:] = []
+                continue
         dirnames[:] = [name for name in dirnames if name not in prune]
     return sorted(repos, key=lambda p: p.relative_to(root).as_posix().lower())
+
+
+def repo_key_map(
+    root: Path,
+    repos: list[Path],
+    *,
+    include_root_repo: bool = False,
+) -> dict[str, Path]:
+    """Map discovered repos to stable keys without dropping duplicate basenames.
+
+    Unique basenames keep the short legacy key. When multiple repos share a
+    basename, each duplicate gets its relative workspace path as the key.
+    """
+    root = Path(root)
+    filtered = [
+        repo for repo in repos
+        if include_root_repo or repo != root or len(repos) == 1
+    ]
+    counts = Counter(repo.name for repo in filtered)
+    keyed: dict[str, Path] = {}
+    for repo in filtered:
+        if counts[repo.name] == 1:
+            key = repo.name
+        else:
+            key = repo.relative_to(root).as_posix()
+        keyed[key] = repo
+    return keyed
 
 
 def _relative(path: Path, root: Path) -> str:

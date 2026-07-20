@@ -77,6 +77,8 @@ class Config:
     extra_prune: frozenset[str] = frozenset()
     markers: tuple[str, ...] = DEFAULT_MARKERS
     jobs: int = field(default_factory=_default_jobs)
+    descend_into_repos: bool = False
+    include_root_repo: bool = False
     omit_origin_classes: frozenset[str] = frozenset()
     portable: bool = True
     annotations: dict[str, Any] = field(default_factory=dict)
@@ -122,6 +124,12 @@ def _build_config(data: dict[str, Any], path: Path) -> Config:
         raise SystemExit(f"{path}: [scan] jobs must be a positive integer")
     extra_prune = frozenset(str(d) for d in scan.get("prune", []))
     markers = tuple(scan["markers"]) if "markers" in scan else DEFAULT_MARKERS
+    descend_into_repos = scan.get("descend_into_repos", False)
+    if not isinstance(descend_into_repos, bool):
+        raise SystemExit(f"{path}: [scan] descend_into_repos must be a boolean")
+    include_root_repo = scan.get("include_root_repo", False)
+    if not isinstance(include_root_repo, bool):
+        raise SystemExit(f"{path}: [scan] include_root_repo must be a boolean")
 
     omit = frozenset(str(c) for c in data.get("privacy", {}).get("omit_origin_classes", []))
 
@@ -135,4 +143,15 @@ def _build_config(data: dict[str, Any], path: Path) -> Config:
         if key not in _KNOWN_TOP:
             print(f"{path}: warning: unknown config key '{key}'", file=sys.stderr)
 
-    return Config(tuple(rules), extra_prune, markers, jobs, omit, portable, annotations, architecture)
+    return Config(
+        rules=tuple(rules),
+        extra_prune=extra_prune,
+        markers=markers,
+        jobs=jobs,
+        descend_into_repos=descend_into_repos,
+        include_root_repo=include_root_repo,
+        omit_origin_classes=omit,
+        portable=portable,
+        annotations=annotations,
+        architecture=architecture,
+    )

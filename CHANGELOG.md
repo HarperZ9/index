@@ -25,6 +25,15 @@
 - Performance: workbench page-weight budgets keep large-workspace artifacts lean (61.8MB
   down to 5.6MB on a 2k-document workspace), and the workbench map now draws only the
   internal graph while externals stay counted.
+- Performance: workspace repo discovery now prunes traversal below discovered repo
+  roots by default, treats a multi-repo scan root as a container unless
+  `scan.include_root_repo = true`, preserves duplicate basenames with relative keys,
+  and caches `index bench` output for repeated agent-loop calls (`--no-cache` forces
+  a cold run).
+- Performance: graph construction now caches each repo's resolver facts behind a
+  content fingerprint. On the local `C:\dev` workspace with bench text caching disabled,
+  the first repo-cache populate run took 82.7s and the next unchanged bench run took
+  20.6s because unchanged repos were fingerprinted but not reparsed.
 - Visual identity refresh: spectrum banner, feature-first README header and body, a
   current plain-language introduction (`docs/INTRODUCTION.md`), the delivery contract
   evolved to the new visual identity, and a live PyPI downloads badge.

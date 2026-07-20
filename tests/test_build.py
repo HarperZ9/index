@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from index_graph.context.pack import to_json
 from index_graph.graph.build import build_graph, detect_markers
 
 FIX = Path(__file__).parent / "fixtures"
@@ -26,3 +27,12 @@ def test_build_graph_links_app_to_lib():
     edge = next(e for e in internal if (e.from_repo, e.to_repo) == ("py-app", "py-lib"))
     assert edge.confidence == "high"      # both manifest + import signals
     assert graph.warnings == ()           # no spurious ambiguity warnings
+
+
+def test_build_graph_parallel_output_matches_serial_output():
+    paths = {"py-app": FIX / "py-app", "py-lib": FIX / "py-lib"}
+
+    serial = to_json(build_graph(paths, jobs=1))
+    parallel = to_json(build_graph(paths, jobs=4))
+
+    assert parallel == serial
