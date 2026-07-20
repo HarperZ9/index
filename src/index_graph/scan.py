@@ -7,6 +7,7 @@ import json
 import os
 import sys
 from concurrent.futures import ThreadPoolExecutor
+from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -25,8 +26,14 @@ def _warn(message: str) -> None:
         print(safe, file=sys.stderr)
 
 
-def discover_repos(root: Path, config: Config, *,
-                   skipped: list | None = None) -> list[Path]:
+def discover_repos(
+    root: Path,
+    config: Config,
+    *,
+    skipped: list | None = None,
+    checkpoint: Callable[[str], bool] | None = None,
+    prune_repo_contents: bool = False,
+) -> list[Path]:
     prune = config.prune
     repos: set[Path] = set()
     def _onerror(exc: OSError) -> None:
@@ -38,10 +45,16 @@ def discover_repos(root: Path, config: Config, *,
         _warn(f"warning: skipped unreadable directory during repo discovery: {exc}")
 
     for dirpath, dirnames, filenames in os.walk(root, onerror=_onerror):
+        if checkpoint is not None and not checkpoint("scan.directory"):
+            dirnames.clear()
+            break
         current = Path(dirpath)
-        if ".git" in dirnames or ".git" in filenames:
+        is_repo = ".git" in dirnames or ".git" in filenames
+        if is_repo:
             repos.add(current)
-        dirnames[:] = [name for name in dirnames if name not in prune]
+        dirnames[:] = sorted(name for name in dirnames if name not in prune)
+        if prune_repo_contents and is_repo:
+            dirnames.clear()
     return sorted(repos, key=lambda p: p.relative_to(root).as_posix().lower())
 
 

@@ -18,7 +18,7 @@ from __future__ import annotations
 import fnmatch
 import hashlib
 import os
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from pathlib import Path
 
 from ..graph.resolvers import ALL_RESOLVERS
@@ -48,16 +48,30 @@ def _is_relevant(filename: str, names, suffixes, globs) -> bool:
     return any(fnmatch.fnmatchcase(filename, g) for g in globs)
 
 
-def relevant_files(repo_root: Path, resolvers=ALL_RESOLVERS) -> Iterator[Path]:
+def is_relevant_filename(filename: str, resolvers=ALL_RESOLVERS) -> bool:
+    names, suffixes, globs = _matchers(resolvers)
+    return _is_relevant(filename, names, suffixes, globs)
+
+
+def relevant_files(
+    repo_root: Path,
+    resolvers=ALL_RESOLVERS,
+    *,
+    checkpoint: Callable[[str], bool] | None = None,
+) -> Iterator[Path]:
     """Yield every graph-relevant file under repo_root (the manifests and source
     suffixes the resolvers read, across all ecosystems), pruning EXCLUDE_DIRS.
     Fail-closed: a missing or unreadable tree yields nothing rather than raising.
     """
     names, suffixes, globs = _matchers(resolvers)
     for dirpath, dirnames, filenames in os.walk(Path(repo_root), onerror=lambda _e: None):
-        dirnames[:] = [d for d in dirnames if d not in EXCLUDE_DIRS]
-        for fn in filenames:
+        if checkpoint is not None and not checkpoint("freshness.directory"):
+            return
+        dirnames[:] = sorted(d for d in dirnames if d not in EXCLUDE_DIRS)
+        for fn in sorted(filenames):
             if _is_relevant(fn, names, suffixes, globs):
+                if checkpoint is not None and not checkpoint("freshness.file"):
+                    return
                 yield Path(dirpath) / fn
 
 

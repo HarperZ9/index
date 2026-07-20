@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from .edges import Edge, build_index, resolve_edges
-from .walk import walk_files
+from .walk import walk_budget, walk_files
 from .resolvers import ALL_RESOLVERS
 from .resolvers.base import RawEdge
 from .roles import derive_roles
@@ -35,12 +35,18 @@ class DependencyGraph:
     warnings: tuple[str, ...]
 
 
-def _description(repo_root: Path) -> str:
+def _description(repo_root: Path, document_reader=None) -> str:
     for readme in ("README.md", "README.rst", "README.txt", "readme.md"):
         p = repo_root / readme
         if p.is_file():
             try:
-                text = p.read_text(encoding="utf-8", errors="replace").strip()
+                if document_reader is not None and p.suffix.lower() == ".md":
+                    text = document_reader(p)
+                    if text is None:
+                        continue
+                    text = text.strip()
+                else:
+                    text = p.read_text(encoding="utf-8", errors="replace").strip()
             except OSError:
                 continue
             for block in _PARA.split(text):
@@ -100,28 +106,60 @@ def detect_markers(repo_root: Path, exposed: set[str]) -> set[str]:
     return mk
 
 
-def build_graph(repo_paths: dict[str, Path], resolvers=ALL_RESOLVERS) -> DependencyGraph:
+def build_graph(
+    repo_paths: dict[str, Path],
+    resolvers=ALL_RESOLVERS,
+    *,
+    checkpoint=None,
+    document_reader=None,
+) -> DependencyGraph:
     nodes: list[RepoNode] = []
     exposed: dict[str, set[str]] = {}
     repo_raw: dict[str, list[RawEdge]] = {}
     markers: dict[str, set[str]] = {}
-    for name, root in sorted(repo_paths.items()):
-        ecos: list[str] = []
-        names: set[str] = set()
-        raws: list[RawEdge] = []
-        for r in resolvers:
-            if r.matches(root):
-                ecos.append(r.name)
-                names |= r.exposed_names(root)
-                raws += r.raw_edges(root)
-        exposed[name] = names
-        repo_raw[name] = raws
-        mk = detect_markers(root, names)
-        markers[name] = mk
-        nodes.append(RepoNode(name, str(root), tuple(ecos), frozenset(names),
-                              _description(root), frozenset(mk)))
+    exhausted_boundary: str | None = None
+
+    def checked(boundary: str) -> bool:
+        nonlocal exhausted_boundary
+        if exhausted_boundary is not None:
+            return False
+        allowed = checkpoint is None or checkpoint(boundary)
+        if not allowed:
+            exhausted_boundary = boundary
+        return allowed
+
+    with walk_budget(checked if checkpoint is not None else None):
+        for name, root in sorted(repo_paths.items()):
+            if not checked("graph.repo"):
+                break
+            ecos: list[str] = []
+            names: set[str] = set()
+            raws: list[RawEdge] = []
+            for r in resolvers:
+                if not checked("graph.resolver"):
+                    break
+                if r.matches(root):
+                    if exhausted_boundary is not None:
+                        break
+                    ecos.append(r.name)
+                    names |= r.exposed_names(root)
+                    if exhausted_boundary is not None:
+                        break
+                    raws += r.raw_edges(root)
+            if exhausted_boundary is not None:
+                break
+            exposed[name] = names
+            repo_raw[name] = raws
+            mk = detect_markers(root, names)
+            if exhausted_boundary is not None:
+                break
+            markers[name] = mk
+            nodes.append(RepoNode(name, str(root), tuple(ecos), frozenset(names),
+                                  _description(root, document_reader), frozenset(mk)))
 
     index = build_index(exposed)
     edges, warnings = resolve_edges(repo_raw, index)
+    if exhausted_boundary is not None:
+        warnings.append(f"budget-exhausted:{exhausted_boundary}")
     roles = derive_roles(set(repo_paths), edges, markers)
     return DependencyGraph(tuple(nodes), tuple(edges), roles, tuple(warnings))
