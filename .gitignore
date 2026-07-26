@@ -24,3 +24,7 @@ CLAUDE.local.md
 .env.*
 # ...but the committed template must survive the .env.* rule above
 !.env.example
+
+# direnv environment files (can hold exported secrets)
+.envrc
+.envrc.local
