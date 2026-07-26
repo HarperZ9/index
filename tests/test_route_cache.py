@@ -810,6 +810,7 @@ def test_route_cache_accepts_ranked_receipt_and_root_selection_item(tmp_path):
         "public/index/z.md",
         "public/index/a.md",
     ]
+    payload["budget"]["document_bodies_opened"] = 2
     payload["documents"]["reconciliation"] = _reconciliation(2)
     payload["reconciliation"] = {
         "verdict": "MATCH",
@@ -1121,6 +1122,8 @@ def test_match_candidates_equal_manifest_candidate_universe(tmp_path):
         "opened-docs",
         "manifest-docs",
         "budget-ms",
+        "selected-docs",
+        "visited-repos",
     ],
 )
 def test_route_cache_enforces_declared_limits(tmp_path, case):
@@ -1143,8 +1146,16 @@ def test_route_cache_enforces_declared_limits(tmp_path, case):
         manifest["document_digests"] = {
             "public/index/README.md": "a" * 64,
         }
-    else:
+    elif case == "budget-ms":
         payload["budget"]["requested_ms"] = 4999
+    elif case == "selected-docs":
+        payload["documents"]["selected"] = [
+            "public/index/README.md",
+        ]
+        payload["documents"]["reconciliation"] = _reconciliation(1)
+    else:
+        payload["scope"]["max_repos"] = 1
+        payload["budget"]["repositories_visited"] = 2
     cache = RouteCache(tmp_path / "cache")
     cache.put(
         f"limit-{case}",
@@ -1153,6 +1164,93 @@ def test_route_cache_enforces_declared_limits(tmp_path, case):
         manifest=manifest,
     )
     assert cache.get(f"limit-{case}") is None
+
+
+def test_complete_manifest_requires_selected_repository_root_record(tmp_path):
+    scope = _scope(tmp_path)
+    manifest = build_manifest(
+        tmp_path,
+        scope,
+        WorkBudget.start(5000),
+        scope_snapshot=_snapshot(),
+        strict=False,
+    )
+    manifest["directories"] = [
+        record
+        for record in manifest["directories"]
+        if record["path"] != "public/index"
+    ]
+    cache = RouteCache(tmp_path / "cache")
+    cache.put(
+        "missing-repository-root",
+        payload=_receipt(),
+        markdown="",
+        manifest=manifest,
+    )
+    assert cache.get("missing-repository-root") is None
+
+
+@pytest.mark.parametrize("collection", ["directories", "files", "documents"])
+def test_manifest_rejects_evidence_outside_selected_repositories(
+    tmp_path, collection
+):
+    scope = _scope(tmp_path)
+    manifest = build_manifest(
+        tmp_path,
+        scope,
+        WorkBudget.start(5000),
+        scope_snapshot=_snapshot(),
+        strict=False,
+    )
+    unrelated = "public/index-other"
+    if collection == "directories":
+        record = deepcopy(manifest["directories"][0])
+        record["path"] = unrelated
+        manifest["directories"].append(record)
+        manifest["directories"].sort(key=lambda item: item["path"])
+    elif collection == "files":
+        manifest["files"][0]["path"] = f"{unrelated}/mod.py"
+    else:
+        manifest["document_digests"] = {
+            f"{unrelated}/README.md": "a" * 64,
+        }
+    cache = RouteCache(tmp_path / "cache")
+    cache.put(
+        f"unrelated-{collection}",
+        payload=_receipt(),
+        markdown="",
+        manifest=manifest,
+    )
+    assert cache.get(f"unrelated-{collection}") is None
+
+
+def test_root_repository_contains_all_manifest_evidence(tmp_path):
+    (tmp_path / ".git").mkdir()
+    source = tmp_path / "src"
+    source.mkdir()
+    (source / "mod.py").write_text("x = 1\n", encoding="utf-8")
+    scope = [
+        RepoCandidate(".", tmp_path, ".", "explicit"),
+    ]
+    manifest = build_manifest(
+        tmp_path,
+        scope,
+        WorkBudget.start(5000),
+        scope_snapshot=_snapshot(candidates=(".",)),
+        strict=False,
+    )
+    payload = _receipt()
+    payload["scope"]["paths"] = ["."]
+    payload["selection"]["candidates"] = ["."]
+    payload["selection"]["selected"] = ["."]
+    cache = RouteCache(tmp_path / "cache")
+    cache.put(
+        "root-repository",
+        payload=payload,
+        markdown="",
+        manifest=manifest,
+    )
+    assert cache.get("root-repository") is not None
 
 
 @pytest.mark.parametrize(

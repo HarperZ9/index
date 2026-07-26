@@ -290,6 +290,13 @@ def _compatible_payload_manifest(payload: dict, manifest: dict) -> bool:
         return False
     if len(selection["selected"]) > scope["max_repos"]:
         return False
+    if budget["repositories_visited"] > scope["max_repos"]:
+        return False
+    if (
+        len(payload["documents"]["selected"])
+        > budget["document_bodies_opened"]
+    ):
+        return False
     if budget["document_bodies_opened"] > scope["max_docs"]:
         return False
     if len(manifest["document_digests"]) > scope["max_docs"]:
@@ -352,6 +359,34 @@ def _valid_stat_record(record: object, *, file_record: bool) -> bool:
     )
 
 
+def _manifest_evidence_scoped(manifest: dict) -> bool:
+    repositories = manifest["repositories"]
+    directory_paths = {
+        record["path"] for record in manifest["directories"]
+    }
+    evidence_paths = [
+        *(record["path"] for record in manifest["directories"]),
+        *(record["path"] for record in manifest["files"]),
+        *manifest["document_digests"],
+    ]
+
+    def selected(path: str) -> bool:
+        return any(
+            repository == "."
+            or path == repository
+            or path.startswith(f"{repository}/")
+            for repository in repositories
+        )
+
+    return (
+        (
+            not manifest["complete"]
+            or all(repository in directory_paths for repository in repositories)
+        )
+        and all(selected(path) for path in evidence_paths)
+    )
+
+
 def _valid_manifest(manifest: object) -> bool:
     if (
         not isinstance(manifest, dict)
@@ -400,12 +435,16 @@ def _valid_manifest(manifest: object) -> bool:
         )
     ):
         return False
-    return validate_manifest_paths(manifest) and all(
-        value is None or isinstance(value, expected)
-        for value, expected in (
-            (manifest.get("markdown_paths_signature"), str),
-            (manifest.get("strict_signature"), str),
-            (manifest.get("last_strict_verified_at"), (int, float)),
+    return (
+        validate_manifest_paths(manifest)
+        and _manifest_evidence_scoped(manifest)
+        and all(
+            value is None or isinstance(value, expected)
+            for value, expected in (
+                (manifest.get("markdown_paths_signature"), str),
+                (manifest.get("strict_signature"), str),
+                (manifest.get("last_strict_verified_at"), (int, float)),
+            )
         )
     )
 
