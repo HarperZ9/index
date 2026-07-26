@@ -18,3 +18,9 @@ build/
 
 # Local-only Claude instructions (global standard: never commit)
 CLAUDE.local.md
+
+# Environment files (global standard: never commit)
+.env
+.env.*
+# ...but the committed template must survive the .env.* rule above
+!.env.example
