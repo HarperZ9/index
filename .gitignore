@@ -15,3 +15,6 @@ build/
 
 # viz dogfood output (runtime artifact, never committed)
 .viz-dogfood-out/
+
+# Local-only Claude instructions (global standard: never commit)
+CLAUDE.local.md
