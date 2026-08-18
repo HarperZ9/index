@@ -6,10 +6,13 @@ from index_graph.cli import main
 
 
 def test_version_flag_exits_zero(capsys):
+    import index_graph
+
     with pytest.raises(SystemExit) as exc:
         main(["--version"])
     assert exc.value.code == 0
-    assert "2.9.0" in capsys.readouterr().out
+    # Assert the CLI reports the real package version, not a pinned literal.
+    assert index_graph.__version__ in capsys.readouterr().out
 
 
 def test_json_to_stdout(tmp_path, capsys):
