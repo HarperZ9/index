@@ -8,8 +8,16 @@
 [![downloads](https://img.shields.io/pypi/dm/index-graph?label=downloads&style=flat-square&labelColor=14041b)](https://pypi.org/project/index-graph/)
 ![python: 3.11+](https://img.shields.io/badge/python-3.11%2B-blue?style=flat-square&labelColor=14041b)
 ![deps: none](https://img.shields.io/badge/deps-none-success?style=flat-square&labelColor=14041b)
+![version: 2.10.0](https://img.shields.io/badge/version-2.10.0-26dfe8?style=flat-square&labelColor=14041b)
 
 [Project Telos](https://harperz9.github.io) | [gather](https://github.com/HarperZ9/gather) | [crucible](https://github.com/HarperZ9/crucible) | [index](https://github.com/HarperZ9/index) | [forum](https://github.com/HarperZ9/forum) | [telos](https://github.com/HarperZ9/telos) | [learn](https://github.com/HarperZ9/learn) | [emet](https://github.com/HarperZ9/emet) | [buildlang](https://github.com/HarperZ9/buildlang)
+
+## Current status
+
+`index-graph 2.10.0` is the current source version. The workspace map, wiki,
+dependency and symbol graphs, context envelopes, freshness checks, and offline
+HTML/JSON surfaces are present; every map remains a snapshot of the inspected
+workspace rather than a claim about unscanned repositories.
 
 Point `index` at one unfamiliar repo and get a self-contained wiki with module, symbol, and architecture pages. Point it at a whole workspace and get the dependency atlas with your docs joined to the code they explain, or the workbench, which folds map, docs, context lens, and health into one page. Every command writes one offline HTML file: no server, no account, no model, no network. `pip install index-graph` installs it, `index` runs it, `import index_graph` imports it.
 

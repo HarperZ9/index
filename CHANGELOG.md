@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Presentation parity
+
+- README now exposes the current source version and the operator commands for
+  status, doctor, MCP, and the offline visual surfaces.
+
 ## 2.9.0 (2026-07-07)
 
 - Workbench: `index workbench` renders every index surface (the workspace map, docs,
