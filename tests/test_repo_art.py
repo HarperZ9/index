@@ -152,3 +152,29 @@ def test_the_tagline_stays_inside_its_rule():
         tagline = spec["header"]["tagline"]
         assert len(tagline) <= TAGLINE_BUDGET, (
             f"{len(tagline)} characters runs past the rule: {tagline!r}")
+
+
+# An outcome box is one unwrapped line of label over one unwrapped line of note,
+# inset 14px inside a box that is (960 - 88 - 26 * (n - 1)) / n wide. Neither
+# line wraps and neither is clipped, so an over-long note simply runs out of its
+# box and into the next one. Like the tagline budget above, these count
+# characters rather than measure glyphs: a guardrail, not a typographic fact.
+# The widths come from the box at three outcomes, which is what every spec so
+# far uses, and shrink with the box when a spec uses more.
+def _outcome_budgets(count: int) -> tuple[int, int]:
+    span = (960 - 44 * 2 - 26 * (count - 1)) / count
+    usable = span - 14 - 10
+    return int(usable / 7.0), int(usable / 5.4)
+
+
+def test_no_outcome_runs_out_of_its_box():
+    for spec in _specs():
+        for flow in spec.get("flows", []):
+            outcomes = flow["outcomes"]
+            label_budget, note_budget = _outcome_budgets(len(outcomes))
+            for item in outcomes:
+                assert len(item["label"]) <= label_budget, (
+                    f'{item["label"]!r} is wider than its box')
+                assert len(item["note"]) <= note_budget, (
+                    f'the note under {item["label"]} is wider than its box: '
+                    f'{item["note"]!r}')

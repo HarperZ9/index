@@ -28,7 +28,7 @@
       ],
       "outcomes": [
         {"label": "MATCH", "note": "the graph carries the edge, with file and line", "tone": "verified"},
-        {"label": "REFUTED", "note": "the graph is complete here and has no such edge", "tone": "drift"},
+        {"label": "REFUTED", "note": "the graph is complete here, with no such edge", "tone": "drift"},
         {"label": "UNVERIFIABLE", "note": "an endpoint sits outside the scanned workspace", "tone": "none"}
       ]
     }
