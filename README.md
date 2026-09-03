@@ -161,6 +161,8 @@ Everything works with zero configuration. An optional `.index.toml` at the works
 - Self-contained and safe with untrusted docs: one HTML file, no external URLs, markdown escaped as it renders, with hostile-content fixtures in the tests.
 - Private by default: paths are root-relative, the local root reduces to a short hash, and credential-shaped fragments in remote URLs are redacted.
 
+<p align="center"><img src="docs/art/what-leaves.svg" alt="Seven things git or the filesystem hands index, and what each one becomes in the written map. A password in a remote URL is replaced whole, a credential-shaped query parameter keeps its name and loses its value, and an ssh username is left alone because it is not a secret. Paths are measured from the scan root, a repository outside that root reduces to its own directory name, and the root itself reduces to sixteen hex characters. The marked row is the one setting that puts real absolute paths in the file, which the map then records against itself." width="100%"></p>
+
 ## Status
 
 `index-graph` 2.9.0 on PyPI, command `index`, Python 3.11+, Development Status Beta. It is used as the workspace map layer of [Project Telos](https://harperz9.github.io), alongside [gather](https://github.com/HarperZ9/gather), [crucible](https://github.com/HarperZ9/crucible), [forum](https://github.com/HarperZ9/forum), and [telos](https://github.com/HarperZ9/telos).
