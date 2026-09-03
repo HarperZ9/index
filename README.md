@@ -1,4 +1,4 @@
-<p align="center"><img src=".github/assets/zentropy-banner.png" alt="index: Maps a multi-repo workspace in seconds on the nine-ecosystem reference tree it ships with (self-measured): nine ecosystems, dependency and symbol graphs, fully offline, zero dependencies." width="100%"></p>
+<p align="center"><img src="docs/art/index-header.svg" alt="index: map a workspace offline, and refute a claim the code does not support." width="100%"></p>
 
 **Maps a multi-repo workspace in seconds on the nine-ecosystem reference tree it ships with (self-measured): nine ecosystems, dependency and symbol graphs, fully offline, zero dependencies.**
 
@@ -42,6 +42,22 @@ New here? [`docs/INTRODUCTION.md`](docs/INTRODUCTION.md) is the ten-minute walkt
 ## What it does
 
 Every codebase has a shape. Past a handful of repos, that shape lives only in someone's head, and they are usually busy or already gone. `index` draws it for you: how your repositories depend on each other, what lives inside each one down to the symbol level, and the docs that explain why, as maps you can open, search, and re-derive. It reads nine ecosystems (Python, JavaScript and TypeScript, Rust, Go, Java, C#, Ruby, PHP, C and C++) from their manifests and their real imports, and it records each dependency edge with the file and line that shows it. Pure Python 3.11+ standard library, zero runtime dependencies.
+
+## How a claim is settled
+
+`index verify` answers a structural claim from the graph it extracted, not from
+a model's memory. This is the path one claim takes.
+
+<p align="center"><img src="docs/art/claim-oracle.svg" alt="Eight stages from workspace discovery to a rechecked certificate: discover, classify, graph, freshness, claim, ground, certificate, recheck. Fingerprints ask whether ground truth has moved, and a graph built over changed code is rebuilt before any claim is grounded against it. A claim is answered from the graph rather than from memory, ending as match, refuted or unverifiable." width="100%"></p>
+
+The triad here is deliberately not the one `index wiki --verify` reports. A
+sealed artifact can DRIFT away from a tree that moved underneath it. A claim
+cannot drift: either the graph carries the edge, or the graph is complete on
+that point and does not, which is REFUTED. UNVERIFIABLE is reserved for the case
+where the question itself falls outside what was scanned, such as an endpoint
+that is not a repository in the workspace. A MATCH on a dependency hands back
+the file and line of its strongest supporting edge, so the answer arrives with
+its witness rather than as an assertion you have to take on faith.
 
 ## The surfaces, coolest first
 
