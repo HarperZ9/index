@@ -7,12 +7,34 @@ import subprocess
 from pathlib import Path
 from typing import Any
 
+# A web remote carries its whole userinfo as a secret. The token often
+# sits in the user slot with no password beside it, so the slot goes as a
+# unit.
 _USERINFO = re.compile(r"(?i)(https?://)[^/@]+@")
-_SECRET_QUERY = re.compile(r"(?i)\b(token|password|secret|api[_-]?key)=([^@\s]+)")
+# Every other scheme keeps its username, because ssh://git@host names a
+# user and nothing more. A colon means a password came with it, and that
+# is a secret whatever the scheme says.
+_PASSWORD_USERINFO = re.compile(
+    r"(?i)([a-z][a-z0-9+.-]*://)[^/@\s]*:[^/@\s]*@")
+# Parameter names arrive prefixed as often as bare, so access_token has to
+# match as readily as token. The value class runs to the end of the query
+# on purpose: swallowing a trailing parameter redacts more than was asked
+# for, and the alternative is publishing a second secret whose name this
+# pattern does not know.
+_SECRET_QUERY = re.compile(
+    r"(?i)(?<![\w-])([\w-]*(?:token|password|secret|api[_-]?key))=([^@\s]+)")
 
 
 def sanitize_credentials(origin: str) -> str:
+    """Strip the parts of a remote URL a reader of the map must not get.
+
+    What survives is the scheme, the host and the path, which is what
+    makes a remote recognisable. Every origin passes through here before
+    it reaches a row, so a map cannot carry a credential even when the
+    clone URL held one.
+    """
     clean = _USERINFO.sub(r"\1<redacted>@", origin)
+    clean = _PASSWORD_USERINFO.sub(r"\1<redacted>@", clean)
     return _SECRET_QUERY.sub(r"\1=<redacted>", clean)
 
 

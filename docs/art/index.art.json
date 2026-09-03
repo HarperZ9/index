@@ -32,5 +32,25 @@
         {"label": "UNVERIFIABLE", "note": "an endpoint sits outside the scanned workspace", "tone": "none"}
       ]
     }
+  ],
+  "cards": [
+    {
+      "file": "what-leaves.svg",
+      "kicker": "every origin and every path goes through this",
+      "title": "What a shared map carries about the machine that made it",
+      "source": "python -c \"import index_graph.gitmeta as g; print(g.sanitize_credentials.__doc__)\"",
+      "alt": "Seven things git or the filesystem hands index, and what each one becomes in the written map. A password in a remote URL is replaced whole, a credential-shaped query parameter keeps its name and loses its value, and an ssh username is left alone because it is not a secret. Paths are measured from the scan root, a repository outside that root reduces to its own directory name, and the root itself reduces to sixteen hex characters. The marked row is the one setting that puts real absolute paths in the file, which the map then records against itself.",
+      "footnote": "A map is written to be read somewhere else, so an origin is rewritten before it reaches a row and a path is measured from the scan root. Redaction works by pattern, which covers the parameter names listed here and cannot cover one it has never seen. The marked row is the setting that puts real paths in the file, and a map made that way says so in absolute_paths_included.",
+      "heads": ["what index is handed", "what the map carries", "why it lands that way"],
+      "fields": [
+        {"key": "a password in a remote", "value": "scheme, host, path", "note": "The userinfo goes as a unit, under any scheme, once a colon says a password came with the name."},
+        {"key": "a credential parameter", "value": "name kept, value gone", "note": "token, password, secret and api_key, bare or prefixed. The rest of the query goes with it."},
+        {"key": "ssh://git@host", "value": "left as it is", "note": "A username is not a secret, and blanking it costs a reader how the clone was set up."},
+        {"key": "a repo under the root", "value": "path relative to it", "note": "Forward slashes on every platform, and the root itself reads as a single dot."},
+        {"key": "a repo outside it", "value": "its own name only", "note": "relative_to raises and the fallback is the directory name, so no absolute path arrives by that route."},
+        {"key": "the scan root", "value": "16 hex characters", "note": "A sha256 prefix. Two maps under one root agree without either naming it."},
+        {"key": "portable turned off", "value": "absolute paths, flagged", "tone": "drift", "note": "The one setting that writes real paths, recorded in the map as absolute_paths_included."}
+      ]
+    }
   ]
 }
