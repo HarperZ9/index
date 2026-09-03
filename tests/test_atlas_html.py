@@ -16,8 +16,10 @@ def _doc(pack, docs):
 def test_flagship_brand_assets_and_atlas_theme():
     root = Path(__file__).resolve().parents[1]
     readme = (root / "README.md").read_text(encoding="utf-8")
-    # brand assets exist on disk; the README references at least one brand
-    # visual (the exact asset is the presentation lane's choice, not pinned)
+    # brand assets exist on disk; the README opens with a brand visual. Which
+    # one is a presentation choice and stays unpinned, so `header` joins the
+    # alternation: docs/art/index-header.svg is generated from
+    # docs/art/index.art.json and is what the README shows now.
     for rel in [
         "docs/brand/index-mark.svg",
         "docs/brand/index-hero.png",
@@ -25,7 +27,7 @@ def test_flagship_brand_assets_and_atlas_theme():
         "examples/index-demo.html",
     ]:
         assert (root / rel).exists(), rel
-    assert re.search(r'<img src="[^"]*(banner|hero|mark)[^"]*"', readme), \
+    assert re.search(r'<img src="[^"]*(banner|hero|mark|header)[^"]*"', readme), \
         "README must open with a brand visual"
     assets = (root / "src/index_graph/viz/atlas_assets.py").read_text(encoding="utf-8")
     assert "#f4f3ef" in assets

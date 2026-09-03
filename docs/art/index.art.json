@@ -1,0 +1,36 @@
+{
+  "$comment": "Source of truth for the artwork on this repository's front page. Edit a sentence here and re-run scripts/render_repo_art.py; tests/test_repo_art.py fails if the committed SVG stops matching.",
+  "header": {
+    "name": "index",
+    "role": "offline workspace graph",
+    "tagline": "Map a workspace offline. Refute a claim the code does not support.",
+    "words": ["scan", "graph", "symbols", "verify", "certificate"]
+  },
+  "flows": [
+    {
+      "file": "claim-oracle.svg",
+      "kicker": "one claim, end to end",
+      "title": "How a structural claim is settled against the code itself",
+      "alt": "Eight stages from workspace discovery to a rechecked certificate. Fingerprints ask whether ground truth has moved, and a graph built over changed code is rebuilt before any claim is grounded against it. A claim is answered from the graph rather than from memory, ending as match, refuted or unverifiable.",
+      "footnote": "The verdict is computed from the graph, so an agent's confidence has no route into it.",
+      "stages": [
+        {"title": "Discover", "note": "The workspace is walked and pruned into a repo list."},
+        {"title": "Classify", "note": "Each repo takes its ecosystem from its own manifests."},
+        {"title": "Graph", "note": "Imports and symbols become edges carrying a file and line."},
+        {"title": "Freshness", "note": "Fingerprints answer one question: has ground truth moved?"},
+        {"title": "Claim", "note": "An agent asserts a dependency, or that a symbol exists."},
+        {"title": "Ground", "note": "The claim meets the graph, and never the agent's memory."},
+        {"title": "Certificate", "note": "The verdict is sealed over a hash of the whole graph."},
+        {"title": "Recheck", "note": "A consumer recomputes that hash instead of trusting it."}
+      ],
+      "returns": [
+        {"from": 3, "to": 2, "label": "GROUND TRUTH MOVED: THE GRAPH IS REBUILT FIRST"}
+      ],
+      "outcomes": [
+        {"label": "MATCH", "note": "the graph carries the edge, with file and line", "tone": "verified"},
+        {"label": "REFUTED", "note": "the graph is complete here, with no such edge", "tone": "drift"},
+        {"label": "UNVERIFIABLE", "note": "an endpoint sits outside the scanned workspace", "tone": "none"}
+      ]
+    }
+  ]
+}
