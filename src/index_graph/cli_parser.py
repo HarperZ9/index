@@ -14,6 +14,15 @@ from . import __version__
 from .wiki.cli import add_wiki_parser
 
 
+def _add_budget_ms_arg(p: argparse.ArgumentParser) -> None:
+    p.add_argument(
+        "--budget-ms",
+        type=int,
+        default=None,
+        help="repository-discovery time budget in milliseconds; 0 means unbounded",
+    )
+
+
 def _add_map_args(p: argparse.ArgumentParser) -> None:
     p.add_argument("--root", type=Path, default=Path.cwd())
     p.add_argument("--output", type=Path, default=None)
@@ -25,6 +34,12 @@ def _add_map_args(p: argparse.ArgumentParser) -> None:
     )
     p.add_argument("--config", type=Path, default=None)
     p.add_argument("--jobs", type=int, default=None)
+    p.add_argument(
+        "--resume-state",
+        type=Path,
+        default=None,
+        help="JSONL checkpoint file that lets complete map builds resume completed repo rows",
+    )
 
 
 def _add_telos_parser(sub, name: str, help_text: str) -> None:
@@ -38,6 +53,7 @@ def _add_graph_parser(sub) -> None:
     g = sub.add_parser("graph", help="Derive the repo-level dependency graph.")
     g.add_argument("--root", type=Path, default=Path.cwd())
     g.add_argument("--json", action="store_true")
+    _add_budget_ms_arg(g)
     g.add_argument(
         "--cycles",
         action="store_true",
@@ -52,6 +68,7 @@ def _add_context_parser(sub) -> None:
     c.add_argument("--focus", default=None)
     c.add_argument("--hops", type=int, default=None)
     c.add_argument("--audit", action="store_true")
+    _add_budget_ms_arg(c)
 
 
 def _add_context_envelope_parser(sub) -> None:
@@ -69,6 +86,7 @@ def _add_context_envelope_parser(sub) -> None:
     ce.add_argument("--focus", default=None)
     ce.add_argument("--hops", type=int, default=None)
     ce.add_argument("--json", action="store_true")
+    _add_budget_ms_arg(ce)
     ce.add_argument(
         "--verify",
         type=Path,
@@ -272,6 +290,7 @@ def _add_router_parser(sub) -> None:
                     help="maximum doc-to-repo edges rendered in the router markdown")
     rt.add_argument("--no-cache", action="store_true",
                     help="disable the workspace-router filesystem cache for this run")
+    _add_budget_ms_arg(rt)
 
 
 def _add_verify_parser(sub) -> None:

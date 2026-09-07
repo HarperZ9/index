@@ -51,9 +51,23 @@ def test_dry_run_reports_the_path_and_writes_nothing(tmp_path, capsys):
     assert f"index map: would write {root.resolve() / 'INDEX.json'}" in out
     assert "dry-run" in out
     assert "repos=1" in out
+    assert "dirty_verified=0" in out
+    assert "metadata_status=partial" in out
+    assert "metadata_unknown=1" in out
+    assert "dirty=0" not in out
     assert not (root / "INDEX.json").exists()
     # negative fixture: a dry run that creates ANY new file fails here
     assert _tree(root) == before
+
+
+def test_write_summary_marks_unknown_metadata(tmp_path, capsys):
+    root = _workspace(tmp_path)
+
+    assert main(["--root", str(root)]) == 0
+    out = capsys.readouterr().out
+
+    assert "repos=1 dirty_verified=0 metadata_status=partial metadata_unknown=1" in out
+    assert "dirty=0" not in out
 
 
 def test_map_subcommand_dry_run_with_explicit_output(tmp_path, capsys):

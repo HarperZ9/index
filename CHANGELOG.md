@@ -1,5 +1,28 @@
 # Changelog
 
+## 2.11.0 (2026-09-07)
+
+- Reliability: interactive workspace MCP cache keys now use the cheap CLI cache
+  identity instead of recursively walking resolver-relevant files before cache
+  lookup, fixing a fresh-process import cycle and letting warm calls return
+  before repository discovery.
+- Reliability: `index router`, `index graph`, `index context`, and
+  `index context-envelope` accept `--budget-ms`; matching interactive MCP
+  workspace tools accept `budget_ms`. Budgeted large-workspace scans return typed
+  UNVERIFIABLE results instead of silently serving a partial map or running until
+  the host times out.
+- Reliability: `index map --resume-state PATH` records completed repository rows
+  as JSONL so complete inventory runs over large workspaces can resume. Cached
+  rows are reused only while their Git/control-file, dirty/untracked, marker, and
+  row-affecting config identity still matches; stale rows rebuild.
+- Reliability: map rows now expose `metadata_status: "unknown"` when the
+  required Git status check fails, and map summaries expose top-level metadata
+  counts so `dirty_count` cannot be read as a complete cleanliness aggregate
+  while any row's Git metadata is unknown.
+- Reliability: the `index.map` MCP tool no longer uses the interactive TTL text
+  cache or advertises `budget_ms`, so a fresh inventory call cannot hide a newly
+  discovered nested repository behind a stale cache key.
+
 ## 2.9.0 (2026-07-07)
 
 - Workbench: `index workbench` renders every index surface (the workspace map, docs,

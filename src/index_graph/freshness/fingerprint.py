@@ -48,14 +48,18 @@ def _is_relevant(filename: str, names, suffixes, globs) -> bool:
     return any(fnmatch.fnmatchcase(filename, g) for g in globs)
 
 
-def relevant_files(repo_root: Path, resolvers=ALL_RESOLVERS) -> Iterator[Path]:
+def relevant_files(repo_root: Path, resolvers=ALL_RESOLVERS, *, checkpoint=None) -> Iterator[Path]:
     """Yield every graph-relevant file under repo_root (the manifests and source
     suffixes the resolvers read, across all ecosystems), pruning EXCLUDE_DIRS.
     Fail-closed: a missing or unreadable tree yields nothing rather than raising.
     """
     names, suffixes, globs = _matchers(resolvers)
     for dirpath, dirnames, filenames in os.walk(Path(repo_root), onerror=lambda _e: None):
-        dirnames[:] = [d for d in dirnames if d not in EXCLUDE_DIRS]
+        current = Path(dirpath)
+        if checkpoint is not None and not checkpoint(current):
+            dirnames[:] = []
+            break
+        dirnames[:] = sorted((d for d in dirnames if d not in EXCLUDE_DIRS), key=str.lower)
         for fn in filenames:
             if _is_relevant(fn, names, suffixes, globs):
                 yield Path(dirpath) / fn

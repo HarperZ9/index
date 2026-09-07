@@ -20,7 +20,7 @@ The console script is `index` (equivalently `python -m index_graph`). With no su
 
 ```text
 index [--root ROOT] [--output OUTPUT] [--json] [--dry-run]
-      [--config CONFIG] [--jobs JOBS] [--version]
+      [--config CONFIG] [--jobs JOBS] [--resume-state STATE] [--version]
 ```
 
 | Flag        | Default                          | Meaning                                              |
@@ -31,9 +31,10 @@ index [--root ROOT] [--output OUTPUT] [--json] [--dry-run]
 | `--dry-run` | off                              | Report the write path and repo counts without writing anything (rejected with `--json`, which already writes nothing). |
 | `--config`  | `<root>/.index.toml` if present  | Path to a `.index.toml`. A missing explicit path is fatal. |
 | `--jobs`    | config or a CPU heuristic        | Override the parallel git worker count (must be at least 1). |
+| `--resume-state` | off                        | JSONL checkpoint file for complete map builds; completed repo rows are reused only while their Git/config/marker identity still matches. |
 | `--version` | n/a                              | Print the version (for example `index 1.0.0`) and exit. |
 
-The default write is explicit: `index` prints `index map: writing <path>` before it touches the filesystem, so the write location is never a surprise.
+The default write is explicit: `index` prints `index map: writing <path>` before it touches the filesystem, so the write location is never a surprise. For very large workspaces, pass `--resume-state PATH` to write each completed repository row to a JSONL checkpoint as it finishes; rerunning the same command reuses only rows whose Git state, marker presence, and row-affecting config still match, while stale or newly discovered repositories are scanned again. A row whose required Git status check fails is still listed for coverage, but it carries `metadata_status: "unknown"` and a safe `metadata_error` instead of presenting zero dirty or untracked files as a verified clean fact.
 
 With no config, classification falls back to a remote-host heuristic: `local` (no remote), `public` (the origin host is in the known public set), or `private`. Supply a `.index.toml` (see `example.index.toml`) for ordered path-glob rules.
 
@@ -54,6 +55,10 @@ Example output (yours will differ in paths, hashes, and timestamps):
   "absolute_paths_included": false,
   "repo_count": 2,
   "dirty_count": 0,
+  "dirty_count_status": "complete",
+  "metadata_status": "ok",
+  "metadata_ok_count": 2,
+  "metadata_unknown_count": 0,
   "class_counts": {
     "public": 1,
     "local": 1
@@ -67,10 +72,11 @@ Example output (yours will differ in paths, hashes, and timestamps):
   "repositories": [
     { "path": "proj-a", "class": "public", "branch": "main", "head": "eb4e19b",
       "origin": "https://github.com/example/proj-a.git",
-      "dirty_count": 0, "untracked_count": 1, "markers": ["README.md"] },
+      "dirty_count": 0, "untracked_count": 1, "markers": ["README.md"],
+      "metadata_status": "ok" },
     { "path": "proj-b", "class": "local", "branch": "main", "head": "e4f1b0c",
       "origin": "", "dirty_count": 0, "untracked_count": 0,
-      "markers": ["pyproject.toml"] }
+      "markers": ["pyproject.toml"], "metadata_status": "ok" }
   ]
 }
 ```
@@ -86,7 +92,7 @@ Example output:
 ```text
 index map: writing /path/to/my-workspace/INDEX.json
 wrote /path/to/my-workspace/INDEX.json
-repos=2 dirty=0
+repos=2 dirty_verified=0 metadata_status=ok metadata_unknown=0
 ```
 
 The JSON file content matches the structure shown in Example 1.
@@ -101,7 +107,7 @@ Example output (nothing is written):
 
 ```text
 index map: would write /path/to/my-workspace/INDEX.json (dry-run, nothing written)
-repos=2 dirty=0
+repos=2 dirty_verified=0 metadata_status=ok metadata_unknown=0
 ```
 
 ### Example 3, custom output path and worker count
@@ -114,7 +120,7 @@ Example output:
 
 ```text
 wrote /path/to/inventory.json
-repos=2 dirty=0
+repos=2 dirty_verified=0 metadata_status=ok metadata_unknown=0
 ```
 
 ### Example 4, use an explicit config
@@ -187,7 +193,8 @@ from index_graph import build_map, default_config, __version__
 config = default_config()
 m = build_map(Path("./my-workspace"), config, __version__)
 
-print(m.repo_count, m.dirty_count)   # e.g. 2 0
+print(m.repo_count, m.dirty_count, m.dirty_count_status)   # e.g. 2 0 complete
+print(m.metadata_status, m.metadata_unknown_count)          # e.g. ok 0
 print(m.class_counts)                # e.g. {'public': 1, 'local': 1}
 for row in m.repositories:
     print(row.path, row.class_, row.branch, row.head)
@@ -196,7 +203,8 @@ for row in m.repositories:
 Example output:
 
 ```text
-2 0
+2 0 complete
+ok 0
 {'public': 1, 'local': 1}
 proj-a public main eb4e19b
 proj-b local main e4f1b0c
@@ -713,10 +721,10 @@ Pass `--freshness` to `index check` to stamp the certificate with a content fing
 `index router` renders a deterministic, evidence-carrying map of the workspace, shaped for a model's `CLAUDE.md` or `AGENTS.md`: where each repo lives with its role and dependencies, the entry points, the depended-on core, and which docs describe what. It is derived from the dependency graph and the docs atlas and re-runs identically, so it replaces the `index.md` plus read-first plus brief that teams maintain by hand.
 
 ```text
-index router --root ROOT [--out FILE]
+index router --root ROOT [--out FILE] [--budget-ms MS]
 ```
 
-With `--out` it writes the map to a file; otherwise it prints to stdout. Every line is a graph fact (roles, edges, doc-describes), nothing invented.
+With `--out` it writes the map to a file; otherwise it prints to stdout. Every line is a graph fact (roles, edges, doc-describes), nothing invented. Router uses a bounded interactive discovery budget by default. If the scan cannot complete inside the budget or the complete repo set is too large for an interactive graph build, it exits non-zero with an `UNVERIFIABLE` message instead of printing a partial map as if it were complete. Use `--budget-ms 0` for an explicit unbounded graph build, and use `index map --resume-state PATH` when the goal is complete repository inventory rather than a graph/doc router.
 
 ## Grounding a claim (`verify`)
 
@@ -796,7 +804,7 @@ Bytes are exact and model-agnostic. The token figures use the common ~4 bytes/to
 index mcp
 ```
 
-The tools are `index_graph`, `index_focus` (a repo's neighborhood plus the preservation manifest), `index_verify` (ground a depends or exists claim), `index_router` (the workspace map), `index_internals` (a repo's module graph), `index.select` (path selection with typed rejection receipts), `index.invalidate` (without `pin` it mints and returns a pin of the current tree; with `pin` it emits the `index.invalidation/1` report plus its reconciliation), `index.wiki` (the sealed single-repo wiki pack, or a verification report when called with `verify`), and the symbol quartet `index.symbol-graph` (the whole call/reference graph for a repo), `index.symbol-definition` (GO-TO-DEFINITION, the file:line of a symbol), `index.symbol-references` (FIND-REFERENCES, the resolved callers of a symbol, with unresolved references reported separately), and `index.symbol-implementations` (FIND-IMPLEMENTATIONS, in-repo subclasses of a class or overrides of a method, with an external base never guessed into an edge). Each reuses the same function its matching subcommand does, so the protocol face never disagrees with the CLI. An unresolvable `focus` or `repo` argument returns an `index.focus-rejection/v1` receipt as the payload instead of a protocol error.
+The tools are `index_graph`, `index_focus` (a repo's neighborhood plus the preservation manifest), `index_verify` (ground a depends or exists claim), `index_router` (the workspace map), `index_internals` (a repo's module graph), `index.select` (path selection with typed rejection receipts), `index.invalidate` (without `pin` it mints and returns a pin of the current tree; with `pin` it emits the `index.invalidation/1` report plus its reconciliation), `index.wiki` (the sealed single-repo wiki pack, or a verification report when called with `verify`), and the symbol quartet `index.symbol-graph` (the whole call/reference graph for a repo), `index.symbol-definition` (GO-TO-DEFINITION, the file:line of a symbol), `index.symbol-references` (FIND-REFERENCES, the resolved callers of a symbol, with unresolved references reported separately), and `index.symbol-implementations` (FIND-IMPLEMENTATIONS, in-repo subclasses of a class or overrides of a method, with an external base never guessed into an edge). Interactive workspace MCP tools accept `budget_ms`, where `0` means the caller chose the unbounded path; `index.map` accepts `resume_state` for the same JSONL checkpoint used by the CLI and is rebuilt for each call because it is an authoritative repository inventory. Each tool reuses the same function its matching subcommand does, so the protocol face never disagrees with the CLI. An unresolvable `focus` or `repo` argument returns an `index.focus-rejection/v1` receipt as the payload instead of a protocol error, and large-workspace budget failures return an `index.mcp-tool-error/v1` payload with `UNVERIFIABLE` status.
 
 ## Notes
 

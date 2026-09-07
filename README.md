@@ -93,8 +93,8 @@ max_cycles = 0
 
 ```
 index                                            # bare: writes INDEX.json, prints the path first
-index map       [--root ROOT] [--json] [--dry-run] [--config CFG]
-index graph     [--root ROOT] [--json] [--cycles]
+index map       [--root ROOT] [--json] [--dry-run] [--config CFG] [--resume-state STATE]
+index graph     [--root ROOT] [--json] [--cycles] [--budget-ms MS]
 index viz       [--root ROOT] [--format {html,svg,mermaid,all}] [--focus REPO] [--no-external]
 index atlas     [--root ROOT] [--format html] [--json] [--out FILE] [--no-external]
 index workbench [--root ROOT] [--budget N] [--max-doc-bodies N] [--out FILE] [--json]
@@ -102,8 +102,8 @@ index wiki      [SOURCE] [--root REPO] [--out PATH] [--format {html,json}]
 index wiki      --verify PATH [--root REPO] [--json]
 index serve     [--host HOST] [--port PORT]
 index lens      [--root ROOT] [--budget N] [--focus REPO] [--out FILE] [--json]
-index context   [--root ROOT] [--focus REPO] [--hops N] [--json] [--audit]
-index context-envelope [--root ROOT] [--budget N] [--focus REPO] [--json]
+index context   [--root ROOT] [--focus REPO] [--hops N] [--json] [--audit] [--budget-ms MS]
+index context-envelope [--root ROOT] [--budget N] [--focus REPO] [--json] [--budget-ms MS]
 index context-envelope --verify ENVELOPE_JSON [--root ROOT]   # is a cached envelope still fresh? exit 1 if it drifted
 index select    [--root ROOT] [--suffix S ...] [--max-files N] [--json]
 index internals [--root REPO] [--json] [--cycles]
@@ -116,7 +116,7 @@ index drift     --from OLD --to NEW [--json]
 index freshness --cert CERT [--root ROOT] [--json]
 index invalidate [--root ROOT] (--out PIN | --pin PIN) [--json]
 index verify    [--root ROOT] [--depends "A -> B" | --exists NAME] [--json]
-index router    [--root ROOT] [--out FILE]
+index router    [--root ROOT] [--out FILE] [--budget-ms MS]
 index bench     [--root ROOT] [--json] [--no-cache]
 index status | doctor | demo [--json]
 index mcp
@@ -157,7 +157,16 @@ Everything works with zero configuration. An optional `.index.toml` at the works
 - Deterministic output: the same input gives the same bytes. No timestamps, no randomness.
 - Cold-path cache: repo-level resolver facts are cached behind graph-relevant
   fingerprints, so unchanged repos do not rebuild on every workspace graph run.
-- Zero runtime dependencies, including the markdown renderer, the SVG layout, and the LSP framing. A test keeps it that way; the suite currently collects 585 tests.
+- Interactive bounds: router, graph, context, and context-envelope calls use a
+  repository-discovery budget by default and return an UNVERIFIABLE message when
+  a workspace is too large for an interactive graph build. Use `--budget-ms 0`
+  for the explicit unbounded path.
+- Resumable inventory: `index map --resume-state STATE` appends completed repo
+  rows as JSONL so a large complete map can resume after a process timeout;
+  rows are reused only while their Git/config/marker identity still matches, and
+  rows whose Git metadata cannot be verified carry `metadata_status: "unknown"`;
+  top-level metadata counts state whether `dirty_count` is complete or known-only.
+- Zero runtime dependencies, including the markdown renderer, the SVG layout, and the LSP framing. A test keeps it that way; the suite covers the public command and protocol surfaces.
 - Self-contained and safe with untrusted docs: one HTML file, no external URLs, markdown escaped as it renders, with hostile-content fixtures in the tests.
 - Private by default: paths are root-relative, the local root reduces to a short hash, and credential-shaped fragments in remote URLs are redacted.
 
@@ -165,7 +174,7 @@ Everything works with zero configuration. An optional `.index.toml` at the works
 
 ## Status
 
-`index-graph` 2.9.0 on PyPI, command `index`, Python 3.11+, Development Status Beta. It is used as the workspace map layer of [Project Telos](https://harperz9.github.io), alongside [gather](https://github.com/HarperZ9/gather), [crucible](https://github.com/HarperZ9/crucible), [forum](https://github.com/HarperZ9/forum), and [telos](https://github.com/HarperZ9/telos).
+`index-graph` 2.11.0 release-candidate source, command `index`, Python 3.11+, Development Status Beta. It is used as the workspace map layer of [Project Telos](https://harperz9.github.io), alongside [gather](https://github.com/HarperZ9/gather), [crucible](https://github.com/HarperZ9/crucible), [forum](https://github.com/HarperZ9/forum), and [telos](https://github.com/HarperZ9/telos). The PyPI badge shows the latest published package.
 
 One note on why the outputs look the way they do: every claim an `index` artifact makes, an edge, a page, a verdict, carries the evidence to re-derive it, and the verifiers are built to be able to fail. If you only remember one command, make it `index wiki --verify`.
 

@@ -22,7 +22,6 @@ _PROTOCOL_VERSION = "2024-11-05"
 _CACHE_SCHEMA = "index.mcp-cache-entry/v1"
 _CACHE: dict[str, dict] = {}
 _CACHEABLE_TOOLS = {
-    "index.map",
     "index.context",
     "index.context.envelope",
     "index_graph",
@@ -84,34 +83,36 @@ def _sha256_text(value: str) -> str:
 
 
 def _workspace_signature(root: Path) -> str:
-    parts = [str(root)]
-    for cfg in (root / ".index.toml", root / ".repomap.toml"):
-        try:
-            stat = cfg.stat()
-        except OSError:
-            parts.append(f"{cfg.name}:missing")
-        else:
-            parts.append(f"{cfg.name}:{stat.st_mtime_ns}:{stat.st_size}")
-    # Recurse over every graph-relevant file, not just top-level entries: a
-    # content edit moves NO directory mtime and a nested add moves only the
-    # immediate parent's, so the old iterdir() scan was invariant to virtually
-    # every graph-relevant change and served a stale map as fresh. Reuse the
-    # shipped resolver-driven walk (the same primitive freshness/LSP use).
+    """Cheap MCP cache identity.
+
+    Freshness is handled by typed fingerprints on the verification/envelope
+    surfaces. The MCP cache key must not recursively walk a large workspace before
+    it can discover whether a warm entry exists.
+    """
+    from .cache import workspace_signature
+
+    return workspace_signature(root)
+
+
+def _interactive_budget_ms(args: dict) -> int:
+    raw = args.get("budget_ms")
+    if raw is None or raw == "":
+        from .scan import default_interactive_budget_ms
+        return default_interactive_budget_ms()
     try:
-        from .freshness.fingerprint import relevant_files
-        rels = []
-        for path in relevant_files(root):
-            try:
-                stat = path.stat()
-                rel = path.relative_to(root).as_posix()
-            except (OSError, ValueError):
-                continue
-            rels.append(f"{rel}:{stat.st_mtime_ns}:{stat.st_size}")
-        for entry in sorted(rels):
-            parts.append(entry)
-    except OSError as exc:
-        parts.append(f"root-error:{type(exc).__name__}:{exc}")
-    return _sha256_text("|".join(parts))
+        value = int(raw)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("budget_ms must be an integer millisecond budget") from exc
+    if value < 0:
+        raise ValueError("budget_ms must be non-negative")
+    return value
+
+
+def _cache_args(args: dict, *, budget_ms: int | None = None) -> dict:
+    stable = dict(args)
+    if budget_ms is not None:
+        stable["budget_ms"] = budget_ms
+    return stable
 
 
 def _cache_key(name: str, root: Path, args: dict) -> str:
@@ -189,17 +190,29 @@ def _root_schema(extra: dict | None = None, required: list | None = None) -> dic
     return {"type": "object", "properties": props, "required": required or ["root"]}
 
 
+def _workspace_schema(extra: dict | None = None, required: list | None = None) -> dict:
+    props = {
+        "budget_ms": {
+            "type": "integer",
+            "description": "optional repository-discovery time budget in milliseconds; 0 means unbounded",
+        }
+    }
+    if extra:
+        props.update(extra)
+    return _root_schema(props, required=required)
+
+
 def _tool_defs() -> list[dict]:
     return [
         {"name": "index.map",
          "description": "Repository inventory map as JSON, matching the `index map --json` CLI surface.",
-         "inputSchema": _root_schema()},
+         "inputSchema": _root_schema({"resume_state": {"type": "string", "description": "optional JSONL state file for resumable complete map builds"}})},
         {"name": "index.context",
          "description": "Repo-level dependency context pack as JSON, matching the `index context --json` CLI surface.",
-         "inputSchema": _root_schema()},
+         "inputSchema": _workspace_schema()},
         {"name": "index.context.envelope",
          "description": "Budgeted, receipt-backed context envelope for large-codebase agent workflows.",
-         "inputSchema": _root_schema({
+         "inputSchema": _workspace_schema({
              "budget": {"type": "integer"},
              "focus": {"type": "string"},
              "hops": {"type": "integer"},
@@ -247,32 +260,51 @@ def _tool_defs() -> list[dict]:
          "inputSchema": {"type": "object", "properties": {}}},
         {"name": "index_graph",
          "description": "Repo-level dependency graph (relations, roles, cycles) as JSON.",
-         "inputSchema": _root_schema()},
+         "inputSchema": _workspace_schema()},
         {"name": "index_focus",
          "description": "A repo's dependency neighborhood plus a preservation manifest of what was dropped at the boundary.",
-         "inputSchema": _root_schema({"repo": {"type": "string"}, "hops": {"type": "integer"}},
-                                     required=["root", "repo"])},
+         "inputSchema": _workspace_schema({"repo": {"type": "string"}, "hops": {"type": "integer"}},
+                                       required=["root", "repo"])},
         {"name": "index_verify",
          "description": "Ground a structural claim. Pass depends 'A -> B' or exists 'NAME'. Returns MATCH/REFUTED/UNVERIFIABLE with file:line evidence.",
-         "inputSchema": _root_schema({"depends": {"type": "string"}, "exists": {"type": "string"}})},
+         "inputSchema": _workspace_schema({"depends": {"type": "string"}, "exists": {"type": "string"}})},
         {"name": "index_router",
          "description": "A deterministic CLAUDE.md/AGENTS.md workspace map derived from the graph and docs.",
-         "inputSchema": _root_schema({"max_docs": {"type": "integer"}})},
+         "inputSchema": _workspace_schema({"max_docs": {"type": "integer"}})},
         {"name": "index_internals",
          "description": "Intra-repo module dependency graph for one repo, with cycles and coverage.",
-         "inputSchema": _root_schema({"repo": {"type": "string"}}, required=["root", "repo"])},
+         "inputSchema": _workspace_schema({"repo": {"type": "string"}}, required=["root", "repo"])},
     ]
 
 
-def _repo_paths(root: Path) -> dict:
+def _repo_paths(root: Path, *, budget_ms: int | None = None) -> dict:
     from .config import load_config
-    from .scan import discover_repos, repo_key_map
+    from .scan import (
+        ScanBudget,
+        ScanBudgetExceeded,
+        discover_repos,
+        enforce_interactive_repo_limit,
+        repo_key_map,
+    )
+
     config = load_config(None, root)
-    return repo_key_map(
+    budget = ScanBudget(budget_ms)
+    skipped: list[str] = []
+    repos = discover_repos(
         root,
-        discover_repos(root, config),
+        config,
+        skipped=skipped,
+        checkpoint=budget.checkpoint if budget.budget_ms > 0 else None,
+    )
+    if budget.exhausted:
+        raise ScanBudgetExceeded(root=root, budget=budget, repo_count=len(repos), skipped=skipped)
+    keyed = repo_key_map(
+        root,
+        repos,
         include_root_repo=config.include_root_repo,
     )
+    enforce_interactive_repo_limit(len(keyed), budget_ms=budget.budget_ms)
+    return keyed
 
 
 def _symbol_matches(sym, query: str) -> bool:
@@ -350,8 +382,6 @@ def call_tool(name: str, args: dict) -> str:
                 "index.symbol-references", "index.symbol-implementations"):
         return _symbol_tool(name, root, args)
 
-    repo_paths = _repo_paths(root)
-
     if name == "index.invalidate":
         # without 'pin' this mints one; with 'pin' it emits the typed report.
         # both are payloads, matching the CLI's --out / --pin modes.
@@ -369,31 +399,36 @@ def call_tool(name: str, args: dict) -> str:
     if name == "index.map":
         from .config import load_config
         from .scan import build_map
-        return _with_cache(
-            name,
-            root,
-            args,
-            lambda: json.dumps(
-                build_map(root, load_config(None, root), __version__).to_json(),
-                indent=2,
-                sort_keys=True,
-            ),
+        resume_state = Path(args["resume_state"]) if args.get("resume_state") else None
+        return json.dumps(
+            build_map(root, load_config(None, root), __version__, resume_state=resume_state).to_json(),
+            indent=2,
+            sort_keys=True,
         )
 
     if name in ("index.context", "index_graph"):
+        budget_ms = _interactive_budget_ms(args)
+
+        def _build_context() -> str:
+            paths = _repo_paths(root, budget_ms=budget_ms)
+            return json.dumps(to_json(build_graph(paths)), indent=2, sort_keys=True)
+
         return _with_cache(
             name,
             root,
-            args,
-            lambda: json.dumps(to_json(build_graph(repo_paths)), indent=2, sort_keys=True),
+            _cache_args(args, budget_ms=budget_ms),
+            _build_context,
         )
 
     if name == "index.context.envelope":
         from .context.envelope import build_context_envelope
+        budget_ms = _interactive_budget_ms(args)
+
         def _build_envelope():
+            paths = _repo_paths(root, budget_ms=budget_ms)
             try:
                 env = build_context_envelope(
-                    build_graph(repo_paths),
+                    build_graph(paths),
                     root=root,
                     token_budget=int(args.get("budget", 1200)),
                     focus=args.get("focus"),
@@ -404,9 +439,11 @@ def call_tool(name: str, args: dict) -> str:
                 # (the index.select not-found precedent)
                 return json.dumps(exc.receipt, indent=2, sort_keys=True)
             return json.dumps(env, indent=2, sort_keys=True)
-        return _with_cache(name, root, args, _build_envelope)
+        return _with_cache(name, root, _cache_args(args, budget_ms=budget_ms), _build_envelope)
 
     if name == "index_focus":
+        budget_ms = _interactive_budget_ms(args)
+        repo_paths = _repo_paths(root, budget_ms=budget_ms)
         graph = build_graph(repo_paths)
         repo = args.get("repo") or ""
         names = {n.name for n in graph.repos}
@@ -420,6 +457,8 @@ def call_tool(name: str, args: dict) -> str:
 
     if name == "index_verify":
         from .verify import build_verification
+        budget_ms = _interactive_budget_ms(args)
+        repo_paths = _repo_paths(root, budget_ms=budget_ms)
         pack = to_json(build_graph(repo_paths))
         if args.get("depends"):
             if "->" not in args["depends"]:
@@ -443,21 +482,29 @@ def call_tool(name: str, args: dict) -> str:
             r = p.resolve().relative_to(root).as_posix()
             return "" if r == "." else r
 
-        repo_dirs = {nm: _rel(p) for nm, p in repo_paths.items()}
+        budget_ms = _interactive_budget_ms(args)
         max_docs = max(0, int(args.get("max_docs", 500)))
+
+        def _build_router() -> str:
+            paths = _repo_paths(root, budget_ms=budget_ms)
+            repo_dirs = {nm: _rel(p) for nm, p in paths.items()}
+            return render_router(build_router_pack(
+                build_graph(paths),
+                discover_docs(root),
+                repo_dirs,
+            ), max_docs=max_docs)
+
         return _with_cache(
             name,
             root,
-            args,
-            lambda: render_router(build_router_pack(
-                build_graph(repo_paths),
-                discover_docs(root),
-                repo_dirs,
-            ), max_docs=max_docs),
+            _cache_args(args, budget_ms=budget_ms),
+            _build_router,
         )
 
     if name == "index_internals":
         from .internals import build_internals
+        budget_ms = _interactive_budget_ms(args)
+        repo_paths = _repo_paths(root, budget_ms=budget_ms)
         repo = args.get("repo")
         if repo not in repo_paths:
             raise ValueError(f"unknown repo: {repo}")
