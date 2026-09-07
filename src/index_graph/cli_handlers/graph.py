@@ -9,11 +9,48 @@ from .. import __version__
 from ..context.focus import focus_rejection, render_rejection
 from ..context.pack import closure, focus_subgraph, render_text, to_json
 from ..graph.build import build_graph
+from ..scan import ScanBudgetExceeded, ScanWorkloadExceeded, default_interactive_budget_ms
 from ._common import head_commit, repo_paths, require_dir
 
 
+def _budget_ms(args) -> int:
+    value = getattr(args, "budget_ms", None)
+    if value is None:
+        value = default_interactive_budget_ms()
+    if value < 0:
+        raise SystemExit("--budget-ms must be non-negative")
+    return value
+
+
+def _emit_scan_budget(args, command: str, exc: ScanBudgetExceeded) -> int:
+    if getattr(args, "json", False):
+        payload = {
+            "schema": "index.scan-budget-exceeded/v1",
+            "command": command,
+            "status": "UNVERIFIABLE",
+            "message": str(exc),
+            "budget_ms": getattr(exc, "budget_ms", None),
+            "partial_repos": getattr(exc, "repo_count", None),
+        }
+        if hasattr(exc, "elapsed_ms"):
+            payload["elapsed_ms"] = exc.elapsed_ms
+        if hasattr(exc, "last_path"):
+            payload["last_path"] = exc.last_path
+        if hasattr(exc, "skipped"):
+            payload["skipped"] = exc.skipped
+        if hasattr(exc, "repo_limit"):
+            payload["repo_limit"] = exc.repo_limit
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        print(f"{command}: UNVERIFIABLE: {exc}")
+    return 2
+
+
 def cmd_graph(args) -> int:
-    graph = build_graph(repo_paths(args.root.resolve()))
+    try:
+        graph = build_graph(repo_paths(args.root.resolve(), budget_ms=_budget_ms(args)))
+    except (ScanBudgetExceeded, ScanWorkloadExceeded) as exc:
+        return _emit_scan_budget(args, "index graph", exc)
     if getattr(args, "cycles", False):
         from ..graph.cycles import find_cycles
 

@@ -1,10 +1,11 @@
 # Index protocol
 
-This document specifies the two machine-readable artifacts `index` emits for downstream
-consumers: the **snapshot** and the **certificate**. Both are plain JSON. Any consumer
-can read them, and any consumer can verify a certificate by recomputing its hashes and
-re-running its command. The protocol names no other tool and assumes none. A consumer may
-be a CI job, a code reviewer, or an automated agent.
+This document specifies the machine-readable artifacts `index` emits for downstream
+consumers: the **map**, the **snapshot**, the **certificate**, and the invalidation and
+freshness receipts. They are plain JSON. Any consumer can read them, and any consumer can
+verify a certificate by recomputing its hashes and re-running its command. The protocol
+names no other tool and assumes none. A consumer may be a CI job, a code reviewer, or an
+automated agent.
 
 The tool that produces these artifacts runs fully offline. It requires no network, no
 account, no API key, and no model. It reads source code and emits JSON, and it is
@@ -25,6 +26,72 @@ def canonical_sha(obj) -> str:
 Canonical JSON sorts keys and uses compact separators, so the hash depends on the content
 and not on key order or whitespace. Re-serializing the same content on any platform yields
 the same hash.
+
+## The inventory map: `schema_version: 1`
+
+`index map --json` and MCP `index.map` emit the complete repository inventory for a
+workspace. It is a coverage inventory, so a repository whose Git status cannot be read is
+still listed, but its metadata is marked unknown.
+
+```json
+{
+  "schema_version": 1,
+  "tool_version": "2.11.0",
+  "generated_at": "2026-09-07T10:16:44-07:00",
+  "root_sha256_prefix": "617a55395ac0d599",
+  "absolute_paths_included": false,
+  "repo_count": 2,
+  "dirty_count": 1,
+  "dirty_count_status": "known_only",
+  "metadata_status": "partial",
+  "metadata_ok_count": 1,
+  "metadata_unknown_count": 1,
+  "class_counts": {"public": 1, "unknown": 1},
+  "top_level": [],
+  "repositories": [
+    {
+      "path": "app",
+      "class": "public",
+      "branch": "main",
+      "head": "eb4e19b",
+      "origin": "https://github.com/example/app.git",
+      "dirty_count": 1,
+      "untracked_count": 0,
+      "markers": ["README.md"],
+      "metadata_status": "ok"
+    },
+    {
+      "path": "broken",
+      "class": "unknown",
+      "branch": "unknown",
+      "head": "unknown",
+      "origin": "",
+      "dirty_count": 0,
+      "untracked_count": 0,
+      "markers": [],
+      "metadata_status": "unknown",
+      "metadata_error": "GitMetadataError"
+    }
+  ]
+}
+```
+
+| Field | Meaning |
+|-------|---------|
+| `repo_count` | number of repositories discovered under the configured traversal rules |
+| `dirty_count` | dirty tracked files across rows whose `metadata_status` is `ok`; it is a complete workspace dirty count only when `dirty_count_status` is `complete` |
+| `dirty_count_status` | `complete` when every repo's metadata is known, otherwise `known_only` |
+| `metadata_status` | `ok` when every repo row has verified Git metadata, otherwise `partial` |
+| `metadata_ok_count` | number of repo rows with verified Git metadata |
+| `metadata_unknown_count` | number of repo rows whose required Git status check failed |
+| `repositories[].metadata_status` | `ok` for a verified row, `unknown` when branch/head/dirty/untracked could not be established |
+| `repositories[].metadata_error` | safe error class for an unknown row; no command output, paths beyond the row path, or credentials are included |
+
+A consumer must treat `metadata_unknown_count > 0` as incomplete cleanliness metadata. The
+row remains in the map for coverage, but the zero dirty and untracked counts on that row are
+not a clean-working-tree assertion. CLI file-writing summaries use `dirty_verified` for the
+same reason. MCP `index.map` returns this same JSON shape and does not use the interactive
+TTL cache.
 
 ## The snapshot: `index.snapshot/1`
 

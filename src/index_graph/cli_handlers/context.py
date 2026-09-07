@@ -7,13 +7,61 @@ import json
 from ..context.focus import FocusRejection, focus_rejection, render_rejection
 from ..context.pack import closure, focus_subgraph, preservation, render_text, to_json
 from ..graph.build import build_graph
+from ..scan import ScanBudgetExceeded, ScanWorkloadExceeded, default_interactive_budget_ms
 from ._common import repo_paths
+
+
+def _budget_ms(args) -> int:
+    value = getattr(args, "budget_ms", None)
+    if value is None:
+        value = default_interactive_budget_ms()
+    if value < 0:
+        raise SystemExit("--budget-ms must be non-negative")
+    return value
+
+
+def _scan_budget_payload(command: str, exc: ScanBudgetExceeded | ScanWorkloadExceeded) -> dict:
+    payload = {
+        "schema": "index.scan-budget-exceeded/v1",
+        "command": command,
+        "status": "UNVERIFIABLE",
+        "message": str(exc),
+        "budget_ms": getattr(exc, "budget_ms", None),
+        "partial_repos": getattr(exc, "repo_count", None),
+        "next_actions": [
+            "Increase --budget-ms for a larger bounded interactive scan.",
+            "Use --budget-ms 0 for an unbounded interactive run.",
+            "Use index map --resume-state PATH for complete repository inventory over large workspaces.",
+        ],
+    }
+    if hasattr(exc, "elapsed_ms"):
+        payload["elapsed_ms"] = exc.elapsed_ms
+    if hasattr(exc, "last_path"):
+        payload["last_path"] = exc.last_path
+    if hasattr(exc, "skipped"):
+        payload["skipped"] = exc.skipped
+    if hasattr(exc, "repo_limit"):
+        payload["repo_limit"] = exc.repo_limit
+    return payload
+
+
+def _emit_scan_budget(args, command: str, exc: ScanBudgetExceeded | ScanWorkloadExceeded) -> int:
+    payload = _scan_budget_payload(command, exc)
+    if getattr(args, "json", False):
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        print(f"{command}: UNVERIFIABLE: {exc}")
+        print("next: increase --budget-ms, use --budget-ms 0, or run index map --resume-state PATH")
+    return 2
 
 
 def cmd_context(args) -> int:
     if args.hops is not None and args.hops < 0:
         raise SystemExit("--hops must be >= 0")
-    graph = build_graph(repo_paths(args.root.resolve()))
+    try:
+        graph = build_graph(repo_paths(args.root.resolve(), budget_ms=_budget_ms(args)))
+    except (ScanBudgetExceeded, ScanWorkloadExceeded) as exc:
+        return _emit_scan_budget(args, "index context", exc)
     names = {n.name for n in graph.repos}
     if args.audit:
         return _context_audit(graph)
@@ -75,7 +123,10 @@ def cmd_context_envelope(args) -> int:
         raise SystemExit("--hops must be >= 0")
     from ..context.envelope import build_context_envelope
 
-    graph = build_graph(repo_paths(args.root.resolve()))
+    try:
+        graph = build_graph(repo_paths(args.root.resolve(), budget_ms=_budget_ms(args)))
+    except (ScanBudgetExceeded, ScanWorkloadExceeded) as exc:
+        return _emit_scan_budget(args, "index context-envelope", exc)
     try:
         env = build_context_envelope(
             graph,
@@ -113,7 +164,10 @@ def _verify_envelope(args) -> int:
     except (OSError, ValueError) as exc:
         print(f"could not read envelope {args.verify}: {exc}")
         return 2
-    graph = build_graph(repo_paths(args.root.resolve()))
+    try:
+        graph = build_graph(repo_paths(args.root.resolve(), budget_ms=_budget_ms(args)))
+    except (ScanBudgetExceeded, ScanWorkloadExceeded) as exc:
+        return _emit_scan_budget(args, "index context-envelope --verify", exc)
     verdict = verify_envelope_freshness(envelope, graph)
     if args.json:
         print(json.dumps(verdict, indent=2, sort_keys=True))

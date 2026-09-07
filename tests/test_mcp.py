@@ -70,7 +70,37 @@ def test_catalog_map_alias_returns_inventory(tmp_path):
     assert r["result"]["isError"] is False
     rec = json.loads(r["result"]["content"][0]["text"])
     assert rec["repo_count"] == 1
+    assert rec["dirty_count"] == 0
+    assert rec["dirty_count_status"] == "known_only"
+    assert rec["metadata_status"] == "partial"
+    assert rec["metadata_unknown_count"] == 1
     assert rec["repositories"][0]["path"] == "solo"
+    assert rec["repositories"][0]["metadata_status"] == "unknown"
+
+
+def test_catalog_map_alias_does_not_cache_stale_repo_universe(tmp_path, monkeypatch):
+    import index_graph.mcp as mcp_mod
+
+    monkeypatch.setenv("INDEX_MCP_CACHE_TTL_SECONDS", "60")
+    monkeypatch.setenv("INDEX_MCP_CACHE_DIR", str(tmp_path.parent / f"{tmp_path.name}-cache"))
+    mcp_mod._CACHE.clear()
+    (tmp_path / "group").mkdir()
+
+    first = handle_request({"jsonrpc": "2.0", "id": 19, "method": "tools/call",
+                            "params": {"name": "index.map",
+                                       "arguments": {"root": str(tmp_path)}}})
+    assert first["result"]["isError"] is False
+    assert json.loads(first["result"]["content"][0]["text"])["repo_count"] == 0
+
+    (tmp_path / "group" / "nested" / ".git").mkdir(parents=True)
+    second = handle_request({"jsonrpc": "2.0", "id": 20, "method": "tools/call",
+                             "params": {"name": "index.map",
+                                        "arguments": {"root": str(tmp_path)}}})
+
+    assert second["result"]["isError"] is False
+    payload = json.loads(second["result"]["content"][0]["text"])
+    assert payload["repo_count"] == 1
+    assert payload["repositories"][0]["path"] == "group/nested"
 
 
 def test_catalog_context_alias_returns_graph_pack(tmp_path):
@@ -115,7 +145,7 @@ def test_mcp_workspace_tool_ignores_non_utf8_filesystem_cache(tmp_path, monkeypa
     import index_graph.mcp as mcp_mod
 
     monkeypatch.setenv("INDEX_MCP_CACHE_TTL_SECONDS", "60")
-    monkeypatch.setenv("INDEX_MCP_CACHE_DIR", str(tmp_path / "cache"))
+    monkeypatch.setenv("INDEX_MCP_CACHE_DIR", str(tmp_path.parent / f"{tmp_path.name}-cache"))
     mcp_mod._CACHE.clear()
     (tmp_path / "solo" / ".git").mkdir(parents=True)
     (tmp_path / "solo" / "pyproject.toml").write_text(
@@ -210,7 +240,7 @@ def test_missing_root_is_clear_error():
 def test_mcp_tool_converts_system_exit_to_typed_error(tmp_path, monkeypatch):
     import index_graph.mcp as mcp_mod
 
-    def boom(_root):
+    def boom(_root, **_kwargs):
         raise SystemExit("bad config")
 
     monkeypatch.setattr(mcp_mod, "_repo_paths", boom)
@@ -278,21 +308,92 @@ def test_serve_framed_stdio_roundtrip():
     assert "tools" in frames[1]["result"]
 
 
-def test_workspace_signature_moves_on_a_nested_source_edit(tmp_path):
-    # A source edit nested inside a repo must move the cache key, or the MCP
-    # serves a stale map as fresh. The top-level-only scan was invariant to it.
+def test_workspace_signature_is_cache_identity_not_recursive_freshness(tmp_path):
+    from index_graph.freshness.fingerprint import repo_fingerprint
     from index_graph.mcp import _workspace_signature
-    repo = tmp_path / "myrepo" / "src"
-    repo.mkdir(parents=True)
-    f = repo / "mod.py"
+
+    repo = tmp_path / "myrepo"
+    src = repo / "src"
+    src.mkdir(parents=True)
+    f = src / "mod.py"
     f.write_text("def a():\n    return 1\n", encoding="utf-8")
-    before = _workspace_signature(tmp_path)
-    # edit the nested file: change the BYTE LENGTH too, so the signature moves
-    # via size even when two rapid writes land in the same mtime tick (a
-    # same-length edit would be a flaky assertion on mtime granularity alone)
+    before_identity = _workspace_signature(tmp_path)
+    before_fingerprint = repo_fingerprint(repo)
+
     f.write_text("def a():\n    return 2  # edited, longer now\n", encoding="utf-8")
-    after = _workspace_signature(tmp_path)
-    assert before != after, "a nested source edit must move the workspace signature"
-    # a brand-new nested module also moves the key
-    (repo / "new.py").write_text("x = 1\n", encoding="utf-8")
-    assert _workspace_signature(tmp_path) != after
+
+    assert _workspace_signature(tmp_path) == before_identity
+    assert repo_fingerprint(repo) != before_fingerprint
+
+
+def test_mcp_workspace_signature_works_in_fresh_process(tmp_path):
+    import subprocess
+    import sys
+
+    code = (
+        "from pathlib import Path; "
+        "from index_graph.mcp import _workspace_signature; "
+        f"print(_workspace_signature(Path({str(tmp_path)!r})))"
+    )
+    env = dict(__import__("os").environ)
+    env["PYTHONPATH"] = str(__import__("pathlib").Path(__file__).resolve().parents[1] / "src")
+    result = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, timeout=10, env=env)
+
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.strip()
+
+
+def test_mcp_cache_hit_returns_before_repo_discovery(tmp_path, monkeypatch):
+    import index_graph.mcp as mcp_mod
+
+    monkeypatch.setenv("INDEX_MCP_CACHE_TTL_SECONDS", "60")
+    monkeypatch.setenv("INDEX_MCP_CACHE_DIR", str(tmp_path.parent / f"{tmp_path.name}-cache"))
+    mcp_mod._CACHE.clear()
+    (tmp_path / "solo" / ".git").mkdir(parents=True)
+    (tmp_path / "solo" / "pyproject.toml").write_text(
+        "[project]\nname='solo'\nversion='0'\n", encoding="utf-8")
+
+    first = handle_request({"jsonrpc": "2.0", "id": 30, "method": "tools/call",
+                            "params": {"name": "index_router",
+                                       "arguments": {"root": str(tmp_path), "max_docs": 1}}})
+    assert first["result"]["isError"] is False
+
+    def fail_repo_discovery(_root, **_kwargs):
+        raise AssertionError("cache hit must not rediscover repositories")
+
+    monkeypatch.setattr(mcp_mod, "_repo_paths", fail_repo_discovery)
+    second = handle_request({"jsonrpc": "2.0", "id": 31, "method": "tools/call",
+                             "params": {"name": "index_router",
+                                        "arguments": {"root": str(tmp_path), "max_docs": 1}}})
+
+    assert second["result"]["isError"] is False
+    assert second["result"]["content"][0]["text"] == first["result"]["content"][0]["text"]
+
+
+def test_mcp_interactive_tools_advertise_discovery_budget():
+    tools = handle_request({"jsonrpc": "2.0", "id": 32, "method": "tools/list"})["result"]["tools"]
+    schemas = {tool["name"]: tool["inputSchema"] for tool in tools}
+
+    assert "budget_ms" not in schemas["index.map"]["properties"]
+    for name in ("index.context", "index.context.envelope", "index_graph", "index_router"):
+        assert schemas[name]["properties"]["budget_ms"]["type"] == "integer"
+
+
+def test_mcp_interactive_repo_limit_is_typed_error(tmp_path, monkeypatch):
+    import index_graph.mcp as mcp_mod
+
+    monkeypatch.setenv("INDEX_MCP_CACHE_TTL_SECONDS", "0")
+    monkeypatch.setenv("INDEX_INTERACTIVE_REPO_LIMIT", "2")
+    mcp_mod._CACHE.clear()
+    for name in ("a", "b", "c"):
+        (tmp_path / name / ".git").mkdir(parents=True)
+
+    r = handle_request({"jsonrpc": "2.0", "id": 33, "method": "tools/call",
+                        "params": {"name": "index_graph",
+                                   "arguments": {"root": str(tmp_path), "budget_ms": 1000}}})
+
+    payload = json.loads(r["result"]["content"][0]["text"])
+    assert r["result"]["isError"] is True
+    assert payload["status"] == "UNVERIFIABLE"
+    assert payload["error_type"] == "ScanWorkloadExceeded"
+    assert "3 repositories" in payload["message"]

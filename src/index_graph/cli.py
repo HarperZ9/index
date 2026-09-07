@@ -102,6 +102,14 @@ _DISPATCH = {
 }
 
 
+def _map_summary(data) -> str:
+    return (
+        f"repos={data.repo_count} dirty_verified={data.dirty_count} "
+        f"metadata_status={data.metadata_status} "
+        f"metadata_unknown={data.metadata_unknown_count}"
+    )
+
+
 def _configure_stdio() -> None:
     for stream_name in ("stdout", "stderr"):
         stream = getattr(sys, stream_name, None)
@@ -128,18 +136,18 @@ def _cmd_map(args) -> int:
                 "map: --dry-run applies to the file-writing mode; "
                 "--json already writes nothing"
             )
-        print(json.dumps(build_map(root, config, __version__).to_json(), indent=2))
+        print(json.dumps(build_map(root, config, __version__, resume_state=args.resume_state).to_json(), indent=2))
         return 0
     output = args.output.resolve() if args.output else root / "INDEX.json"
     if args.dry_run:
         print(f"index map: would write {output} (dry-run, nothing written)")
-        data = build_map(root, config, __version__)
-        print(f"repos={data.repo_count} dirty={data.dirty_count}")
+        data = build_map(root, config, __version__, resume_state=args.resume_state)
+        print(_map_summary(data))
         return 0
     print(f"index map: writing {output}")
-    data = write_map(root, config, __version__, output)
+    data = write_map(root, config, __version__, output, resume_state=args.resume_state)
     print(f"wrote {output}")
-    print(f"repos={data.repo_count} dirty={data.dirty_count}")
+    print(_map_summary(data))
     return 0
 
 

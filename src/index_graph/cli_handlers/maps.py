@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 
 from ..cache import cached_text
+from ..scan import ScanBudgetExceeded, ScanWorkloadExceeded, default_interactive_budget_ms
 from ..graph.build import build_graph
 from ._common import rel_to_root, repo_paths, require_dir
 
@@ -87,20 +88,30 @@ def cmd_router(args) -> int:
 
     root = require_dir(args.root)
     max_docs = max(0, int(getattr(args, "max_docs", 500)))
+    budget_ms = getattr(args, "budget_ms", None)
+    if budget_ms is None:
+        budget_ms = default_interactive_budget_ms()
+    if budget_ms < 0:
+        raise SystemExit("--budget-ms must be non-negative")
 
     def _build() -> str:
-        paths = repo_paths(root)
+        paths = repo_paths(root, budget_ms=budget_ms)
         repo_dirs = {name: rel_to_root(root, p) for name, p in paths.items()}
         pack = build_router_pack(build_graph(paths), discover_docs(root), repo_dirs)
         return render_router(pack, max_docs=max_docs)
 
-    text = cached_text(
-        "router",
-        root,
-        {"max_docs": max_docs},
-        _build,
-        enabled=not getattr(args, "no_cache", False),
-    )
+    try:
+        text = cached_text(
+            "router",
+            root,
+            {"max_docs": max_docs, "budget_ms": budget_ms},
+            _build,
+            enabled=not getattr(args, "no_cache", False),
+        )
+    except (ScanBudgetExceeded, ScanWorkloadExceeded) as exc:
+        print(f"index router: UNVERIFIABLE: {exc}")
+        print("next: increase --budget-ms, use --budget-ms 0, or run index map --resume-state PATH")
+        return 2
     if args.out:
         Path(args.out).write_text(text, encoding="utf-8")
         print(f"wrote {args.out}")

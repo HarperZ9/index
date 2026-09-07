@@ -7,19 +7,36 @@ import subprocess
 from pathlib import Path
 
 from ..config import load_config
-from ..scan import discover_repos, repo_key_map
+from ..scan import (
+    ScanBudget,
+    ScanBudgetExceeded,
+    discover_repos,
+    enforce_interactive_repo_limit,
+    repo_key_map,
+)
 
 
-def repo_paths(root: Path, *, skipped: list | None = None) -> dict[str, Path]:
+def repo_paths(root: Path, *, skipped: list | None = None, budget_ms: int | None = None) -> dict[str, Path]:
     # discover_repos requires a Config; use neutral defaults for graph/context.
     # `skipped`, when given, collects directories the scan could not read, so a
     # narrowed scan is a receiptable fact rather than a stderr-only warning.
     config = load_config(None, root)
-    return repo_key_map(
+    budget = ScanBudget(budget_ms)
+    repos = discover_repos(
         root,
-        discover_repos(root, config, skipped=skipped),
+        config,
+        skipped=skipped,
+        checkpoint=budget.checkpoint if budget.budget_ms > 0 else None,
+    )
+    if budget.exhausted:
+        raise ScanBudgetExceeded(root=root, budget=budget, repo_count=len(repos), skipped=skipped)
+    keyed = repo_key_map(
+        root,
+        repos,
         include_root_repo=config.include_root_repo,
     )
+    enforce_interactive_repo_limit(len(keyed), budget_ms=budget.budget_ms)
+    return keyed
 
 
 def require_dir(root: Path) -> Path:

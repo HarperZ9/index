@@ -62,7 +62,7 @@ Install:
 
 ```bash
 pip install index-graph
-index --version        # index 2.9.0
+index --version        # index 2.11.0
 ```
 
 ### Minute one: a repo you have never read

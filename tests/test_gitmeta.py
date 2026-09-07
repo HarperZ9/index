@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from index_graph.gitmeta import repo_metadata, run_git, sanitize_credentials
+from index_graph.gitmeta import GitMetadataError, repo_metadata, run_git, sanitize_credentials
 
 
 def test_sanitize_redacts_userinfo_but_keeps_host():
@@ -69,11 +69,29 @@ def test_sanitize_leaves_an_origin_holding_no_credential_alone(origin):
     assert sanitize_credentials(origin) == origin
 
 
-def test_repo_metadata_degrades_on_non_repo(tmp_path: Path):
-    meta = repo_metadata(tmp_path)  # not a git repo -> all git calls return ""
-    assert meta["branch"] == "unknown"
-    assert meta["head"] == "unknown"
-    assert meta["dirty_count"] == 0
+def test_repo_metadata_raises_when_status_is_unavailable(tmp_path: Path):
+    with pytest.raises(GitMetadataError):
+        repo_metadata(tmp_path)
+
+
+def test_repo_metadata_does_not_climb_to_parent_repo_for_broken_nested_marker(tmp_path: Path):
+    parent = tmp_path / "parent"
+    subprocess.run(["git", "init", "-b", "main", str(parent)], check=True,
+                   capture_output=True)
+    subprocess.run(["git", "-C", str(parent), "config", "user.email", "t@t.t"],
+                   check=True, capture_output=True)
+    subprocess.run(["git", "-C", str(parent), "config", "user.name", "t"],
+                   check=True, capture_output=True)
+    (parent / "README.md").write_text("parent\n", encoding="utf-8")
+    subprocess.run(["git", "-C", str(parent), "add", "."], check=True,
+                   capture_output=True)
+    subprocess.run(["git", "-C", str(parent), "commit", "-m", "parent"],
+                   check=True, capture_output=True)
+    broken = parent / "nested" / "broken"
+    (broken / ".git").mkdir(parents=True)
+
+    with pytest.raises(GitMetadataError):
+        repo_metadata(broken)
 
 
 def test_repo_metadata_reads_real_repo(tmp_path: Path):
@@ -90,11 +108,50 @@ def test_repo_metadata_reads_real_repo(tmp_path: Path):
     meta = repo_metadata(tmp_path)
     assert meta["branch"] == "main"
     assert meta["head"] != "unknown"
+    assert meta["metadata_status"] == "ok"
+    assert meta["status_signature"]
+
+
+def test_repo_metadata_uses_global_no_optional_locks(monkeypatch, tmp_path):
+    calls = []
+
+    def _run(args, **kwargs):
+        calls.append(args)
+        if args[-3:] == ["config", "--get", "remote.origin.url"]:
+            return subprocess.CompletedProcess(args, 1, stdout="", stderr="")
+        return subprocess.CompletedProcess(
+            args,
+            0,
+            stdout="# branch.oid abcdef1234567890\n# branch.head main\n",
+            stderr="",
+        )
+
+    monkeypatch.setattr(subprocess, "run", _run)
+
+    meta = repo_metadata(tmp_path)
+
+    assert meta["branch"] == "main"
+    assert calls[0][:4] == ["git", "--no-optional-locks", "-C", str(tmp_path)]
+    assert calls[0][4] == "status"
 
 
 def test_run_git_timeout_returns_empty(monkeypatch, tmp_path):
     import subprocess
     def _raise(*args, **kwargs):
-        raise subprocess.TimeoutExpired(cmd="git", timeout=20)
+        raise subprocess.TimeoutExpired(cmd="git", timeout=5)
     monkeypatch.setattr(subprocess, "run", _raise)
     assert run_git(tmp_path, ["status"]) == ""
+
+
+def test_run_git_uses_bounded_timeout(monkeypatch, tmp_path):
+    seen = {}
+
+    def _run(*args, **kwargs):
+        seen.update(kwargs)
+        return subprocess.CompletedProcess(args[0], 0, stdout="ok\n", stderr="")
+
+    monkeypatch.delenv("INDEX_GIT_TIMEOUT_SECONDS", raising=False)
+    monkeypatch.setattr(subprocess, "run", _run)
+
+    assert run_git(tmp_path, ["status"]) == "ok"
+    assert seen["timeout"] <= 5

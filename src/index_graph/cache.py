@@ -38,7 +38,9 @@ def workspace_signature(root: Path) -> str:
     """Cheap workspace signature for cache invalidation.
 
     This is intentionally cheaper than the full freshness fingerprint. It catches
-    config and top-level entry changes, while the TTL bounds nested-change staleness.
+    config and top-level entry name changes, while the TTL bounds nested-change
+    staleness. Directory mtimes are excluded so volatile runtime trees such as
+    .scratch do not churn interactive cache keys before a cache lookup.
     """
     root = root.resolve()
     parts = [str(root)]
@@ -61,7 +63,10 @@ def workspace_signature(root: Path) -> str:
             parts.append(f"{entry.name}:unstatable")
             continue
         kind = "d" if entry.is_dir() else "f"
-        parts.append(f"{entry.name}:{kind}:{stat.st_mtime_ns}:{stat.st_size}")
+        if kind == "d":
+            parts.append(f"{entry.name}:{kind}")
+        else:
+            parts.append(f"{entry.name}:{kind}:{stat.st_mtime_ns}:{stat.st_size}")
     return _sha256_text("|".join(parts))
 
 

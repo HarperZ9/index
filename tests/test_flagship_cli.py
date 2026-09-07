@@ -34,6 +34,8 @@ def test_doctor_probes_mcp_map_surface(capsys):
     checks = {check["name"]: check for check in payload["native"]["checks"]}
     assert checks["mcp_map_probe"]["status"] == "MATCH"
     assert checks["mcp_map_probe"]["repo_count"] == 1
+    assert checks["mcp_map_probe"]["metadata_status"] == "partial"
+    assert checks["mcp_map_probe"]["metadata_unknown_count"] == 1
     assert checks["mcp_map_probe"]["absolute_paths_included"] is False
 
 

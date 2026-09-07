@@ -15,7 +15,7 @@ from .arch.criteria import ArchitectureCriteria, parse_architecture
 DEFAULT_PRUNE_DIRS = frozenset({
     ".git", ".mypy_cache", ".pytest_cache", ".ruff_cache",
     "__pycache__", ".venv", "venv", "venvs", "env",
-    "node_modules", "site-packages", ".tox", ".eggs",
+    "node_modules", "site-packages", "lib64", ".tox", ".eggs",
     "build", "dist", ".cache", ".playwright-mcp",
     ".warden-safe-cache", ".next", ".turbo",
     "target", "coverage", ".coverage", ".nyc_output",

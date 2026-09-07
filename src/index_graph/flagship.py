@@ -80,6 +80,8 @@ def _mcp_map_probe() -> dict[str, Any]:
         "name": "mcp_map_probe",
         "status": status,
         "repo_count": payload.get("repo_count"),
+        "metadata_status": payload.get("metadata_status"),
+        "metadata_unknown_count": payload.get("metadata_unknown_count"),
         "absolute_paths_included": payload.get("absolute_paths_included"),
         "elapsed_ms": round((time.perf_counter() - start) * 1000),
         "side_effect": "temporary_workspace",
@@ -110,7 +112,7 @@ def status_payload() -> dict:
                 "index_internals",
             ],
             "current_status": (
-                "2.9.0 workspace atlas, certificates, freshness, benchmarking, "
+                f"{__version__} workspace atlas, certificates, freshness, benchmarking, "
                 "selection-aware context envelopes, and MCP parity"
             ),
             "telos_contracts": TELOS_CONTRACTS,
