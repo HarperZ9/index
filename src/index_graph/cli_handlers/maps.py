@@ -8,6 +8,7 @@ from pathlib import Path
 from ..cache import cached_text
 from ..scan import ScanBudgetExceeded, ScanWorkloadExceeded, default_interactive_budget_ms
 from ..graph.build import build_graph
+from ..graph.progress import stderr_progress
 from ._common import rel_to_root, repo_paths, require_dir
 
 
@@ -83,7 +84,7 @@ def _atlas_html(args, pack, docs) -> int:
 
 def cmd_router(args) -> int:
     from ..knowledge.atlas import build_router_pack
-    from ..knowledge.docs import discover_docs
+    from ..knowledge.docs import discover_router_docs
     from ..router import render_router
 
     root = require_dir(args.root)
@@ -97,7 +98,10 @@ def cmd_router(args) -> int:
     def _build() -> str:
         paths = repo_paths(root, budget_ms=budget_ms)
         repo_dirs = {name: rel_to_root(root, p) for name, p in paths.items()}
-        pack = build_router_pack(build_graph(paths), discover_docs(root), repo_dirs)
+        pack = build_router_pack(build_graph(paths, executor="process",
+                                 use_cache=not getattr(args, "no_cache", False),
+                                 on_progress=stderr_progress()),
+                                 discover_router_docs(root), repo_dirs)
         return render_router(pack, max_docs=max_docs)
 
     try:

@@ -4,7 +4,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from ..walk import walk_files
+from ..walk import read_source_text, walk_files
 from .base import RawEdge
 
 _MODULE = re.compile(r"^\s*module\s+(\S+)")
@@ -25,7 +25,7 @@ class GoResolver:
     def exposed_names(self, repo_root: Path) -> set[str]:
         gm = repo_root / "go.mod"
         try:
-            for line in gm.read_text(encoding="utf-8", errors="replace").splitlines():
+            for line in read_source_text(gm, encoding="utf-8", errors="replace").splitlines():
                 m = _MODULE.match(line)
                 if m:
                     return {m.group(1)}
@@ -57,13 +57,13 @@ class GoResolver:
         gm = repo_root / "go.mod"
         if gm.is_file():
             try:
-                for path in self._require_paths(gm.read_text(encoding="utf-8", errors="replace")):
+                for path in self._require_paths(read_source_text(gm, encoding="utf-8", errors="replace")):
                     edges.append(RawEdge(path, "manifest", "go.mod", None, f"require {path}"))
             except OSError:
                 pass
-        for src in walk_files(repo_root, suffixes=(".go",)):
+        for src in walk_files(repo_root, suffixes=(".go",), stop_at_nested_repos=True):
             try:
-                lines = src.read_text(encoding="utf-8", errors="replace").splitlines()
+                lines = read_source_text(src, encoding="utf-8", errors="replace").splitlines()
             except OSError:
                 continue
             rel = src.relative_to(repo_root).as_posix()

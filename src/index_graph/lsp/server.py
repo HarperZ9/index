@@ -2,17 +2,23 @@
 
 State is deliberately thin. On ``initialize``/``initialized`` the server builds
 the wave-1 symbol graph for its single ``--root`` workspace and records a content
-fingerprint of the Python tree. Before answering ``textDocument/definition`` or
-``textDocument/references`` it re-checks that fingerprint: if the tree moved on
-disk, it returns a typed STALE error instead of an answer derived from a graph
-that no longer describes the files. Every positive answer is an evidence-backed
-Location from the graph; an unresolved name is null (definition) or [] (references),
-never a guess, and never a symbol from outside this root.
+fingerprint plus a cheap metadata signature of the Python tree. Before answering
+``textDocument/definition`` or ``textDocument/references`` it reuses metadata
+only inside a short monotonic cache window, and only when file mtimes are outside
+the recent-write uncertainty window. Otherwise it re-checks the content
+fingerprint; if that moved, it returns a typed STALE error instead of an answer
+derived from a graph that no longer describes the files. A deliberately restored
+old mtime can still hide until the bounded content recheck. Every positive
+answer is an evidence-backed Location from the graph; an unresolved name is null
+(definition) or [] (references), never a guess, and never a symbol from outside
+this root.
 """
 from __future__ import annotations
 
+from dataclasses import dataclass
 import hashlib
 import sys
+import time
 from pathlib import Path
 
 from ..graph.walk import walk_files
@@ -28,6 +34,22 @@ METHOD_NOT_FOUND = -32601
 STALE_CODE = -32603  # Internal Error: the workspace changed since initialize
 
 _SERVER_NAME = "index-lsp"
+_MTIME_UNCERTAINTY_NS = 1_000_000_000
+_CONTENT_RECHECK_NS = 2_000_000_000
+
+
+@dataclass(frozen=True)
+class _StatSignature:
+    digest: str
+    newest_mtime_ns: int
+
+
+def _wall_time_ns() -> int:
+    return time.time_ns()
+
+
+def _monotonic_ns() -> int:
+    return time.monotonic_ns()
 
 
 def _fingerprint(root: Path) -> str:
@@ -50,20 +72,16 @@ def _fingerprint(root: Path) -> str:
     return hashlib.sha256("\n".join(entries).encode("utf-8")).hexdigest()
 
 
-def _cheap_signature(root: Path) -> str:
+def _cheap_signature(root: Path) -> _StatSignature:
     """A cheap staleness pre-check: SHA-256 over the sorted
     (relative-path, mtime_ns, size) triples of the Python tree. This is
     stat-only (no file reads), so it is O(files) rather than the
-    O(files * bytes) of [`_fingerprint`]. Any added or removed .py file moves
-    the set of paths, and any write moves that file's mtime, so the signature
-    moves; a stable tree keeps it identical. It is used only as a FAST PATH
-    before the authoritative full-content fingerprint: a match means "nothing
-    stat-visible changed, skip the full re-read"; a mismatch always falls back
-    to [`_fingerprint`], which stays the source of truth. (The one thing a
-    stat-only check cannot see is a content edit that preserves both size and
-    mtime to the nanosecond, which a normal filesystem write never does.)"""
+    O(files * bytes) of [`_fingerprint`]. It is a bounded cache key, not an
+    authority: a match can skip the full read only outside the mtime uncertainty
+    window and only until the content-recheck interval expires."""
     root = Path(root).resolve()
     entries: list[str] = []
+    newest_mtime_ns = 0
     for py in walk_files(root, suffixes=(".py",)):
         try:
             rel = py.relative_to(root).as_posix()
@@ -71,11 +89,13 @@ def _cheap_signature(root: Path) -> str:
             rel = py.as_posix()
         try:
             st = py.stat()
+            newest_mtime_ns = max(newest_mtime_ns, st.st_mtime_ns)
             entries.append(f"{rel}:{st.st_mtime_ns}:{st.st_size}")
         except OSError:
             entries.append(f"{rel}:unstattable")
     entries.sort()
-    return hashlib.sha256("\n".join(entries).encode("utf-8")).hexdigest()
+    digest = hashlib.sha256("\n".join(entries).encode("utf-8")).hexdigest()
+    return _StatSignature(digest, newest_mtime_ns)
 
 
 class LSPServer:
@@ -86,7 +106,8 @@ class LSPServer:
         self.trace = trace
         self.symbol_graph: SymbolGraph | None = None
         self.fingerprint: str | None = None
-        self.cheap_sig: str | None = None
+        self.cheap_sig: _StatSignature | None = None
+        self.last_content_check_mono_ns: int | None = None
         self.should_exit = False
         self._shutdown = False
 
@@ -97,31 +118,43 @@ class LSPServer:
         self.symbol_graph = build_symbol_graph(self.root)
         self.fingerprint = _fingerprint(self.root)
         self.cheap_sig = _cheap_signature(self.root)
+        self.last_content_check_mono_ns = _monotonic_ns()
 
     def is_stale(self) -> bool:
         """True when the Python tree changed on disk since the last build.
 
-        Fail-closed and fast in the common case: a cheap stat-only signature is
-        checked first, and only when it moves does the authoritative full-content
-        fingerprint run. IDEs issue definition/references on every hover and
-        click, so the unchanged-tree path (the overwhelming majority) avoids
-        re-reading and re-hashing every file.
+        Fail-closed around recent writes while staying fast in the common case:
+        a cheap stat-only signature is checked first, and a match skips the
+        full-content fingerprint only outside the recent-mtime uncertainty
+        window and only until the short monotonic content-recheck interval
+        expires. Metadata changes, recent mtimes, future mtimes, and expired
+        cache windows all fall back to the content fingerprint.
         """
         if self.fingerprint is None:
             return False
         cheap_now = _cheap_signature(self.root)
-        if cheap_now == self.cheap_sig:
-            return False  # fast path: nothing stat-visible changed
+        wall_now = _wall_time_ns()
+        mono_now = _monotonic_ns()
+        if cheap_now == self.cheap_sig and self._metadata_cache_valid(cheap_now, wall_now, mono_now):
+            return False
         # The cheap signature moved; the full-content fingerprint is the
         # authority and decides staleness (fail-closed on a real change).
         if _fingerprint(self.root) != self.fingerprint:
             return True
-        # mtime/size moved but content is byte-identical (e.g. a touch or a
-        # rewrite with the same bytes): not stale. Refresh the cheap signature
-        # so the next request takes the fast path instead of re-running the
-        # full check every time.
+        # Either metadata moved while content stayed identical, or the bounded
+        # metadata cache expired. Refresh both checks from this content read.
         self.cheap_sig = cheap_now
+        self.last_content_check_mono_ns = mono_now
         return False
+
+    def _metadata_cache_valid(self, stat_sig: _StatSignature, wall_now: int, mono_now: int) -> bool:
+        if self.last_content_check_mono_ns is None:
+            return False
+        mtime_age = wall_now - stat_sig.newest_mtime_ns
+        if stat_sig.newest_mtime_ns and (mtime_age < 0 or mtime_age <= _MTIME_UNCERTAINTY_NS):
+            return False
+        content_age = mono_now - self.last_content_check_mono_ns
+        return 0 <= content_age <= _CONTENT_RECHECK_NS
 
     # --- dispatch ------------------------------------------------------------
 

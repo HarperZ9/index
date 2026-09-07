@@ -69,7 +69,7 @@ its witness rather than as an assertion you have to take on faith.
 
 **`index lens`, the context lens.** Agent context assembly is usually invisible: a budget retains some files and silently drops the rest. The lens renders it. One page shows what a token budget retains and what it drops with typed failure codes, and a slider replays the exact greedy rule the CLI runs over the exact same numbers, live, without re-running Python. `index context-envelope` is the machine face of the same thing: a budgeted context packet where each retained repo carries hashed source references and every omission carries a failure code such as `budget_exceeded`, so a downstream agent can ask for more instead of inheriting confidence from a missing file. And `context-envelope --verify` re-derives a cached envelope's freshness against the current workspace: it re-fingerprints the repos, confirms the sealed hashes still hold, and names the repos that drifted, exiting non-zero if the map moved under the envelope, so stale context is caught by a check instead of acted on by mistake.
 
-**`index symbols` and `index lsp`, IDE navigation from the graph.** Go-to-definition, find-references, and find-implementations for any Python symbol, from the CLI (`index symbols Class::method`) with `file:line` on every hop, or inside VSCode, Neovim, and JetBrains via a stdio LSP server with hand-rolled JSON-RPC framing and zero new dependencies. An unresolved reference returns empty, never a guessed jump, and a workspace that changed on disk is detected rather than answered from a stale graph. `index internals` and `index internals-symbols` expose the underlying module and call graphs directly.
+**`index symbols` and `index lsp`, IDE navigation from the graph.** Go-to-definition, find-references, and find-implementations for any Python symbol, from the CLI (`index symbols Class::method`) with `file:line` on every hop, or inside VSCode, Neovim, and JetBrains via a stdio LSP server with hand-rolled JSON-RPC framing and zero new dependencies. An unresolved reference returns empty, never a guessed jump. LSP content checks reject detected disk changes; its unchanged-metadata fast path expires after two seconds, so older same-size edits with restored timestamps can remain undetected within that interval. `index internals` and `index internals-symbols` expose the underlying module and call graphs directly.
 
 **`index check`, `snapshot`, `drift`, architecture as a testable rule.** Declare the layering you meant in `.index.toml`:
 
@@ -156,7 +156,14 @@ Everything works with zero configuration. An optional `.index.toml` at the works
 - Evidence on every edge: no dependency edge exists without a file and line behind it, and a confidence grade. Two independent signals (manifest and observed import) grade each one.
 - Deterministic output: the same input gives the same bytes. No timestamps, no randomness.
 - Cold-path cache: repo-level resolver facts are cached behind graph-relevant
-  fingerprints, so unchanged repos do not rebuild on every workspace graph run.
+  fingerprints and resolver implementation/version, so unchanged repos do not
+  rebuild on every workspace graph run. Fingerprints read working bytes, including
+  local source changes that Git index flags can hide.
+  Builds exceeding the temporary source-byte cache limits do not populate repo
+  facts; see [cache limits](USAGE.md#workspace-map-router) for the tradeoff.
+- Observable graph builds: CLI graph/router and matching MCP calls use bounded
+  process workers and emit rate-limited progress JSON on stderr. A progress count
+  records repositories processed; it is not proof of semantic source correctness.
 - Interactive bounds: router, graph, context, and context-envelope calls use a
   repository-discovery budget by default and return an UNVERIFIABLE message when
   a workspace is too large for an interactive graph build. Use `--budget-ms 0`
@@ -192,6 +199,14 @@ python -m pytest
 ```
 
 Python 3.11+. That is the entire dependency list.
+
+## Development
+
+Start with [AGENTS.md](AGENTS.md) for the repository contract and
+[USAGE.md](USAGE.md) for CLI and Python entrypoints. Run the focused tests for a
+changed surface, then `python -m pytest` before proposing a release. Keep source
+evidence, cache invalidation, and CLI/MCP behavior aligned; see
+[CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidance.
 
 ---
 

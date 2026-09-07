@@ -10,14 +10,18 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import sys
 from dataclasses import dataclass
 from pathlib import Path
+from types import CodeType
 from typing import Any
 
+from .walk import read_source_bytes
+from .. import __version__
 from ..freshness.fingerprint import repo_fingerprint
 
 SCHEMA = "index.graph-repo-cache/v1"
-CACHE_KEY_VERSION = "repo-build/v1"
+CACHE_KEY_VERSION = "repo-build/v3"
 _DESCRIPTION_NAMES = ("README.md", "README.rst", "README.txt", "readme.md")
 
 
@@ -48,18 +52,49 @@ def _sha256_text(value: str) -> str:
     return hashlib.sha256(value.encode("utf-8")).hexdigest()
 
 
+def _implementation_value(value):
+    """Encode immutable code values without marshal's object-reference state."""
+    if isinstance(value, CodeType):
+        fields = ("co_argcount", "co_posonlyargcount", "co_kwonlyargcount",
+                  "co_nlocals", "co_stacksize", "co_flags", "co_code",
+                  "co_consts", "co_names", "co_varnames", "co_freevars",
+                  "co_cellvars", "co_exceptiontable")
+        return ["code", [[name, _implementation_value(getattr(value, name, None))]
+                         for name in fields]]
+    if isinstance(value, tuple):
+        return ["tuple", [_implementation_value(item) for item in value]]
+    if isinstance(value, frozenset):
+        items = [_implementation_value(item) for item in value]
+        return ["frozenset", sorted(items, key=lambda item: json.dumps(item))]
+    if isinstance(value, bytes):
+        return ["bytes", value.hex()]
+    return [type(value).__name__, repr(value)]
+
+
 def _resolver_signature(resolvers) -> tuple[str, ...]:
     parts = []
     for resolver in resolvers:
         cls = type(resolver)
         name = str(getattr(resolver, "name", cls.__name__))
-        parts.append(f"{name}:{cls.__module__}.{cls.__qualname__}")
+        implementation = hashlib.sha256()
+        implementation.update(str(sys.implementation.cache_tag).encode("utf-8"))
+        for method_name in sorted(dir(cls)):
+            method = getattr(cls, method_name, None)
+            code = getattr(method, "__code__", None)
+            if code is not None:
+                implementation.update(method_name.encode("utf-8"))
+                implementation.update(json.dumps(_implementation_value(code),
+                                                  separators=(",", ":")).encode("utf-8"))
+        # Custom resolvers with external configuration can invalidate their
+        # derived facts explicitly. Package version covers shipped helper changes.
+        implementation.update(str(getattr(resolver, "cache_version", "1")).encode("utf-8"))
+        parts.append(f"{name}:{cls.__module__}.{cls.__qualname__}:{implementation.hexdigest()}")
     return tuple(sorted(parts))
 
 
 def _file_digest(path: Path) -> str:
     try:
-        return hashlib.sha256(path.read_bytes()).hexdigest()
+        return hashlib.sha256(read_source_bytes(path)).hexdigest()
     except OSError:
         return "unreadable"
 
@@ -88,6 +123,7 @@ def make_lookup(repo_name: str, repo_root: Path, resolvers) -> RepoCacheLookup:
     signature = _resolver_signature(resolvers)
     payload = {
         "version": CACHE_KEY_VERSION,
+        "index_version": __version__,
         "repo_name": repo_name,
         "repo_path": str(root),
         "fingerprint": fingerprint,

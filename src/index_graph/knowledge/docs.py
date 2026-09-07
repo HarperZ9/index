@@ -45,3 +45,26 @@ def discover_docs(root: Path) -> list[Doc]:
         out.append(_parse_doc(p.relative_to(root).as_posix(), text))
     out.sort(key=lambda d: d.rel_path)
     return out
+
+
+def discover_router_docs(root: Path) -> list[Doc]:
+    """Markdown locations for router `describes` edges, without reading bodies.
+
+    The router only needs each doc path and containing directory to connect docs
+    to the most-specific repo. Atlas/workbench/wiki still call `discover_docs`
+    when titles, wikilinks, or prose mentions are needed.
+    """
+    root = Path(root)
+    out: list[Doc] = []
+    for p in walk_files(root, suffixes=_MD_SUFFIXES):
+        rel_path = p.relative_to(root).as_posix()
+        parent = Path(rel_path).parent.as_posix()
+        out.append(Doc(
+            rel_path=rel_path,
+            title=Path(rel_path).stem,
+            body="",
+            link_targets=(),
+            dir_rel="" if parent == "." else parent,
+        ))
+    out.sort(key=lambda d: d.rel_path)
+    return out

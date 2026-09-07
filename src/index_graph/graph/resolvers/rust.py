@@ -6,7 +6,7 @@ import tomllib
 from collections.abc import Iterator
 from pathlib import Path
 
-from ..walk import walk_files
+from ..walk import read_source_text, walk_files
 from .base import RawEdge
 
 _DEP_TABLES = ("dependencies", "dev-dependencies", "build-dependencies")
@@ -25,13 +25,13 @@ class RustResolver:
         return (repo_root / "Cargo.toml").is_file()
 
     def _manifests(self, repo_root: Path) -> Iterator[Path]:
-        return walk_files(repo_root, names=("Cargo.toml",))
+        return walk_files(repo_root, names=("Cargo.toml",), stop_at_nested_repos=True)
 
     def exposed_names(self, repo_root: Path) -> set[str]:
         names: set[str] = set()
         for ct in self._manifests(repo_root):
             try:
-                data = tomllib.loads(ct.read_text(encoding="utf-8", errors="replace"))
+                data = tomllib.loads(read_source_text(ct, encoding="utf-8", errors="replace"))
             except (tomllib.TOMLDecodeError, OSError):
                 continue
             pkg = data.get("package", {})
@@ -43,7 +43,7 @@ class RustResolver:
         edges: list[RawEdge] = []
         for ct in self._manifests(repo_root):
             try:
-                data = tomllib.loads(ct.read_text(encoding="utf-8", errors="replace"))
+                data = tomllib.loads(read_source_text(ct, encoding="utf-8", errors="replace"))
             except (tomllib.TOMLDecodeError, OSError):
                 continue
             rel = ct.relative_to(repo_root).as_posix()
@@ -52,9 +52,9 @@ class RustResolver:
                 if isinstance(section, dict):
                     for name in section:
                         edges.append(RawEdge(str(name), "manifest", rel, None, f"{table}.{name}"))
-        for src in walk_files(repo_root, suffixes=(".rs",)):
+        for src in walk_files(repo_root, suffixes=(".rs",), stop_at_nested_repos=True):
             try:
-                lines = src.read_text(encoding="utf-8", errors="replace").splitlines()
+                lines = read_source_text(src, encoding="utf-8", errors="replace").splitlines()
             except OSError:
                 continue
             rel = src.relative_to(repo_root).as_posix()

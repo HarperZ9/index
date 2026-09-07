@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import json
+import os
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -105,3 +108,53 @@ def test_build_graph_ignores_corrupt_repo_cache(tmp_path: Path, monkeypatch):
 
     assert second == first
     assert any(json.loads(path.read_text(encoding="utf-8")) for path in cache_dir.glob("*.json"))
+
+
+def test_resolver_implementation_change_invalidates_cached_edges(tmp_path, monkeypatch):
+    monkeypatch.setenv("INDEX_GRAPH_REPO_CACHE_DIR", str(tmp_path / "cache"))
+    repo = _repo(tmp_path / "app", "app", "alpha")
+    paths = {"app": repo}
+    before = to_json(build_graph(paths, resolvers=(CountingResolver(),), jobs=1))
+
+    def changed_raw_edges(self, root):
+        return [RawEdge("beta", "manifest", "deps.txt", 1, "beta")]
+
+    monkeypatch.setattr(CountingResolver, "raw_edges", changed_raw_edges)
+    cached = to_json(build_graph(paths, resolvers=(CountingResolver(),), jobs=1))
+    actual = to_json(build_graph(paths, resolvers=(CountingResolver(),), jobs=1,
+                                use_cache=False))
+    assert cached == actual
+    assert cached != before
+
+
+def test_index_release_version_invalidates_graph_cache_key(tmp_path, monkeypatch):
+    import index_graph.graph.cache as cache_mod
+
+    repo = _repo(tmp_path / "app", "app", "alpha")
+    before = cache_mod.make_lookup("app", repo, (CountingResolver(),)).key
+    monkeypatch.setattr(cache_mod, "__version__", "999.0.0", raising=False)
+    assert cache_mod.make_lookup("app", repo, (CountingResolver(),)).key != before
+
+
+def test_fresh_interpreter_resolver_warmup_keeps_one_cache_entry(tmp_path):
+    # Isolate from suite order: earlier tests may already have warmed resolvers.
+    script = """
+import json, sys
+from pathlib import Path
+from index_graph.graph.build import build_graph
+root = Path(sys.argv[1])
+repo = root / 'repo'
+repo.mkdir(exist_ok=True)
+(repo / 'pyproject.toml').write_text('[project]\\nname="sample"\\n')
+(repo / 'main.py').write_text('import alpha\\n')
+for _ in range(3):
+    graph = build_graph({'sample': repo}, jobs=1)
+    assert {edge.target_name for edge in graph.edges} == {'alpha'}
+print(json.dumps({'cache_files': len(list((root / 'cache').glob('*.json')))}))
+"""
+    env = dict(os.environ, INDEX_GRAPH_REPO_CACHE_DIR=str(tmp_path / "cache"),
+               PYTHONPATH=str(Path(__file__).resolve().parents[1] / "src"))
+    result = subprocess.run([sys.executable, "-c", script, str(tmp_path)],
+                            env=env, capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+    assert json.loads(result.stdout)["cache_files"] == 1
