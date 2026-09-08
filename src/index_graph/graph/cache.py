@@ -1,8 +1,8 @@
 """Per-repo graph resolver cache.
 
 The cache stores derived resolver facts, never raw source. A repo entry is valid
-only for the same repo key, resolved path, resolver signature, and graph-relevant
-content fingerprint.
+only for the same repo key, resolved path, resolver signature, graph-relevant
+content fingerprint, and resolver source-read contract.
 """
 
 from __future__ import annotations
@@ -17,11 +17,12 @@ from types import CodeType
 from typing import Any
 
 from .walk import read_source_bytes
+from .resolvers import BUILTIN_SHARED_SOURCE_READER_TYPES
 from .. import __version__
 from ..freshness.fingerprint import repo_fingerprint
 
 SCHEMA = "index.graph-repo-cache/v1"
-CACHE_KEY_VERSION = "repo-build/v3"
+CACHE_KEY_VERSION = "repo-build/v4"
 _DESCRIPTION_NAMES = ("README.md", "README.rst", "README.txt", "readme.md")
 
 
@@ -90,6 +91,17 @@ def _resolver_signature(resolvers) -> tuple[str, ...]:
         implementation.update(str(getattr(resolver, "cache_version", "1")).encode("utf-8"))
         parts.append(f"{name}:{cls.__module__}.{cls.__qualname__}:{implementation.hexdigest()}")
     return tuple(sorted(parts))
+
+
+def resolver_uses_shared_source_reads(resolver) -> bool:
+    """Whether a resolver can safely participate in persistent repo caching."""
+    if type(resolver) in BUILTIN_SHARED_SOURCE_READER_TYPES:
+        return True
+    return getattr(resolver, "uses_shared_source_reader", False) is True
+
+
+def resolvers_use_shared_source_reads(resolvers) -> bool:
+    return all(resolver_uses_shared_source_reads(resolver) for resolver in resolvers)
 
 
 def _file_digest(path: Path) -> str:

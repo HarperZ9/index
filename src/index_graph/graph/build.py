@@ -14,7 +14,12 @@ from pathlib import Path
 from time import perf_counter
 
 from .edges import Edge, build_index, resolve_edges
-from .cache import make_lookup, read_repo_build, write_repo_build
+from .cache import (
+    make_lookup,
+    read_repo_build,
+    resolvers_use_shared_source_reads,
+    write_repo_build,
+)
 from .walk import cached_file_scope, read_source_text, source_reuse_complete, walk_files
 from .resolvers import ALL_RESOLVERS
 from .resolvers.base import RawEdge
@@ -215,8 +220,9 @@ def _load_or_build_one_repo(
     def presented(built: _RepoBuild) -> _RepoBuild:
         return replace(built, node=replace(built.node, path=str(requested_root)))
 
+    cache_allowed = use_cache and resolvers_use_shared_source_reads(resolvers)
     with cached_file_scope():
-        if not use_cache:
+        if not cache_allowed:
             return presented(_build_one_repo(source_item, resolvers))
         lookup = make_lookup(name, source_item[1], resolvers)
         cached = read_repo_build(lookup)

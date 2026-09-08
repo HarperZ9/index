@@ -159,8 +159,15 @@ Everything works with zero configuration. An optional `.index.toml` at the works
   fingerprints and resolver implementation/version, so unchanged repos do not
   rebuild on every workspace graph run. Fingerprints read working bytes, including
   local source changes that Git index flags can hide.
-  Builds exceeding the temporary source-byte cache limits do not populate repo
-  facts; see [cache limits](USAGE.md#workspace-map-router) for the tradeoff.
+  The temporary source-byte cache is bounded; above-cap reads use first-read
+  digests to decide whether persistent repo facts are safe to write. Digest
+  mismatch, source I/O failure, interrupted traversal, or journal overflow skips
+  persistent cache for that build; see [cache limits](USAGE.md#workspace-map-router)
+  for the tradeoff.
+  Persistent repo-cache reads and writes are enabled for the exact shipped
+  built-in resolver types and for custom resolvers that opt into Index's shared
+  source-read contract. Unopted custom or mixed resolver sets still build
+  complete graph facts, but they bypass persistent repo cache.
 - Observable graph builds: CLI graph/router and matching MCP calls use bounded
   process workers and emit rate-limited progress JSON on stderr. A progress count
   records repositories processed; it is not proof of semantic source correctness.
@@ -181,7 +188,7 @@ Everything works with zero configuration. An optional `.index.toml` at the works
 
 ## Status
 
-`index-graph` 2.11.0 release-candidate source, command `index`, Python 3.11+, Development Status Beta. It is used as the workspace map layer of [Project Telos](https://harperz9.github.io), alongside [gather](https://github.com/HarperZ9/gather), [crucible](https://github.com/HarperZ9/crucible), [forum](https://github.com/HarperZ9/forum), and [telos](https://github.com/HarperZ9/telos). The PyPI badge shows the latest published package.
+`index-graph` 2.12.0 release-candidate source, command `index`, Python 3.11+, Development Status Beta. It is used as the workspace map layer of [Project Telos](https://harperz9.github.io), alongside [gather](https://github.com/HarperZ9/gather), [crucible](https://github.com/HarperZ9/crucible), [forum](https://github.com/HarperZ9/forum), and [telos](https://github.com/HarperZ9/telos). The PyPI badge shows the latest published package.
 
 One note on why the outputs look the way they do: every claim an `index` artifact makes, an edge, a page, a verdict, carries the evidence to re-derive it, and the verifiers are built to be able to fail. If you only remember one command, make it `index wiki --verify`.
 

@@ -746,17 +746,36 @@ Graph scans keep the existing `EXCLUDE_DIRS` pruning but do not apply `.gitignor
 as a source filter. A nested `.git` directory or file marks a separate repository:
 include that repository in the discovered input set to cover it independently.
 The repo cache hashes working bytes and includes Index/resolver implementation
-identity. Custom resolvers whose instance state or external configuration changes
-their behavior must update `cache_version` or disable caching. Router doc discovery reads locations;
+identity. Persistent repo-cache reads and writes are enabled only when every
+resolver is either one of Index's exact shipped built-in resolver types or a
+custom resolver that explicitly declares `uses_shared_source_reader = True`.
+Set that custom resolver flag only when every file declared by
+`fingerprint_names`, `fingerprint_suffixes`, or `fingerprint_globs`, and every
+other graph-relevant source read that can affect returned facts, goes through
+`index_graph.graph.walk.read_source_bytes` or `read_source_text`. Unopted custom
+resolvers bypass persistent repo cache reads and writes, including when mixed
+with built-in resolvers; graph coverage is unchanged, but repeat builds reparse
+those repos. Subclasses of built-in resolvers count as custom until they opt in.
+Monkeypatching a shipped built-in method keeps the exact runtime type, so tests
+or hosts that replace source-read behavior should pass `use_cache=False`.
+Custom resolvers whose instance state or external configuration changes their
+behavior must still update `cache_version` or disable caching. The repo-cache key
+version changes with this contract, so earlier candidate cache entries are not
+reused. Router doc discovery reads locations;
 commands that need Markdown content still read document bodies.
 Fingerprinting and built-in resolver parsing share a temporary working-byte cache
 inside each repo build, capped at 16 MiB and 4,096 files. The cap limits reuse, not
 source coverage; larger inputs are still read. Source bytes are not retained in
 the persistent graph cache and the temporary cache expires after each build.
-If either cap is exceeded, that build does not write persistent repo facts. This
-avoids caching parsed changes under an earlier fingerprint, at the cost of repeat
-parsing for large repositories. A graph is an observation made during a scan, not
-an atomic filesystem snapshot; edit-free inputs are required for matched comparisons.
+If either cap is exceeded, above-cap reads keep a first-read digest journal rather
+than retaining source bodies. A later built-in read of the same above-cap file must
+match that first digest before the build can write persistent repo facts. Digest
+mismatch, source I/O failure, interrupted traversal, or journal overflow skips
+persistent cache for that build while preserving source coverage. The journal is
+bounded by entry count, not file bytes, so very large file-count repositories can
+still fall back to repeat parsing instead of retaining all source in memory. A graph
+is an observation made during a scan, not an atomic filesystem snapshot; edit-free
+inputs are required for matched comparisons.
 Fingerprinting and built-in resolvers use the resolved repository root consistently;
 node metadata retains the root path the caller supplied. A source read or traversal
 I/O failure aborts a complete graph with `GraphSourceError`, rather than silently

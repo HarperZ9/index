@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.12.0 (2026-09-07)
 
 - LSP bounds its unchanged-metadata fast path to two seconds and reads content
   immediately for files modified within the latest one-second uncertainty window.
@@ -33,8 +33,16 @@
 - Within a repository build, built-in resolver parsing reuses the working bytes read
   for fingerprinting. The temporary byte cache is capped at 16 MiB and 4,096 files;
   files beyond the cap are still read, and the cache expires after the build.
-  Builds exceeding either cap do not populate the persistent repo cache, avoiding
-  facts stored under older bytes if an uncached source changes during parsing.
+  Above-cap reads keep first-read digests instead of source bodies, so unchanged
+  larger repositories can still populate the persistent repo cache. Digest
+  mismatch, source I/O failure, interrupted traversal, or journal overflow skips
+  persistence rather than storing facts under older bytes.
+- Persistent repo-cache reads and writes are enabled only for Index's exact
+  shipped built-in resolver types, or for custom resolvers that explicitly set
+  `uses_shared_source_reader = True` and route graph-relevant reads through
+  Index's shared source readers. Unopted custom or mixed resolver sets bypass
+  persistent repo cache in both directions. The repo-cache key is bumped to v4
+  so earlier candidate cache entries cannot be reused under this contract.
 - `router-job start/status/result/cancel/resume` and matching
   `index.router.job.*` MCP operations share one validated local argument contract.
   Jobs keep work running outside the interactive call, report actual progress,

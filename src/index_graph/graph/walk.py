@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import fnmatch
+import hashlib
 import io
 import os
 import threading
@@ -24,6 +25,7 @@ EXCLUDE_DIRS = frozenset({
 _LOCAL = threading.local()
 _SOURCE_CACHE_MAX_BYTES = 16 * 1024 * 1024
 _SOURCE_CACHE_MAX_FILES = 4096
+_SOURCE_DIGEST_JOURNAL_MAX_ENTRIES = 100_000
 
 
 class GraphSourceError(RuntimeError):
@@ -50,6 +52,7 @@ def cached_file_scope():
     if previous is None:
         _LOCAL.file_cache = {}
         _LOCAL.source_cache = {}
+        _LOCAL.source_digest_journal = {}
         _LOCAL.source_cache_bytes = 0
         _LOCAL.source_reuse_complete = True
     try:
@@ -59,6 +62,7 @@ def cached_file_scope():
             try:
                 delattr(_LOCAL, "file_cache")
                 delattr(_LOCAL, "source_cache")
+                delattr(_LOCAL, "source_digest_journal")
                 delattr(_LOCAL, "source_cache_bytes")
                 delattr(_LOCAL, "source_reuse_complete")
             except AttributeError:
@@ -67,11 +71,36 @@ def cached_file_scope():
             _LOCAL.file_cache = previous
 
 
+def _record_unretained_source_read(key: str, data: bytes) -> None:
+    """Track consistency for source bytes that are too large to retain.
+
+    The journal holds path digests, not file bodies. It is still bounded because
+    very large repositories can exceed byte and file retention at the same time.
+    If the journal bound is exceeded, persistent cache is disabled for the build
+    while source coverage continues from the bytes that were read.
+    """
+    journal = getattr(_LOCAL, "source_digest_journal", None)
+    if journal is None:
+        _LOCAL.source_reuse_complete = False
+        return
+    digest = hashlib.sha256(data).hexdigest()
+    previous = journal.get(key)
+    if previous is None:
+        if len(journal) >= _SOURCE_DIGEST_JOURNAL_MAX_ENTRIES:
+            _LOCAL.source_reuse_complete = False
+            return
+        journal[key] = digest
+    elif previous != digest:
+        _LOCAL.source_reuse_complete = False
+
+
 def read_source_bytes(path: Path) -> bytes:
     """Reuse exact working bytes only within a build, with bounded memory.
 
     This never trusts Git metadata or a previous process's source bytes. Files
-    beyond the memory/file limit are read normally; coverage is unchanged.
+    beyond the memory/file limit are read normally; coverage is unchanged. Their
+    first-read digest is journaled so repeated resolver reads can still prove
+    they saw the same bytes before the derived build is written to disk cache.
     """
     cache = getattr(_LOCAL, "source_cache", None)
     key = str(path.absolute())
@@ -82,19 +111,21 @@ def read_source_bytes(path: Path) -> bytes:
     except OSError as error:
         _source_error("read", path, error)
         raise
-    if (cache is not None and len(cache) < _SOURCE_CACHE_MAX_FILES
-            and _LOCAL.source_cache_bytes + len(data) <= _SOURCE_CACHE_MAX_BYTES):
-        cache[key] = data
-        _LOCAL.source_cache_bytes += len(data)
-    elif cache is not None:
-        # A second read may observe different bytes than the fingerprint. Never
-        # persist those derived facts under an earlier lookup's cache key.
-        _LOCAL.source_reuse_complete = False
+    if cache is not None:
+        can_retain = (len(cache) < _SOURCE_CACHE_MAX_FILES
+                      and _LOCAL.source_cache_bytes + len(data) <= _SOURCE_CACHE_MAX_BYTES)
+        # Check previously journaled bytes even if this read now fits the byte
+        # cache. A file can shrink between fingerprinting and resolver parsing.
+        if key in _LOCAL.source_digest_journal or not can_retain:
+            _record_unretained_source_read(key, data)
+        if can_retain:
+            cache[key] = data
+            _LOCAL.source_cache_bytes += len(data)
     return data
 
 
 def source_reuse_complete() -> bool:
-    """Whether every shared source read fit in the current build's byte cache."""
+    """Whether shared source reads remain consistent enough for cache persistence."""
     return getattr(_LOCAL, "source_reuse_complete", False)
 
 
