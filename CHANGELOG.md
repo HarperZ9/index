@@ -109,7 +109,7 @@
   and caches `index bench` output for repeated agent-loop calls (`--no-cache` forces
   a cold run).
 - Performance: graph construction now caches each repo's resolver facts behind a
-  content fingerprint. On the local `C:\dev` workspace with bench text caching disabled,
+  content fingerprint. On the original local workspace with bench text caching disabled,
   the first repo-cache populate run took 82.7s and the next unchanged bench run took
   20.6s because unchanged repos were fingerprinted but not reparsed.
 - Visual identity refresh: spectrum banner, feature-first README header and body, a

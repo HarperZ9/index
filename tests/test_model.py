@@ -39,9 +39,9 @@ def test_map_to_json_portable_omits_root_and_empty_annotations():
 
 
 def test_map_to_json_local_includes_root_and_annotations():
-    data = _map(root="C:/dev", absolute_paths_included=True,
+    data = _map(root="C:/workspace", absolute_paths_included=True,
                 annotations={"operating_model": "x"}).to_json()
-    assert data["root"] == "C:/dev"
+    assert data["root"] == "C:/workspace"
     assert data["annotations"] == {"operating_model": "x"}
 
 

@@ -782,7 +782,7 @@ I/O failure aborts a complete graph with `GraphSourceError`, rather than silentl
 dropping the affected source. CLI JSON returns `UNVERIFIABLE` and exit2; MCP returns
 a typed tool error. Parser limitations and custom resolvers remain separate concerns.
 
-### Background router jobs (unreleased candidate)
+### Background router jobs
 
 `index router-job start --root ROOT` returns JSON with a `job_id` while the local
 worker builds the router. Read it with `index router-job status JOB_ID`, then
@@ -796,8 +796,8 @@ MCP exposes the same actions as `index.router.job.start`, `.status`, `.result`,
 and `no_cache`; other actions require only `job_id`. State remains local under
 `INDEX_ROUTER_JOB_DIR` or the platform user cache. These files can contain private
 workspace paths and router content. See [Router jobs](docs/ROUTER-JOBS.md) for
-worker ownership, result validation, and recovery limits. This candidate has not
-yet been released.
+worker ownership, result validation, and recovery limits. Use background jobs for
+large workspaces that exceed an interactive request's time limit.
 
 ## Grounding a claim (`verify`)
 

@@ -4,7 +4,7 @@ Compares the engine's inferred internal edges against a hand-authored edge set
 (if available) and prints recall + false-positive counts. Read-only; no writes.
 
 Usage:
-    python scripts/dogfood_recovery.py --root C:/dev [--truth path/to/edges.json]
+    python scripts/dogfood_recovery.py --root /path/to/workspace [--truth path/to/edges.json]
 
 --truth is an optional JSON list of {"from": repo, "to": repo} hand-authored edges.
 Without it, the harness just prints the inferred graph summary.

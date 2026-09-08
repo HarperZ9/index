@@ -276,7 +276,7 @@ def _tool_defs() -> list[dict]:
          "description": "Ground a structural claim. Pass depends 'A -> B' or exists 'NAME'. Returns MATCH/REFUTED/UNVERIFIABLE with file:line evidence.",
          "inputSchema": _workspace_schema({"depends": {"type": "string"}, "exists": {"type": "string"}})},
         {"name": "index_router",
-         "description": "A deterministic CLAUDE.md/AGENTS.md workspace map derived from the graph and docs.",
+         "description": "Build a deterministic CLAUDE.md/AGENTS.md workspace map synchronously. For large workspaces, use index.router.job.start, then index.router.job.status and index.router.job.result to avoid an interactive request timeout.",
          "inputSchema": _workspace_schema({"max_docs": {"type": "integer"},
              "no_cache": {"type": "boolean",
                           "description": "Bypass result and per-repository graph caches."}})},
