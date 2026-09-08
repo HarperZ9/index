@@ -4,7 +4,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from ..walk import walk_files
+from ..walk import read_source_text, walk_files
 from .base import RawEdge
 
 _ASSEMBLY_NAME = re.compile(r"<AssemblyName>\s*([^<]+)\s*</AssemblyName>")
@@ -22,14 +22,14 @@ class CSharpResolver:
     def matches(self, repo_root: Path) -> bool:
         # walk_files is fail-closed (never raises on a permission-denied subdir)
         # and pruned; rglob would propagate an OSError out and crash the graph build.
-        return any(walk_files(repo_root, suffixes=(".csproj",)))
+        return any(walk_files(repo_root, suffixes=(".csproj",), stop_at_nested_repos=True))
 
     def exposed_names(self, repo_root: Path) -> set[str]:
         names: set[str] = set()
-        for csproj in walk_files(repo_root, suffixes=(".csproj",)):
+        for csproj in walk_files(repo_root, suffixes=(".csproj",), stop_at_nested_repos=True):
             names.add(csproj.stem)
             try:
-                text = csproj.read_text(encoding="utf-8", errors="replace")
+                text = read_source_text(csproj, encoding="utf-8", errors="replace")
             except OSError:
                 continue
             for pattern in (_ASSEMBLY_NAME, _ROOT_NAMESPACE):
@@ -42,9 +42,9 @@ class CSharpResolver:
         edges: list[RawEdge] = []
 
         # manifest edges: parse each .csproj for PackageReference and ProjectReference
-        for csproj in walk_files(repo_root, suffixes=(".csproj",)):
+        for csproj in walk_files(repo_root, suffixes=(".csproj",), stop_at_nested_repos=True):
             try:
-                lines = csproj.read_text(encoding="utf-8", errors="replace").splitlines()
+                lines = read_source_text(csproj, encoding="utf-8", errors="replace").splitlines()
             except OSError:
                 continue
             rel = csproj.relative_to(repo_root).as_posix()
@@ -61,9 +61,9 @@ class CSharpResolver:
                     edges.append(RawEdge(ref_stem, "manifest", rel, i, line.strip()))
 
         # import edges: scan .cs files for using statements
-        for src in walk_files(repo_root, suffixes=(".cs",)):
+        for src in walk_files(repo_root, suffixes=(".cs",), stop_at_nested_repos=True):
             try:
-                lines = src.read_text(encoding="utf-8", errors="replace").splitlines()
+                lines = read_source_text(src, encoding="utf-8", errors="replace").splitlines()
             except OSError:
                 continue
             rel = src.relative_to(repo_root).as_posix()

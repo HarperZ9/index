@@ -11,3 +11,15 @@ from .rust import RustResolver
 
 ALL_RESOLVERS = (PythonResolver(), JavaScriptResolver(), RustResolver(), GoResolver(),
                  JavaResolver(), CSharpResolver(), RubyResolver(), PhpResolver(), CppResolver())
+
+BUILTIN_SHARED_SOURCE_READER_TYPES = (
+    PythonResolver,
+    JavaScriptResolver,
+    RustResolver,
+    GoResolver,
+    JavaResolver,
+    CSharpResolver,
+    RubyResolver,
+    PhpResolver,
+    CppResolver,
+)

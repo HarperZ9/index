@@ -5,7 +5,7 @@ import re
 from pathlib import Path
 from xml.etree import ElementTree as ET
 
-from ..walk import walk_files
+from ..walk import read_source_bytes, read_source_text, walk_files
 from .base import RawEdge
 
 _GRADLE_FILES = ("build.gradle", "build.gradle.kts")
@@ -21,7 +21,7 @@ def _local(tag: str) -> str:
 def _pom_coords(pom: Path) -> tuple[str, str] | None:
     """The pom's own (groupId, artifactId), falling back to <parent><groupId>."""
     try:
-        root = ET.parse(pom).getroot()
+        root = ET.fromstring(read_source_bytes(pom))
     except (ET.ParseError, OSError):
         return None
     group = artifact = parent_group = None
@@ -50,7 +50,7 @@ class JavaResolver:
 
     def exposed_names(self, repo_root: Path) -> set[str]:
         names: set[str] = set()
-        for pom in walk_files(repo_root, names=("pom.xml",)):
+        for pom in walk_files(repo_root, names=("pom.xml",), stop_at_nested_repos=True):
             coords = _pom_coords(pom)
             if coords:
                 names.add(f"{coords[0]}:{coords[1]}")
@@ -58,9 +58,9 @@ class JavaResolver:
 
     def raw_edges(self, repo_root: Path) -> list[RawEdge]:
         edges: list[RawEdge] = []
-        for pom in walk_files(repo_root, names=("pom.xml",)):
+        for pom in walk_files(repo_root, names=("pom.xml",), stop_at_nested_repos=True):
             try:
-                root = ET.parse(pom).getroot()
+                root = ET.fromstring(read_source_bytes(pom))
             except (ET.ParseError, OSError):
                 continue
             rel = pom.relative_to(repo_root).as_posix()
@@ -82,7 +82,7 @@ class JavaResolver:
             if not gp.is_file():
                 continue
             try:
-                lines = gp.read_text(encoding="utf-8", errors="replace").splitlines()
+                lines = read_source_text(gp, encoding="utf-8", errors="replace").splitlines()
             except OSError:
                 continue
             for i, line in enumerate(lines, 1):

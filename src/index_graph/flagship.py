@@ -89,28 +89,16 @@ def _mcp_map_probe() -> dict[str, Any]:
 
 
 def status_payload() -> dict:
+    from .mcp import _tool_defs
+
     return envelope(
         "status",
         native={
             "role": "structure-context",
             "commands": ["map", "graph", "context", "context-envelope", "select",
-                         "atlas", "wiki", "serve", "verify", "invalidate"],
+                         "atlas", "wiki", "serve", "verify", "invalidate", "router", "router-job"],
             "operator_commands": ["status", "doctor", "demo", "mcp"],
-            "mcp_tools": [
-                "index.map",
-                "index.context",
-                "index.context.envelope",
-                "index.select",
-                "index.invalidate",
-                "index.wiki",
-                "index.status",
-                "index.doctor",
-                "index_graph",
-                "index_focus",
-                "index_verify",
-                "index_router",
-                "index_internals",
-            ],
+            "mcp_tools": [tool["name"] for tool in _tool_defs()],
             "current_status": (
                 f"{__version__} workspace atlas, certificates, freshness, benchmarking, "
                 "selection-aware context envelopes, and MCP parity"

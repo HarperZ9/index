@@ -15,7 +15,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from ..walk import walk_files
+from ..walk import read_source_text, walk_files
 from .base import RawEdge
 
 # CMake command patterns (case-sensitive as written in CMakeLists.txt)
@@ -39,13 +39,14 @@ class CppResolver:
     fingerprint_suffixes = (".c", ".cc", ".cpp", ".cxx", ".h", ".hpp")
 
     def matches(self, repo_root: Path) -> bool:
-        return any(True for _ in walk_files(repo_root, names=("CMakeLists.txt",)))
+        return any(True for _ in walk_files(
+            repo_root, names=("CMakeLists.txt",), stop_at_nested_repos=True))
 
     def exposed_names(self, repo_root: Path) -> set[str]:
         names: set[str] = set()
-        for cmake in walk_files(repo_root, names=("CMakeLists.txt",)):
+        for cmake in walk_files(repo_root, names=("CMakeLists.txt",), stop_at_nested_repos=True):
             try:
-                lines = cmake.read_text(encoding="utf-8", errors="replace").splitlines()
+                lines = read_source_text(cmake, encoding="utf-8", errors="replace").splitlines()
             except OSError:
                 continue
             for line in lines:
@@ -60,9 +61,9 @@ class CppResolver:
         edges: list[RawEdge] = []
 
         # Manifest edges from CMakeLists.txt
-        for cmake in walk_files(repo_root, names=("CMakeLists.txt",)):
+        for cmake in walk_files(repo_root, names=("CMakeLists.txt",), stop_at_nested_repos=True):
             try:
-                lines = cmake.read_text(encoding="utf-8", errors="replace").splitlines()
+                lines = read_source_text(cmake, encoding="utf-8", errors="replace").splitlines()
             except OSError:
                 continue
             rel = cmake.relative_to(repo_root).as_posix()
@@ -95,9 +96,9 @@ class CppResolver:
 
         # Import edges from C/C++ source files
         src_suffixes = (".c", ".cc", ".cpp", ".cxx", ".h", ".hpp")
-        for src in walk_files(repo_root, suffixes=src_suffixes):
+        for src in walk_files(repo_root, suffixes=src_suffixes, stop_at_nested_repos=True):
             try:
-                lines = src.read_text(encoding="utf-8", errors="replace").splitlines()
+                lines = read_source_text(src, encoding="utf-8", errors="replace").splitlines()
             except OSError:
                 continue
             rel = src.relative_to(repo_root).as_posix()

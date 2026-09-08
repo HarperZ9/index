@@ -69,7 +69,7 @@ its witness rather than as an assertion you have to take on faith.
 
 **`index lens`, the context lens.** Agent context assembly is usually invisible: a budget retains some files and silently drops the rest. The lens renders it. One page shows what a token budget retains and what it drops with typed failure codes, and a slider replays the exact greedy rule the CLI runs over the exact same numbers, live, without re-running Python. `index context-envelope` is the machine face of the same thing: a budgeted context packet where each retained repo carries hashed source references and every omission carries a failure code such as `budget_exceeded`, so a downstream agent can ask for more instead of inheriting confidence from a missing file. And `context-envelope --verify` re-derives a cached envelope's freshness against the current workspace: it re-fingerprints the repos, confirms the sealed hashes still hold, and names the repos that drifted, exiting non-zero if the map moved under the envelope, so stale context is caught by a check instead of acted on by mistake.
 
-**`index symbols` and `index lsp`, IDE navigation from the graph.** Go-to-definition, find-references, and find-implementations for any Python symbol, from the CLI (`index symbols Class::method`) with `file:line` on every hop, or inside VSCode, Neovim, and JetBrains via a stdio LSP server with hand-rolled JSON-RPC framing and zero new dependencies. An unresolved reference returns empty, never a guessed jump, and a workspace that changed on disk is detected rather than answered from a stale graph. `index internals` and `index internals-symbols` expose the underlying module and call graphs directly.
+**`index symbols` and `index lsp`, IDE navigation from the graph.** Go-to-definition, find-references, and find-implementations for any Python symbol, from the CLI (`index symbols Class::method`) with `file:line` on every hop, or inside VSCode, Neovim, and JetBrains via a stdio LSP server with hand-rolled JSON-RPC framing and zero new dependencies. An unresolved reference returns empty, never a guessed jump. LSP content checks reject detected disk changes; its unchanged-metadata fast path expires after two seconds, so older same-size edits with restored timestamps can remain undetected within that interval. `index internals` and `index internals-symbols` expose the underlying module and call graphs directly.
 
 **`index check`, `snapshot`, `drift`, architecture as a testable rule.** Declare the layering you meant in `.index.toml`:
 
@@ -156,7 +156,21 @@ Everything works with zero configuration. An optional `.index.toml` at the works
 - Evidence on every edge: no dependency edge exists without a file and line behind it, and a confidence grade. Two independent signals (manifest and observed import) grade each one.
 - Deterministic output: the same input gives the same bytes. No timestamps, no randomness.
 - Cold-path cache: repo-level resolver facts are cached behind graph-relevant
-  fingerprints, so unchanged repos do not rebuild on every workspace graph run.
+  fingerprints and resolver implementation/version, so unchanged repos do not
+  rebuild on every workspace graph run. Fingerprints read working bytes, including
+  local source changes that Git index flags can hide.
+  The temporary source-byte cache is bounded; above-cap reads use first-read
+  digests to decide whether persistent repo facts are safe to write. Digest
+  mismatch, source I/O failure, interrupted traversal, or journal overflow skips
+  persistent cache for that build; see [cache limits](USAGE.md#workspace-map-router)
+  for the tradeoff.
+  Persistent repo-cache reads and writes are enabled for the exact shipped
+  built-in resolver types and for custom resolvers that opt into Index's shared
+  source-read contract. Unopted custom or mixed resolver sets still build
+  complete graph facts, but they bypass persistent repo cache.
+- Observable graph builds: CLI graph/router and matching MCP calls use bounded
+  process workers and emit rate-limited progress JSON on stderr. A progress count
+  records repositories processed; it is not proof of semantic source correctness.
 - Interactive bounds: router, graph, context, and context-envelope calls use a
   repository-discovery budget by default and return an UNVERIFIABLE message when
   a workspace is too large for an interactive graph build. Use `--budget-ms 0`
@@ -174,7 +188,7 @@ Everything works with zero configuration. An optional `.index.toml` at the works
 
 ## Status
 
-`index-graph` 2.11.0 release-candidate source, command `index`, Python 3.11+, Development Status Beta. It is used as the workspace map layer of [Project Telos](https://harperz9.github.io), alongside [gather](https://github.com/HarperZ9/gather), [crucible](https://github.com/HarperZ9/crucible), [forum](https://github.com/HarperZ9/forum), and [telos](https://github.com/HarperZ9/telos). The PyPI badge shows the latest published package.
+`index-graph` 2.12.0, command `index`, Python 3.11+, Development Status Beta. It is used as the workspace map layer of [Project Telos](https://harperz9.github.io), alongside [gather](https://github.com/HarperZ9/gather), [crucible](https://github.com/HarperZ9/crucible), [forum](https://github.com/HarperZ9/forum), and [telos](https://github.com/HarperZ9/telos). The PyPI badge shows the latest published package.
 
 One note on why the outputs look the way they do: every claim an `index` artifact makes, an edge, a page, a verdict, carries the evidence to re-derive it, and the verifiers are built to be able to fail. If you only remember one command, make it `index wiki --verify`.
 
@@ -192,6 +206,14 @@ python -m pytest
 ```
 
 Python 3.11+. That is the entire dependency list.
+
+## Development
+
+Start with [AGENTS.md](AGENTS.md) for the repository contract and
+[USAGE.md](USAGE.md) for CLI and Python entrypoints. Run the focused tests for a
+changed surface, then `python -m pytest` before proposing a release. Keep source
+evidence, cache invalidation, and CLI/MCP behavior aligned; see
+[CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidance.
 
 ---
 

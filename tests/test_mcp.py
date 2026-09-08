@@ -10,6 +10,31 @@ def test_initialize():
     assert r["result"]["protocolVersion"]
 
 
+def test_graph_no_cache_rechecks_changed_source(tmp_path, monkeypatch):
+    monkeypatch.setenv("INDEX_MCP_CACHE_TTL_SECONDS", "60")
+    monkeypatch.setenv("INDEX_MCP_CACHE_DIR", str(tmp_path / "cache"))
+    repo = tmp_path / "solo"
+    (repo / ".git").mkdir(parents=True)
+    (repo / "pyproject.toml").write_text("[project]\nname='solo'\n", encoding="utf-8")
+    (repo / "main.py").write_text("import alpha\n", encoding="utf-8")
+
+    def call(**extra):
+        result = handle_request({"jsonrpc": "2.0", "id": 1, "method": "tools/call",
+                                 "params": {"name": "index_graph", "arguments": {
+                                     "root": str(tmp_path), **extra}}})
+        assert result["result"]["isError"] is False
+        return json.loads(result["result"]["content"][0]["text"])
+
+    first = call()
+    (repo / "main.py").write_text("import bravo\n", encoding="utf-8")
+    current = call(no_cache=True)
+    assert {edge["target_name"] for edge in first["relations"]} == {"alpha"}
+    assert {edge["target_name"] for edge in current["relations"]} == {"bravo"}
+    (repo / "main.py").write_text("import charlie\n", encoding="utf-8")
+    newest = call(no_cache=True)
+    assert {edge["target_name"] for edge in newest["relations"]} == {"charlie"}
+
+
 def test_tools_list_has_core_tools():
     r = handle_request({"jsonrpc": "2.0", "id": 2, "method": "tools/list"})
     names = {t["name"] for t in r["result"]["tools"]}

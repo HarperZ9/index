@@ -1,5 +1,60 @@
 # Changelog
 
+## 2.12.0 (2026-09-07)
+
+- Status discovery derives MCP capabilities from the served tool definitions and
+  includes router-job commands. Source packages omit historical planning notes.
+
+- LSP bounds its unchanged-metadata fast path to two seconds and reads content
+  immediately for files modified within the latest one-second uncertainty window.
+  Same-size edits can no longer remain indefinitely hidden by a restored mtime.
+  This retains a bounded stale window for older timestamp-preserving edits.
+- Graph/router builds use bounded process workers on CLI/MCP entrypoints. Python
+  callers can select `executor="process"`; threads remain the library default for
+  custom resolvers and embedded callers. Dependency output keeps its stable order.
+- Graph progress reports actual completed repositories and distinct building,
+  resolving, complete, and failed phases. CLI/MCP diagnostics use JSON lines on
+  stderr; Python callers can supply `on_progress` without parsing log output.
+- Failed or cancelled graph consumers cancel queued repository work before
+  executor shutdown. Already-active workers are still joined; this is not forced
+  process termination or immediate cancellation.
+- Linked repository roots use the same resolved source path for fingerprinting
+  and parsing. Output nodes retain the caller's requested path, including when
+  equivalent roots reuse a cache entry.
+- Source read or traversal I/O errors inside complete graph builds now raise
+  `GraphSourceError`, emit failed progress, and prevent partial cache writes.
+  CLI JSON reports `UNVERIFIABLE` with exit2; MCP reports a typed tool error.
+- Repository builds share one pruned filesystem listing. Child Git repositories
+  are separate graph boundaries; plain source folders and ignored local source
+  files remain included under the existing directory-pruning rules. Fingerprints
+  hash working bytes, including edits hidden by Git index flags or clean filters.
+- Graph cache keys include the Index version and resolver method implementation,
+  preventing stale edges after a resolver update. Custom resolvers must update
+  `cache_version` when instance state or external configuration changes behavior,
+  or disable caching. Implementation signatures
+  use stable code values so resolver warmup does not create duplicate cache keys.
+- Within a repository build, built-in resolver parsing reuses the working bytes read
+  for fingerprinting. The temporary byte cache is capped at 16 MiB and 4,096 files;
+  files beyond the cap are still read, and the cache expires after the build.
+  Above-cap reads keep first-read digests instead of source bodies, so unchanged
+  larger repositories can still populate the persistent repo cache. Digest
+  mismatch, source I/O failure, interrupted traversal, or journal overflow skips
+  persistence rather than storing facts under older bytes.
+- Persistent repo-cache reads and writes are enabled only for Index's exact
+  shipped built-in resolver types, or for custom resolvers that explicitly set
+  `uses_shared_source_reader = True` and route graph-relevant reads through
+  Index's shared source readers. Unopted custom or mixed resolver sets bypass
+  persistent repo cache in both directions. The repo-cache key is bumped to v4
+  so earlier candidate cache entries cannot be reused under this contract.
+- `router-job start/status/result/cancel/resume` and matching
+  `index.router.job.*` MCP operations share one validated local argument contract.
+  Jobs keep work running outside the interactive call, report actual progress,
+  and return content only after request and result integrity checks pass.
+- Router doc links use Markdown paths without opening every document body.
+  Atlas, wiki, and workbench retain their body-dependent discovery.
+- Router `--no-cache` now bypasses per-repo facts as well as the final text cache.
+  MCP `index_graph` and `index_router` accept `no_cache: true` for the same refresh.
+
 ## 2.11.0 (2026-09-07)
 
 - Reliability: interactive workspace MCP cache keys now use the cheap CLI cache
@@ -54,7 +109,7 @@
   and caches `index bench` output for repeated agent-loop calls (`--no-cache` forces
   a cold run).
 - Performance: graph construction now caches each repo's resolver facts behind a
-  content fingerprint. On the local `C:\dev` workspace with bench text caching disabled,
+  content fingerprint. On the original local workspace with bench text caching disabled,
   the first repo-cache populate run took 82.7s and the next unchanged bench run took
   20.6s because unchanged repos were fingerprinted but not reparsed.
 - Visual identity refresh: spectrum banner, feature-first README header and body, a

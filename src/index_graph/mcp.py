@@ -17,6 +17,7 @@ from pathlib import Path
 from time import time
 
 from . import __version__
+from .graph.progress import stderr_progress
 
 _PROTOCOL_VERSION = "2024-11-05"
 _CACHE_SCHEMA = "index.mcp-cache-entry/v1"
@@ -174,6 +175,10 @@ def _cache_write(key: str, text: str) -> str:
 
 
 def _with_cache(name: str, root: Path, args: dict, build):
+    if "no_cache" in args and not isinstance(args["no_cache"], bool):
+        raise ValueError("no_cache must be a boolean")
+    if args.get("no_cache"):
+        return build()
     if name not in _CACHEABLE_TOOLS:
         return build()
     key = _cache_key(name, root, args)
@@ -203,6 +208,7 @@ def _workspace_schema(extra: dict | None = None, required: list | None = None) -
 
 
 def _tool_defs() -> list[dict]:
+    from .router_job_surface import tool_definitions
     return [
         {"name": "index.map",
          "description": "Repository inventory map as JSON, matching the `index map --json` CLI surface.",
@@ -260,7 +266,8 @@ def _tool_defs() -> list[dict]:
          "inputSchema": {"type": "object", "properties": {}}},
         {"name": "index_graph",
          "description": "Repo-level dependency graph (relations, roles, cycles) as JSON.",
-         "inputSchema": _workspace_schema()},
+         "inputSchema": _workspace_schema({"no_cache": {"type": "boolean",
+             "description": "Bypass result and per-repository graph caches."}})},
         {"name": "index_focus",
          "description": "A repo's dependency neighborhood plus a preservation manifest of what was dropped at the boundary.",
          "inputSchema": _workspace_schema({"repo": {"type": "string"}, "hops": {"type": "integer"}},
@@ -269,11 +276,14 @@ def _tool_defs() -> list[dict]:
          "description": "Ground a structural claim. Pass depends 'A -> B' or exists 'NAME'. Returns MATCH/REFUTED/UNVERIFIABLE with file:line evidence.",
          "inputSchema": _workspace_schema({"depends": {"type": "string"}, "exists": {"type": "string"}})},
         {"name": "index_router",
-         "description": "A deterministic CLAUDE.md/AGENTS.md workspace map derived from the graph and docs.",
-         "inputSchema": _workspace_schema({"max_docs": {"type": "integer"}})},
+         "description": "Build a deterministic CLAUDE.md/AGENTS.md workspace map synchronously. For large workspaces, use index.router.job.start, then index.router.job.status and index.router.job.result to avoid an interactive request timeout.",
+         "inputSchema": _workspace_schema({"max_docs": {"type": "integer"},
+             "no_cache": {"type": "boolean",
+                          "description": "Bypass result and per-repository graph caches."}})},
         {"name": "index_internals",
          "description": "Intra-repo module dependency graph for one repo, with cycles and coverage.",
          "inputSchema": _workspace_schema({"repo": {"type": "string"}}, required=["root", "repo"])},
+        *tool_definitions(),
     ]
 
 
@@ -342,6 +352,11 @@ def _symbol_tool(name: str, root: Path, args: dict) -> str:
 
 
 def call_tool(name: str, args: dict) -> str:
+    if name.startswith("index.router.job."):
+        from .router_job_surface import call_router_job
+        return json.dumps(call_router_job(name.removeprefix("index.router.job."), args),
+                          indent=2, sort_keys=True)
+
     if name == "index.status":
         from .flagship import status_payload
         return json.dumps(status_payload(), indent=2, sort_keys=True)
@@ -411,7 +426,10 @@ def call_tool(name: str, args: dict) -> str:
 
         def _build_context() -> str:
             paths = _repo_paths(root, budget_ms=budget_ms)
-            return json.dumps(to_json(build_graph(paths)), indent=2, sort_keys=True)
+            return json.dumps(to_json(build_graph(paths, executor="process",
+                              use_cache=not args.get("no_cache", False),
+                              on_progress=stderr_progress())),
+                              indent=2, sort_keys=True)
 
         return _with_cache(
             name,
@@ -475,7 +493,7 @@ def call_tool(name: str, args: dict) -> str:
 
     if name == "index_router":
         from .knowledge.atlas import build_router_pack
-        from .knowledge.docs import discover_docs
+        from .knowledge.docs import discover_router_docs
         from .router import render_router
 
         def _rel(p: Path) -> str:
@@ -489,8 +507,10 @@ def call_tool(name: str, args: dict) -> str:
             paths = _repo_paths(root, budget_ms=budget_ms)
             repo_dirs = {nm: _rel(p) for nm, p in paths.items()}
             return render_router(build_router_pack(
-                build_graph(paths),
-                discover_docs(root),
+                build_graph(paths, executor="process",
+                            use_cache=not args.get("no_cache", False),
+                            on_progress=stderr_progress()),
+                discover_router_docs(root),
                 repo_dirs,
             ), max_docs=max_docs)
 

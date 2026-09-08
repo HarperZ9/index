@@ -4,7 +4,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from ..walk import walk_files
+from ..walk import read_source_text, walk_files
 from .base import RawEdge
 
 _GEM_LINE = re.compile(r"""^\s*gem\s+['"]([^'"]+)['"]""")
@@ -27,7 +27,7 @@ class RubyResolver:
     def exposed_names(self, repo_root: Path) -> set[str]:
         for gemspec in repo_root.glob("*.gemspec"):
             try:
-                text = gemspec.read_text(encoding="utf-8", errors="replace")
+                text = read_source_text(gemspec, encoding="utf-8", errors="replace")
             except OSError:
                 continue
             m = _SPEC_NAME.search(text)
@@ -42,7 +42,7 @@ class RubyResolver:
         gemfile = repo_root / "Gemfile"
         if gemfile.is_file():
             try:
-                lines = gemfile.read_text(encoding="utf-8", errors="replace").splitlines()
+                lines = read_source_text(gemfile, encoding="utf-8", errors="replace").splitlines()
             except OSError:
                 lines = []
             for i, line in enumerate(lines, 1):
@@ -52,9 +52,9 @@ class RubyResolver:
                     edges.append(RawEdge(gem, "manifest", "Gemfile", i, line.strip()))
 
         # import edges: .rb source files
-        for src in walk_files(repo_root, suffixes=(".rb",)):
+        for src in walk_files(repo_root, suffixes=(".rb",), stop_at_nested_repos=True):
             try:
-                lines = src.read_text(encoding="utf-8", errors="replace").splitlines()
+                lines = read_source_text(src, encoding="utf-8", errors="replace").splitlines()
             except OSError:
                 continue
             rel = src.relative_to(repo_root).as_posix()

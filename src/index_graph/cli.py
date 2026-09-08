@@ -31,10 +31,12 @@ from .cli_handlers import (
     cmd_viz,
 )
 from .cli_parser import build_parser
+from .router_job_surface import cmd_router_job
 from .config import load_config
 from .context.select import cmd_select
 from .flagship import cmd_demo, cmd_doctor, cmd_status
 from .freshness.invalidate_cli import cmd_invalidate
+from .graph.walk import GraphSourceError
 from .scan import build_map, write_map
 from .wiki.cli import cmd_wiki
 
@@ -56,6 +58,7 @@ _SUBCOMMANDS = {
     "snapshot",
     "drift",
     "router",
+    "router-job",
     "verify",
     "freshness",
     "watch",
@@ -91,6 +94,7 @@ _DISPATCH = {
     "snapshot": cmd_snapshot,
     "drift": cmd_drift,
     "router": cmd_router,
+    "router-job": cmd_router_job,
     "verify": cmd_verify,
     "freshness": cmd_freshness,
     "watch": cmd_watch,
@@ -167,7 +171,16 @@ def main(argv: list[str] | None = None) -> int:
     _configure_stdio()
     args = build_parser().parse_args(_normalize_argv(argv))
     handler = _DISPATCH.get(args.cmd, _cmd_map)
-    return handler(args)
+    try:
+        return handler(args)
+    except GraphSourceError as exc:
+        receipt = {"schema": "index.graph-error/v1", "status": "UNVERIFIABLE",
+                   "error_type": type(exc).__name__, "message": str(exc)}
+        if getattr(args, "json", False):
+            print(json.dumps(receipt, indent=2, sort_keys=True))
+        else:
+            print(f"UNVERIFIABLE: {exc}", file=sys.stderr)
+        return 2
 
 
 if __name__ == "__main__":

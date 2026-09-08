@@ -289,7 +289,7 @@ def _add_router_parser(sub) -> None:
     rt.add_argument("--max-docs", type=int, default=500,
                     help="maximum doc-to-repo edges rendered in the router markdown")
     rt.add_argument("--no-cache", action="store_true",
-                    help="disable the workspace-router filesystem cache for this run")
+                    help="disable router text and per-repository graph caches for this run")
     _add_budget_ms_arg(rt)
 
 
@@ -391,6 +391,18 @@ def _add_lsp_parser(sub) -> None:
     )
 
 
+def _add_router_job_parser(sub) -> None:
+    parser = sub.add_parser("router-job", help="Start and recover durable local router builds.")
+    actions = parser.add_subparsers(dest="action", required=True)
+    start = actions.add_parser("start", help="Start a complete background router build.")
+    start.add_argument("--root", type=Path, default=Path.cwd())
+    start.add_argument("--max-docs", type=int, default=500)
+    start.add_argument("--budget-ms", type=int, default=0)
+    start.add_argument("--no-cache", action="store_true")
+    for action in ("status", "result", "cancel", "resume"):
+        actions.add_parser(action).add_argument("job_id")
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="index",
@@ -424,6 +436,7 @@ def build_parser() -> argparse.ArgumentParser:
     _add_snapshot_parser(sub)
     _add_drift_parser(sub)
     _add_router_parser(sub)
+    _add_router_job_parser(sub)
     _add_verify_parser(sub)
     _add_freshness_parser(sub)
     _add_invalidate_parser(sub)

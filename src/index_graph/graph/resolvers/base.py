@@ -21,6 +21,9 @@ def normalize_name(name: str) -> str:
 
 
 class Resolver(Protocol):
+    # Optional runtime opt-in for custom resolvers. Set
+    # uses_shared_source_reader = True only when every graph-relevant source read
+    # goes through index_graph.graph.walk.read_source_bytes/read_source_text.
     name: str
 
     def matches(self, repo_root: Path) -> bool: ...

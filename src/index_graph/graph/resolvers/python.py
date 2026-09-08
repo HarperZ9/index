@@ -7,7 +7,7 @@ import re
 import tomllib
 from pathlib import Path
 
-from ..walk import walk_files
+from ..walk import read_source_text, walk_files
 from .base import RawEdge
 
 _PEP508_NAME = re.compile(r"^\s*([A-Za-z0-9][A-Za-z0-9._-]*)")
@@ -36,7 +36,7 @@ class PythonResolver:
         pp = repo_root / "pyproject.toml"
         if pp.is_file():
             try:
-                data = tomllib.loads(pp.read_text(encoding="utf-8", errors="replace"))
+                data = tomllib.loads(read_source_text(pp, encoding="utf-8", errors="replace"))
                 proj = data.get("project", {})
                 if isinstance(proj, dict) and proj.get("name"):
                     names.add(str(proj["name"]))
@@ -46,7 +46,7 @@ class PythonResolver:
         if cfg.is_file():
             try:
                 cp = configparser.ConfigParser()
-                cp.read(cfg, encoding="utf-8")
+                cp.read_string(read_source_text(cfg, encoding="utf-8", errors="strict"))
                 if cp.has_option("metadata", "name"):
                     names.add(cp.get("metadata", "name"))
             except (configparser.Error, OSError):
@@ -73,7 +73,7 @@ class PythonResolver:
         pp = repo_root / "pyproject.toml"
         if pp.is_file():
             try:
-                text = pp.read_text(encoding="utf-8", errors="replace")
+                text = read_source_text(pp, encoding="utf-8", errors="replace")
                 data = tomllib.loads(text)
                 proj = data.get("project", {})
                 deps = list(proj.get("dependencies", []) or [])
@@ -88,7 +88,7 @@ class PythonResolver:
                 pass
         for req in sorted(repo_root.glob("requirements*.txt")):
             try:
-                for i, line in enumerate(req.read_text(encoding="utf-8", errors="replace").splitlines(), 1):
+                for i, line in enumerate(read_source_text(req, encoding="utf-8", errors="replace").splitlines(), 1):
                     s = line.strip()
                     if not s or s.startswith(("#", "-")):
                         continue
@@ -101,9 +101,9 @@ class PythonResolver:
 
     def _import_edges(self, repo_root: Path) -> list[RawEdge]:
         out: list[RawEdge] = []
-        for py in walk_files(repo_root, suffixes=(".py",)):
+        for py in walk_files(repo_root, suffixes=(".py",), stop_at_nested_repos=True):
             try:
-                tree = ast.parse(py.read_text(encoding="utf-8", errors="replace"))
+                tree = ast.parse(read_source_text(py, encoding="utf-8", errors="replace"))
             except (OSError, SyntaxError, ValueError):
                 continue
             rel = py.relative_to(repo_root).as_posix()

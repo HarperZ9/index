@@ -721,10 +721,83 @@ Pass `--freshness` to `index check` to stamp the certificate with a content fing
 `index router` renders a deterministic, evidence-carrying map of the workspace, shaped for a model's `CLAUDE.md` or `AGENTS.md`: where each repo lives with its role and dependencies, the entry points, the depended-on core, and which docs describe what. It is derived from the dependency graph and the docs atlas and re-runs identically, so it replaces the `index.md` plus read-first plus brief that teams maintain by hand.
 
 ```text
-index router --root ROOT [--out FILE] [--budget-ms MS]
+index router --root ROOT [--out FILE] [--budget-ms MS] [--no-cache]
 ```
 
 With `--out` it writes the map to a file; otherwise it prints to stdout. Every line is a graph fact (roles, edges, doc-describes), nothing invented. Router uses a bounded interactive discovery budget by default. If the scan cannot complete inside the budget or the complete repo set is too large for an interactive graph build, it exits non-zero with an `UNVERIFIABLE` message instead of printing a partial map as if it were complete. Use `--budget-ms 0` for an explicit unbounded graph build, and use `index map --resume-state PATH` when the goal is complete repository inventory rather than a graph/doc router.
+
+Graph/router builds emit `index.graph-progress/v1` JSON lines on stderr, leaving
+stdout as the result stream. Phases are `building`, `resolving`, `complete`, and
+`failed`; `completed_repos`, `total_repos`, and `elapsed_ms` describe observed work.
+The counts do not certify source quality. MCP hosts may display stderr diagnostics;
+these lines are not protocol progress notifications or a guarantee that a host will
+extend its timeout. A cached text result performs no graph build and emits no graph
+progress. The existing text-cache TTL can retain nested source changes until expiry.
+Use router `--no-cache`, or `no_cache: true` on MCP `index_graph`/`index_router`, to
+bypass both result caching and per-repository graph facts for a fresh build.
+
+CLI graph/router and corresponding MCP calls use at most four process workers by
+default. Python callers keep thread execution unless they explicitly select
+`build_graph(paths, executor="process", on_progress=callback)`. Process callers must
+use picklable resolvers and a guarded `if __name__ == "__main__":` entrypoint.
+Progress callbacks run in the caller, including when workers run in other processes.
+
+Graph scans keep the existing `EXCLUDE_DIRS` pruning but do not apply `.gitignore`
+as a source filter. A nested `.git` directory or file marks a separate repository:
+include that repository in the discovered input set to cover it independently.
+The repo cache hashes working bytes and includes Index/resolver implementation
+identity. Persistent repo-cache reads and writes are enabled only when every
+resolver is either one of Index's exact shipped built-in resolver types or a
+custom resolver that explicitly declares `uses_shared_source_reader = True`.
+Set that custom resolver flag only when every file declared by
+`fingerprint_names`, `fingerprint_suffixes`, or `fingerprint_globs`, and every
+other graph-relevant source read that can affect returned facts, goes through
+`index_graph.graph.walk.read_source_bytes` or `read_source_text`. Unopted custom
+resolvers bypass persistent repo cache reads and writes, including when mixed
+with built-in resolvers; graph coverage is unchanged, but repeat builds reparse
+those repos. Subclasses of built-in resolvers count as custom until they opt in.
+Monkeypatching a shipped built-in method keeps the exact runtime type, so tests
+or hosts that replace source-read behavior should pass `use_cache=False`.
+Custom resolvers whose instance state or external configuration changes their
+behavior must still update `cache_version` or disable caching. The repo-cache key
+version changes with this contract, so earlier candidate cache entries are not
+reused. Router doc discovery reads locations;
+commands that need Markdown content still read document bodies.
+Fingerprinting and built-in resolver parsing share a temporary working-byte cache
+inside each repo build, capped at 16 MiB and 4,096 files. The cap limits reuse, not
+source coverage; larger inputs are still read. Source bytes are not retained in
+the persistent graph cache and the temporary cache expires after each build.
+If either cap is exceeded, above-cap reads keep a first-read digest journal rather
+than retaining source bodies. A later built-in read of the same above-cap file must
+match that first digest before the build can write persistent repo facts. Digest
+mismatch, source I/O failure, interrupted traversal, or journal overflow skips
+persistent cache for that build while preserving source coverage. The journal is
+bounded by entry count, not file bytes, so very large file-count repositories can
+still fall back to repeat parsing instead of retaining all source in memory. A graph
+is an observation made during a scan, not an atomic filesystem snapshot; edit-free
+inputs are required for matched comparisons.
+Fingerprinting and built-in resolvers use the resolved repository root consistently;
+node metadata retains the root path the caller supplied. A source read or traversal
+I/O failure aborts a complete graph with `GraphSourceError`, rather than silently
+dropping the affected source. CLI JSON returns `UNVERIFIABLE` and exit2; MCP returns
+a typed tool error. Parser limitations and custom resolvers remain separate concerns.
+
+### Background router jobs
+
+`index router-job start --root ROOT` returns JSON with a `job_id` while the local
+worker builds the router. Read it with `index router-job status JOB_ID`, then
+`index router-job result JOB_ID`. The result receipt contains text only after
+completion validation. `cancel JOB_ID` requests cooperative cancellation;
+`resume JOB_ID` retries a stopped attempt. All five commands emit JSON. `start`
+also accepts `--max-docs`, `--budget-ms` (default0), and `--no-cache`.
+
+MCP exposes the same actions as `index.router.job.start`, `.status`, `.result`,
+`.cancel`, and `.resume`. Start takes `root` and optional `max_docs`, `budget_ms`,
+and `no_cache`; other actions require only `job_id`. State remains local under
+`INDEX_ROUTER_JOB_DIR` or the platform user cache. These files can contain private
+workspace paths and router content. See [Router jobs](docs/ROUTER-JOBS.md) for
+worker ownership, result validation, and recovery limits. Use background jobs for
+large workspaces that exceed an interactive request's time limit.
 
 ## Grounding a claim (`verify`)
 

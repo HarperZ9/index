@@ -5,7 +5,7 @@ import json
 import re
 from pathlib import Path
 
-from ..walk import walk_files
+from ..walk import read_source_text, walk_files
 from .base import RawEdge
 
 # `use Ns\Thing;`, and also `use function Ns\fn;` / `use const Ns\C;`: a symbol
@@ -32,7 +32,7 @@ class PhpResolver:
         if not cj.is_file():
             return set()
         try:
-            data = json.loads(cj.read_text(encoding="utf-8", errors="replace"))
+            data = json.loads(read_source_text(cj, encoding="utf-8", errors="replace"))
         except (json.JSONDecodeError, OSError):
             return set()
         name = data.get("name")
@@ -43,15 +43,15 @@ class PhpResolver:
         cj = repo_root / "composer.json"
         if cj.is_file():
             try:
-                data = json.loads(cj.read_text(encoding="utf-8", errors="replace"))
+                data = json.loads(read_source_text(cj, encoding="utf-8", errors="replace"))
                 for field in ("require", "require-dev"):
                     for pkg, spec in (data.get(field, {}) or {}).items():
                         edges.append(RawEdge(str(pkg), "manifest", "composer.json", None, f"{pkg}: {spec}"))
             except (json.JSONDecodeError, OSError):
                 pass
-        for src in walk_files(repo_root, suffixes=(".php",)):
+        for src in walk_files(repo_root, suffixes=(".php",), stop_at_nested_repos=True):
             try:
-                lines = src.read_text(encoding="utf-8", errors="replace").splitlines()
+                lines = read_source_text(src, encoding="utf-8", errors="replace").splitlines()
             except OSError:
                 continue
             rel = src.relative_to(repo_root).as_posix()

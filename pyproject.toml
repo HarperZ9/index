@@ -41,3 +41,6 @@ packages = ["src/index_graph"]
 addopts = "-q"
 pythonpath = ["src"]
 testpaths = ["tests"]
+
+[tool.hatch.build.targets.sdist]
+exclude = ["/docs/superpowers"]

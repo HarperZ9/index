@@ -1,8 +1,10 @@
 import os
+import json
 import subprocess
 import sys
 from pathlib import Path
 
+from index_graph.knowledge.docs import discover_router_docs
 from index_graph.router import render_router
 
 
@@ -119,3 +121,49 @@ def test_router_cli_smoke(tmp_path):
     assert r.returncode == 0, r.stderr
     assert "# Workspace map" in r.stdout
     assert "solo" in r.stdout
+    progress = [json.loads(line) for line in r.stderr.splitlines()
+                if line.startswith('{"schema": "index.graph-progress/v1"')]
+    assert progress, r.stderr
+    assert progress[0]["phase"] == "building"
+    assert progress[-1]["phase"] == "complete"
+    assert progress[-1]["completed_repos"] == progress[-1]["total_repos"] == 1
+    assert "index.graph-progress" not in r.stdout
+
+
+def test_router_doc_discovery_does_not_read_markdown_bodies(tmp_path, monkeypatch):
+    doc = tmp_path / "pkg" / "docs" / "big.md"
+    doc.parent.mkdir(parents=True)
+    doc.write_text("# Big\n\nbody that router does not need\n", encoding="utf-8")
+
+    real_read_text = Path.read_text
+
+    def fail_on_markdown_body(path: Path, *args, **kwargs):
+        if path.suffix.lower() == ".md":
+            raise AssertionError("router doc discovery should not read markdown bodies")
+        return real_read_text(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "read_text", fail_on_markdown_body)
+
+    docs = discover_router_docs(tmp_path)
+
+    assert [(d.rel_path, d.dir_rel, d.title, d.body, d.link_targets) for d in docs] == [
+        ("pkg/docs/big.md", "pkg/docs", "big", "", ())
+    ]
+
+
+def test_router_no_cache_bypasses_repo_facts_too(tmp_path, monkeypatch):
+    from types import SimpleNamespace
+    from index_graph.cli_handlers import maps
+
+    (tmp_path / "solo" / ".git").mkdir(parents=True)
+    calls = []
+    real_build = maps.build_graph
+
+    def record_build(*args, **kwargs):
+        calls.append(kwargs.get("use_cache"))
+        return real_build(*args, **kwargs)
+
+    monkeypatch.setattr(maps, "build_graph", record_build)
+    maps.cmd_router(SimpleNamespace(root=tmp_path, max_docs=5, budget_ms=0,
+                                    no_cache=True, out=None))
+    assert calls == [False]

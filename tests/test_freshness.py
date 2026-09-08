@@ -1,5 +1,8 @@
 """Tests for the content fingerprint, the freshness comparison, and the CLI face."""
 import json
+import shutil
+import subprocess
+from pathlib import Path
 
 import pytest
 
@@ -38,6 +41,23 @@ def test_repo_fingerprint_changes_on_source_edit(tmp_path):
     assert repo_fingerprint(repo) != before
 
 
+def test_repo_fingerprint_detects_tracked_worktree_edits(tmp_path):
+    if shutil.which("git") is None:
+        pytest.skip("git is required for git-backed fingerprint coverage")
+    repo = _py_repo(tmp_path / "app", "app")
+    subprocess.run(["git", "init"], cwd=repo, check=True, capture_output=True, text=True)
+    subprocess.run(
+        ["git", "add", "pyproject.toml", "main.py"],
+        cwd=repo,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    before = repo_fingerprint(repo)
+    (repo / "main.py").write_text("import requests\n", encoding="utf-8")
+    assert repo_fingerprint(repo) != before
+
+
 def test_repo_fingerprint_changes_when_new_ecosystem_manifest_appears(tmp_path):
     """A repo that was Python-only gains a Cargo.toml: the graph could now change,
     so the fingerprint must move even though no Python file was touched."""
@@ -62,6 +82,18 @@ def test_repo_fingerprint_requirements_glob_is_tracked(tmp_path):
     before = repo_fingerprint(repo)
     (repo / "requirements-dev.txt").write_text("requests==2.0\n", encoding="utf-8")
     assert repo_fingerprint(repo) != before
+
+
+def test_repo_fingerprint_respects_nested_repo_boundary(tmp_path):
+    repo = _py_repo(tmp_path / "app", "app")
+    child = _py_repo(repo / "child", "child")
+
+    parent_before = repo_fingerprint(repo)
+    child_before = repo_fingerprint(child)
+    (child / "main.py").write_text("import requests\n", encoding="utf-8")
+
+    assert repo_fingerprint(repo) == parent_before
+    assert repo_fingerprint(child) != child_before
 
 
 def test_repo_fingerprint_fail_closed_on_missing_root(tmp_path):

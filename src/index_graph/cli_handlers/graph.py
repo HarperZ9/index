@@ -9,6 +9,7 @@ from .. import __version__
 from ..context.focus import focus_rejection, render_rejection
 from ..context.pack import closure, focus_subgraph, render_text, to_json
 from ..graph.build import build_graph
+from ..graph.progress import stderr_progress
 from ..scan import ScanBudgetExceeded, ScanWorkloadExceeded, default_interactive_budget_ms
 from ._common import head_commit, repo_paths, require_dir
 
@@ -48,7 +49,8 @@ def _emit_scan_budget(args, command: str, exc: ScanBudgetExceeded) -> int:
 
 def cmd_graph(args) -> int:
     try:
-        graph = build_graph(repo_paths(args.root.resolve(), budget_ms=_budget_ms(args)))
+        graph = build_graph(repo_paths(args.root.resolve(), budget_ms=_budget_ms(args)),
+                            executor="process", on_progress=stderr_progress())
     except (ScanBudgetExceeded, ScanWorkloadExceeded) as exc:
         return _emit_scan_budget(args, "index graph", exc)
     if getattr(args, "cycles", False):
