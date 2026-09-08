@@ -2,6 +2,9 @@
 
 ## 2.12.0 (2026-09-07)
 
+- Status discovery derives MCP capabilities from the served tool definitions and
+  includes router-job commands. Source packages omit historical planning notes.
+
 - LSP bounds its unchanged-metadata fast path to two seconds and reads content
   immediately for files modified within the latest one-second uncertainty window.
   Same-size edits can no longer remain indefinitely hidden by a restored mtime.
