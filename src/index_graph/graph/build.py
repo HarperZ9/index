@@ -7,7 +7,7 @@ import os
 import tomllib
 import multiprocessing
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
-from collections.abc import Callable, Iterator
+from collections.abc import Callable, Iterator, Mapping
 from dataclasses import dataclass, field, replace
 from pathlib import Path
 from time import perf_counter
@@ -15,7 +15,13 @@ from time import perf_counter
 from . import cache as _cache
 from .edges import Edge, build_index, resolve_edges
 from .description import description as _description
-from .walk import cached_file_scope, read_source_text, source_reuse_complete, walk_files
+from .walk import (
+    PreloadedFileValue,
+    cached_file_scope,
+    read_source_text,
+    source_reuse_complete,
+    walk_files,
+)
 from .resolvers import ALL_RESOLVERS
 from .resolvers.base import RawEdge
 from .roles import derive_roles
@@ -165,6 +171,7 @@ def _load_or_build_one_repo(
     resolvers,
     *,
     use_cache: bool,
+    file_list: PreloadedFileValue | None = None,
 ) -> _RepoBuild:
     name, requested_root = item
     source_item = (name, requested_root.resolve())
@@ -174,7 +181,8 @@ def _load_or_build_one_repo(
         return replace(built, node=replace(built.node, path=str(requested_root)))
 
     cache_allowed = use_cache and _cache.resolvers_use_shared_source_reads(resolvers)
-    with cached_file_scope():
+    scope_files = {source_item[1]: file_list} if file_list is not None else None
+    with cached_file_scope(scope_files):
         if not cache_allowed:
             build_started = perf_counter()
             built = _build_one_repo(source_item, resolvers)
@@ -222,11 +230,14 @@ def _collect_repos(
     jobs: int,
     *,
     use_cache: bool,
+    file_lists: Mapping[str, PreloadedFileValue] | None = None,
     executor: str = "thread",
 ) -> Iterator[_RepoBuild]:
     if jobs <= 1 or len(items) <= 1:
         for item in items:
-            yield _load_or_build_one_repo(item, resolvers, use_cache=use_cache)
+            file_list = file_lists.get(item[0]) if file_lists is not None else None
+            yield _load_or_build_one_repo(item, resolvers, use_cache=use_cache,
+                                          file_list=file_list)
         return
     # Spawn avoids inheriting locks or application state from an MCP host. The
     # Python API retains threads by default for local/custom resolver objects.
@@ -235,8 +246,16 @@ def _collect_repos(
         if executor == "process" else ThreadPoolExecutor(max_workers=jobs)
     )
     with pool_context as pool:
-        pending = [pool.submit(_load_or_build_one_repo, item, resolvers,
-                               use_cache=use_cache) for item in items]
+        pending = [
+            pool.submit(
+                _load_or_build_one_repo,
+                item,
+                resolvers,
+                use_cache=use_cache,
+                file_list=file_lists.get(item[0]) if file_lists is not None else None,
+            )
+            for item in items
+        ]
         try:
             for future in as_completed(pending):
                 yield future.result()
@@ -255,6 +274,7 @@ def build_graph(
     use_cache: bool = True,
     on_progress: Callable[[GraphProgress], None] | None = None,
     executor: str = "thread",
+    file_lists: Mapping[str, PreloadedFileValue] | None = None,
 ) -> DependencyGraph:
     """Build complete dependency evidence; optional progress runs in the caller.
 
@@ -282,6 +302,7 @@ def build_graph(
         report("building")
         for built in _collect_repos(
             sorted(repo_paths.items()), resolvers, worker_count, use_cache=use_cache,
+            file_lists=file_lists,
             executor=executor,
         ):
             _cache.record_cache_summary(

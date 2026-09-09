@@ -45,15 +45,24 @@ not public release artifacts.
 - `completed_repos` and `total_repos`: actual graph progress reported by
   `build_graph`; `total_repos` is `null` until discovery finishes.
 - `phase_timings_ms`: private per-phase worker timings for local diagnosis,
-  including repository discovery, graph build, router-doc discovery, router pack
-  assembly, rendering, and result publication when those phases have run.
+  including router inventory, graph build, router-doc row construction, router
+  pack assembly, rendering, and result publication when those phases have run.
+- `router_inventory`: aggregate private traversal detail for the operation-local
+  router inventory. It reports physical walk count, visited directory/file
+  counts, metadata byte totals, discovered repo count, Markdown path count,
+  graph file-list count, and per-repo inventory fallback count. These are
+  traversal diagnostics, not source freshness. Reused graph file lists carry a
+  directory-membership seal that is revalidated immediately before the graph
+  fingerprint; changed, ambiguous, or unreadable membership falls back to the
+  normal graph walk. Exact source-byte reads remain in `graph_cache.fingerprint`.
 - `graph_cache`: aggregate private cache outcome counters and reason counts for
   the graph build. It reports hits, misses, invalid entries, bypassed entries,
   writes, cache-stage timings, and exact-byte fingerprint file/byte counts
   without file contents, source snippets, repo paths, or credentials.
-- `router_docs`: aggregate private router-doc discovery detail. It separates
-  markdown path traversal from row construction and reports only counts and
-  milliseconds, not markdown bodies or paths.
+- `router_docs`: aggregate private router-doc detail. It reports the inventory
+  traversal timing used for Markdown path discovery and the row-construction
+  timing used to build path-only doc records; it does not include Markdown
+  bodies or paths.
 - `attempt`, `run_token`, diagnostic `pid`, timestamps, and
   `result_available`.
 - `request_sha256`, `config_sha256`, `result_sha256`, and `result_bytes` bind a
@@ -126,7 +135,9 @@ jobs; live attempts return their existing receipt.
 
 ## Boundary
 
-Router jobs reuse the existing Index functions: repository discovery,
+Router jobs reuse the existing Index functions: repository discovery semantics,
 `build_graph`, graph cache validation, doc discovery, router pack assembly, and
-router rendering. There is no new server, database, dependency, or alternate graph
-implementation.
+router rendering. The operation-local router inventory is only a listing cache:
+it does not replace exact working-byte hashing, does not persist source metadata
+as freshness authority, and does not add a new server, database, dependency, or
+alternate graph implementation.

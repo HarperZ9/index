@@ -885,23 +885,52 @@ def run_router_job_worker(job_dir: Path | str, run_token: str | None = None) -> 
         telemetry.record_timing("config", config_started)
         update(status="running", phase="discovering", config_sha256=config_sha256)
         discovery_started = perf_counter()
-        from .cli_handlers._common import rel_to_root, repo_paths
         from .knowledge.atlas import build_router_pack
         from .knowledge.docs import discover_router_docs
+        from .router_inventory import build_router_inventory
         from .router import render_router
 
-        paths = repo_paths(root, budget_ms=int(request.get("budget_ms", 0)))
-        telemetry.record_timing("repo_discovery", discovery_started, total_repos=len(paths))
+        def inventory_checkpoint(_path: Path) -> bool:
+            if _cancel_requested(job_dir, run_token):
+                raise RouterJobCancelled("router job cancellation requested")
+            return True
+
+        inventory = build_router_inventory(
+            root,
+            budget_ms=int(request.get("budget_ms", 0)),
+            checkpoint=inventory_checkpoint,
+        )
+        paths = inventory.repo_paths
+        telemetry.router_inventory = {
+            "physical_walks": int(inventory.stats.get("physical_walks", 0)),
+            "physical_dirs": int(inventory.stats.get("physical_dirs", 0)),
+            "physical_files": int(inventory.stats.get("physical_files", 0)),
+            "physical_file_bytes": int(inventory.stats.get("physical_file_bytes", 0)),
+            "physical_stat_unreadable": int(inventory.stats.get("physical_stat_unreadable", 0)),
+            "traversal_ms": int(inventory.stats.get("traversal_ms", 0)),
+            "repo_count": len(paths),
+            "router_doc_paths": int(inventory.stats.get("router_doc_paths", 0)),
+            "repo_file_paths": int(inventory.stats.get("repo_file_paths", 0)),
+            "repo_inventory_fallbacks": int(inventory.stats.get("repo_inventory_fallbacks", 0)),
+        }
+        telemetry.record_timing(
+            "repo_discovery",
+            discovery_started,
+            total_repos=len(paths),
+            physical_walks=telemetry.router_inventory["physical_walks"],
+            physical_files=telemetry.router_inventory["physical_files"],
+        )
         if _cancel_requested(job_dir, run_token):
             raise RouterJobCancelled("router job cancellation requested")
         update(status="running", phase="building", completed_repos=0, total_repos=len(paths))
-        repo_dirs = {name: rel_to_root(root, path) for name, path in paths.items()}
+        repo_dirs = inventory.repo_dirs
         graph_started = perf_counter()
         graph = build_graph(
             paths,
             executor=str(request.get("executor") or "process"),
             use_cache=bool(request.get("use_cache", True)),
             on_progress=progress,
+            file_lists=inventory.repo_file_lists,
         )
         telemetry.graph_cache = getattr(graph, "cache_summary", None)
         telemetry.record_timing("graph", graph_started, total_repos=len(paths))
@@ -911,9 +940,13 @@ def run_router_job_worker(job_dir: Path | str, run_token: str | None = None) -> 
         update(status="running", phase="rendering", completed_repos=len(paths), total_repos=len(paths))
         docs_started = perf_counter()
         docs_stats: dict[str, int] = {}
-        docs = discover_router_docs(root, stats=docs_stats)
-        telemetry.router_docs = {"docs": len(docs), "traversal_ms": int(docs_stats.get("traversal_ms", 0)),
-                                 "row_construction_ms": int(docs_stats.get("row_construction_ms", 0))}
+        docs = discover_router_docs(root, paths=inventory.router_doc_paths, stats=docs_stats)
+        telemetry.router_docs = {
+            "docs": len(docs),
+            "traversal_ms": int(inventory.stats.get("traversal_ms", 0)),
+            "physical_walks": int(inventory.stats.get("physical_walks", 0)),
+            "row_construction_ms": int(docs_stats.get("row_construction_ms", 0)),
+        }
         telemetry.record_timing("router_docs", docs_started, **telemetry.router_docs)
         pack_started = perf_counter()
         pack = build_router_pack(graph, docs, repo_dirs)

@@ -11,6 +11,7 @@ class RouterJobTelemetry:
         self._append_event = append_event
         self.phase_timings_ms: dict[str, int] = {}
         self.graph_cache: dict[str, object] | None = None
+        self.router_inventory: dict[str, object] | None = None
         self.router_docs: dict[str, object] | None = None
         self._events: list[dict[str, Any]] = []
 
@@ -20,6 +21,8 @@ class RouterJobTelemetry:
             fields["phase_timings_ms"] = dict(self.phase_timings_ms)
         if self.graph_cache is not None:
             fields["graph_cache"] = dict(self.graph_cache)
+        if self.router_inventory is not None:
+            fields["router_inventory"] = dict(self.router_inventory)
         if self.router_docs is not None:
             fields["router_docs"] = dict(self.router_docs)
         return fields

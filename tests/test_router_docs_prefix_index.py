@@ -136,9 +136,18 @@ def test_router_job_records_private_phase_timings_and_cache_summary(tmp_path, mo
     assert isinstance(fingerprint, dict)
     assert isinstance(fingerprint.get("files"), int)
     assert isinstance(fingerprint.get("bytes"), int)
+    inventory = status.get("router_inventory")
+    assert isinstance(inventory, dict)
+    assert inventory.get("physical_walks") == 1
+    assert inventory.get("repo_count") == 1
+    assert inventory.get("router_doc_paths") == 1
+    for key in ["physical_dirs", "physical_files", "physical_file_bytes", "repo_file_paths"]:
+        assert isinstance(inventory.get(key), int)
+        assert inventory[key] >= 0
     docs_detail = status.get("router_docs")
     assert isinstance(docs_detail, dict)
     assert docs_detail.get("docs") == 1
+    assert docs_detail.get("physical_walks") == 1
     for key in ["traversal_ms", "row_construction_ms"]:
         assert isinstance(docs_detail.get(key), int)
         assert docs_detail[key] >= 0
