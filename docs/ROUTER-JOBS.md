@@ -44,6 +44,16 @@ not public release artifacts.
   `building`, `rendering`, `complete`, `failed`, or `cancelled`.
 - `completed_repos` and `total_repos`: actual graph progress reported by
   `build_graph`; `total_repos` is `null` until discovery finishes.
+- `phase_timings_ms`: private per-phase worker timings for local diagnosis,
+  including repository discovery, graph build, router-doc discovery, router pack
+  assembly, rendering, and result publication when those phases have run.
+- `graph_cache`: aggregate private cache outcome counters and reason counts for
+  the graph build. It reports hits, misses, invalid entries, bypassed entries,
+  writes, cache-stage timings, and exact-byte fingerprint file/byte counts
+  without file contents, source snippets, repo paths, or credentials.
+- `router_docs`: aggregate private router-doc discovery detail. It separates
+  markdown path traversal from row construction and reports only counts and
+  milliseconds, not markdown bodies or paths.
 - `attempt`, `run_token`, diagnostic `pid`, timestamps, and
   `result_available`.
 - `request_sha256`, `config_sha256`, `result_sha256`, and `result_bytes` bind a

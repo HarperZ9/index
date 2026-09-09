@@ -17,13 +17,21 @@ import time
 import uuid
 from contextlib import contextmanager
 from dataclasses import asdict
-from datetime import datetime
 from pathlib import Path
 from time import perf_counter
 from typing import Any, BinaryIO
 
 from . import __version__
 from .graph.build import GraphProgress, build_graph
+from .router_job_telemetry import RouterJobTelemetry
+from .router_job_utils import (
+    config_sha256 as _config_sha256,
+    now as _now,
+    request_sha256 as _request_sha256,
+    root_hash as _root_hash,
+    safe_error_message as _safe_error_message,
+    sha256_text as _sha256_text,
+)
 
 _STATUS_SCHEMA = "index.router-job-status/v1"
 _RESULT_SCHEMA = "index.router-job-result/v1"
@@ -46,10 +54,8 @@ _STATE_LOCKS = threading.local()
 _STATE_THREAD_LOCKS: dict[str, threading.RLock] = {}
 _STATE_THREAD_LOCKS_GUARD = threading.Lock()
 
-
 class RouterJobError(ValueError):
     """Raised for invalid local job operations."""
-
 
 class RouterJobCancelled(RuntimeError):
     """Internal cooperative cancellation signal."""
@@ -61,16 +67,6 @@ class RouterJobLostOwnership(RuntimeError):
 
 class RouterJobAlreadyActive(RuntimeError):
     """Internal signal for a duplicate worker when the active lease is fresh."""
-
-
-def _now() -> str:
-    return datetime.now().astimezone().isoformat(timespec="seconds")
-
-
-def _root_hash(root: Path) -> str:
-    import hashlib
-
-    return hashlib.sha256(str(root.resolve()).encode("utf-8", "surrogateescape")).hexdigest()[:16]
 
 
 def _ensure_lock_byte(fh: BinaryIO) -> None:
@@ -148,39 +144,6 @@ def _state_lock(job_dir: Path):
                 yield
             finally:
                 held.remove(key)
-
-
-def _sha256_bytes(value: bytes) -> str:
-    import hashlib
-
-    return hashlib.sha256(value).hexdigest()
-
-
-def _sha256_text(value: str) -> str:
-    return _sha256_bytes(value.encode("utf-8", "surrogateescape"))
-
-
-def _canonical_json(data: dict[str, Any]) -> str:
-    return json.dumps(data, sort_keys=True, separators=(",", ":"), default=str)
-
-
-def _request_sha256(request: dict[str, Any]) -> str:
-    stable = dict(request)
-    return _sha256_text(_canonical_json(stable))
-
-
-def _config_sha256(root: Path) -> str:
-    parts: list[list[str]] = []
-    for name in (".index.toml", ".repomap.toml"):
-        path = root / name
-        if not path.exists():
-            parts.append([name, "missing"])
-            continue
-        try:
-            parts.append([name, _sha256_bytes(path.read_bytes())])
-        except OSError:
-            parts.append([name, "unreadable"])
-    return _sha256_text(_canonical_json({"root": str(root.resolve()), "config": parts}))
 
 
 def _heartbeat_stale_seconds() -> float:
@@ -836,11 +799,6 @@ def resume_router_job(job_id: str, *, job_root: Path | str | None = None) -> dic
     return written
 
 
-def _safe_error_message(exc: BaseException) -> str:
-    text = str(exc) or type(exc).__name__
-    return " ".join(text.split())[:500]
-
-
 def run_router_job_worker(job_dir: Path | str, run_token: str | None = None) -> int:
     """Run one router job in this process. Public for tests and subprocess entry."""
     job_dir = Path(job_dir).resolve()
@@ -863,6 +821,7 @@ def run_router_job_worker(job_dir: Path | str, run_token: str | None = None) -> 
     started_epoch = time.time()
     stop_heartbeat: threading.Event | None = None
     lease_lock: BinaryIO | None = None
+    telemetry = RouterJobTelemetry(started, lambda event: _append_event(job_dir, event))
 
     def update(**fields: Any) -> dict[str, Any]:
         nonlocal status
@@ -882,6 +841,7 @@ def run_router_job_worker(job_dir: Path | str, run_token: str | None = None) -> 
                 raise RouterJobCancelled("router job cancellation requested")
             status = {
                 **current,
+                **telemetry.status_fields(),
                 **fields,
                 "run_token": run_token,
                 "elapsed_ms": int((perf_counter() - started) * 1000),
@@ -920,28 +880,54 @@ def run_router_job_worker(job_dir: Path | str, run_token: str | None = None) -> 
         root = Path(request["root"]).resolve()
         if not root.is_dir():
             raise FileNotFoundError(f"root not found: {root}")
-        update(status="running", phase="discovering", config_sha256=_config_sha256(root))
+        config_started = perf_counter()
+        config_sha256 = _config_sha256(root)
+        telemetry.record_timing("config", config_started)
+        update(status="running", phase="discovering", config_sha256=config_sha256)
+        discovery_started = perf_counter()
         from .cli_handlers._common import rel_to_root, repo_paths
         from .knowledge.atlas import build_router_pack
         from .knowledge.docs import discover_router_docs
         from .router import render_router
 
         paths = repo_paths(root, budget_ms=int(request.get("budget_ms", 0)))
+        telemetry.record_timing("repo_discovery", discovery_started, total_repos=len(paths))
         if _cancel_requested(job_dir, run_token):
             raise RouterJobCancelled("router job cancellation requested")
         update(status="running", phase="building", completed_repos=0, total_repos=len(paths))
         repo_dirs = {name: rel_to_root(root, path) for name, path in paths.items()}
+        graph_started = perf_counter()
         graph = build_graph(
             paths,
             executor=str(request.get("executor") or "process"),
             use_cache=bool(request.get("use_cache", True)),
             on_progress=progress,
         )
+        telemetry.graph_cache = getattr(graph, "cache_summary", None)
+        telemetry.record_timing("graph", graph_started, total_repos=len(paths))
+        telemetry.flush()
         if _cancel_requested(job_dir, run_token):
             raise RouterJobCancelled("router job cancellation requested")
         update(status="running", phase="rendering", completed_repos=len(paths), total_repos=len(paths))
-        pack = build_router_pack(graph, discover_router_docs(root), repo_dirs)
+        docs_started = perf_counter()
+        docs_stats: dict[str, int] = {}
+        docs = discover_router_docs(root, stats=docs_stats)
+        telemetry.router_docs = {"docs": len(docs), "traversal_ms": int(docs_stats.get("traversal_ms", 0)),
+                                 "row_construction_ms": int(docs_stats.get("row_construction_ms", 0))}
+        telemetry.record_timing("router_docs", docs_started, **telemetry.router_docs)
+        pack_started = perf_counter()
+        pack = build_router_pack(graph, docs, repo_dirs)
+        telemetry.record_timing(
+            "router_pack",
+            pack_started,
+            docs=len(docs),
+            knowledge_edges=len(pack.get("knowledge_edges", ())),
+        )
+        render_started = perf_counter()
         text = render_router(pack, max_docs=max(0, int(request.get("max_docs", 500))))
+        result_bytes = len(text.encode("utf-8", "surrogateescape"))
+        telemetry.record_timing("render", render_started, result_bytes=result_bytes)
+        result_write_started = perf_counter()
         result_sha256 = _sha256_text(text)
         attempt_result = job_dir / f"router.{run_token}.md"
         _atomic_write_text(attempt_result, text)
@@ -957,6 +943,7 @@ def run_router_job_worker(job_dir: Path | str, run_token: str | None = None) -> 
                 if _result_file_is_unsafe(job_dir / _RESULT_FILE):
                     raise RouterJobError("router job result path is unsafe")
                 attempt_result.replace(job_dir / _RESULT_FILE)
+                telemetry.phase_timings_ms["result_write"] = int((perf_counter() - result_write_started) * 1000)
                 status = {
                     **current,
                     "status": "complete",
@@ -966,9 +953,10 @@ def run_router_job_worker(job_dir: Path | str, run_token: str | None = None) -> 
                     "result_available": True,
                     "result_path": str(job_dir / _RESULT_FILE),
                     "result_sha256": result_sha256,
-                    "result_bytes": len(text.encode("utf-8", "surrogateescape")),
+                    "result_bytes": result_bytes,
                     "request_sha256": _request_sha256(request),
-                    "config_sha256": _config_sha256(root),
+                    "config_sha256": config_sha256,
+                    **telemetry.status_fields(),
                     "finished_at": _now(),
                     "elapsed_ms": int((perf_counter() - started) * 1000),
                 }
@@ -978,6 +966,8 @@ def run_router_job_worker(job_dir: Path | str, run_token: str | None = None) -> 
                 attempt_result.unlink()
             except FileNotFoundError:
                 pass
+        telemetry.record_duration("result_write", telemetry.phase_timings_ms.get("result_write", 0))
+        telemetry.flush()
         _append_event(job_dir, {"phase": "complete", "completed_repos": len(paths), "total_repos": len(paths), "elapsed_ms": int((perf_counter() - started) * 1000)})
         return 0
     except RouterJobAlreadyActive as exc:

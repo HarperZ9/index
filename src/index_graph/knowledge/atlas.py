@@ -41,6 +41,28 @@ def _describes(doc: Doc, repo_dirs: dict[str, str]) -> str | None:
     return best
 
 
+def _repo_dirs_by_location(repo_dirs: dict[str, str]) -> dict[str, str]:
+    """repo dir -> first repo name for current longest-prefix describes semantics."""
+    by_dir: dict[str, str] = {}
+    for repo, rdir in repo_dirs.items():
+        by_dir.setdefault(rdir, repo)
+    return by_dir
+
+
+def _describes_indexed(doc: Doc, repo_by_dir: dict[str, str]) -> str | None:
+    if doc.dir_rel == "":
+        return repo_by_dir.get("")
+    current = doc.dir_rel
+    while True:
+        repo = repo_by_dir.get(current)
+        if repo is not None:
+            return repo
+        parent, sep, _name = current.rpartition("/")
+        if not sep:
+            return None
+        current = parent
+
+
 def _mentions_name(body: str, name: str) -> bool:
     # case-insensitive whole-token match; treat '-'/'_' and spaces as separators
     pattern = r"(?<![0-9a-z])" + re.escape(name.lower()) + r"(?![0-9a-z])"
@@ -55,11 +77,12 @@ def _doc_rows(docs: list[Doc]) -> list[dict]:
     return [{"id": d.rel_path, "title": d.title, "dir": d.dir_rel} for d in docs]
 
 
-def _describes_edges(docs: list[Doc], repo_dirs: dict[str, str]) -> list[dict]:
+def _describes_edges_indexed(docs: list[Doc], repo_dirs: dict[str, str]) -> list[dict]:
     edges: list[dict] = []
     seen: set[tuple[str, str, str]] = set()
+    repo_by_dir = _repo_dirs_by_location(repo_dirs)
     for d in docs:
-        repo = _describes(d, repo_dirs)
+        repo = _describes_indexed(d, repo_by_dir)
         if repo is None:
             continue
         key = (d.rel_path, "repo", repo)
@@ -72,6 +95,10 @@ def _describes_edges(docs: list[Doc], repo_dirs: dict[str, str]) -> list[dict]:
                 "to_kind": "repo",
             })
     return sorted(edges, key=_EDGE_SORT)
+
+
+def _describes_edges(docs: list[Doc], repo_dirs: dict[str, str]) -> list[dict]:
+    return _describes_edges_indexed(docs, repo_dirs)
 
 
 def build_router_pack(graph: DependencyGraph, docs: list[Doc],

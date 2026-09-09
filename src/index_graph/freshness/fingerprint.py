@@ -20,6 +20,7 @@ import hashlib
 import fnmatch
 from collections.abc import Iterator
 from pathlib import Path
+from time import perf_counter
 
 from ..graph.resolvers import ALL_RESOLVERS
 from ..graph.walk import read_source_bytes, walk_files
@@ -48,6 +49,15 @@ def _is_relevant(filename: str, names, suffixes, globs) -> bool:
     return any(fnmatch.fnmatchcase(filename, g) for g in globs)
 
 
+def _add_stat(stats: dict[str, int] | None, key: str, value: int) -> None:
+    if stats is not None:
+        stats[key] = int(stats.get(key, 0)) + int(value)
+
+
+def _add_timing(stats: dict[str, int] | None, key: str, started: float) -> None:
+    _add_stat(stats, key, int((perf_counter() - started) * 1000))
+
+
 def relevant_files(repo_root: Path, resolvers=ALL_RESOLVERS, *, checkpoint=None,
                    stop_at_nested_repos: bool = False) -> Iterator[Path]:
     """Yield every graph-relevant file under repo_root (the manifests and source
@@ -67,7 +77,7 @@ def relevant_files(repo_root: Path, resolvers=ALL_RESOLVERS, *, checkpoint=None,
     )
 
 
-def repo_fingerprint(repo_root: Path, resolvers=ALL_RESOLVERS) -> str:
+def repo_fingerprint(repo_root: Path, resolvers=ALL_RESOLVERS, *, stats: dict[str, int] | None = None) -> str:
     """A SHA-256 over the sorted (relpath, file-sha256) of every relevant file.
 
     Fail-closed: an unreadable file contributes a fixed marker rather than
@@ -75,16 +85,29 @@ def repo_fingerprint(repo_root: Path, resolvers=ALL_RESOLVERS) -> str:
     """
     root = Path(repo_root)
     entries = []
-    for p in relevant_files(root, resolvers, stop_at_nested_repos=True):
+    started = perf_counter()
+    files = list(relevant_files(root, resolvers, stop_at_nested_repos=True))
+    _add_timing(stats, "fingerprint_walk_ms", started)
+    _add_stat(stats, "fingerprint_files", len(files))
+    started = perf_counter()
+    byte_count = 0
+    unreadable = 0
+    for p in files:
         try:
-            digest = hashlib.sha256(read_source_bytes(p)).hexdigest()
+            data = read_source_bytes(p)
+            byte_count += len(data)
+            digest = hashlib.sha256(data).hexdigest()
         except OSError:
+            unreadable += 1
             digest = "unreadable"
         try:
             rel = p.relative_to(root).as_posix()
         except ValueError:
             rel = p.as_posix()
         entries.append((rel, digest))
+    _add_stat(stats, "fingerprint_bytes", byte_count)
+    _add_stat(stats, "fingerprint_unreadable", unreadable)
+    _add_timing(stats, "fingerprint_read_hash_ms", started)
     entries.sort()
     h = hashlib.sha256()
     for rel, digest in entries:

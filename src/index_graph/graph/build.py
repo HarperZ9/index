@@ -4,29 +4,23 @@ from __future__ import annotations
 import configparser
 import json
 import os
-import re
 import tomllib
 import multiprocessing
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 from collections.abc import Callable, Iterator
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from time import perf_counter
 
+from . import cache as _cache
 from .edges import Edge, build_index, resolve_edges
-from .cache import (
-    make_lookup,
-    read_repo_build,
-    resolvers_use_shared_source_reads,
-    write_repo_build,
-)
+from .description import description as _description
 from .walk import cached_file_scope, read_source_text, source_reuse_complete, walk_files
 from .resolvers import ALL_RESOLVERS
 from .resolvers.base import RawEdge
 from .roles import derive_roles
 
-_PARA = re.compile(r"\n\s*\n")
-
+make_lookup = _cache.make_lookup
 
 @dataclass(frozen=True)
 class RepoNode:
@@ -37,14 +31,13 @@ class RepoNode:
     description: str
     markers: frozenset[str]
 
-
 @dataclass(frozen=True)
 class DependencyGraph:
     repos: tuple[RepoNode, ...]
     edges: tuple[Edge, ...]
     roles: dict[str, tuple[str, ...]]
     warnings: tuple[str, ...]
-
+    cache_summary: dict[str, object] | None = field(default=None, compare=False)
 
 @dataclass(frozen=True)
 class GraphProgress:
@@ -55,7 +48,6 @@ class GraphProgress:
     total_repos: int
     elapsed_ms: int
 
-
 @dataclass(frozen=True)
 class _RepoBuild:
     name: str
@@ -63,38 +55,10 @@ class _RepoBuild:
     exposed_names: set[str]
     raw_edges: list[RawEdge]
     markers: set[str]
-
-
-def _description(repo_root: Path) -> str:
-    for readme in ("README.md", "README.rst", "README.txt", "readme.md"):
-        p = repo_root / readme
-        if p.is_file():
-            try:
-                text = read_source_text(p, encoding="utf-8", errors="replace").strip()
-            except OSError:
-                continue
-            for block in _PARA.split(text):
-                b = block.strip()
-                if b and not b.startswith("#") and not b.startswith("!["):
-                    return " ".join(b.split())[:300]
-    pp = repo_root / "pyproject.toml"
-    if pp.is_file():
-        try:
-            d = tomllib.loads(read_source_text(pp, encoding="utf-8", errors="replace")).get("project", {})
-            if d.get("description"):
-                return str(d["description"])
-        except (tomllib.TOMLDecodeError, OSError):
-            pass
-    pj = repo_root / "package.json"
-    if pj.is_file():
-        try:
-            d = json.loads(read_source_text(pj, encoding="utf-8", errors="replace"))
-            if d.get("description"):
-                return str(d["description"])
-        except (json.JSONDecodeError, OSError):
-            pass
-    return "(no description)"
-
+    cache_outcome: str = "bypassed"
+    cache_reason: str = "not_recorded"
+    cache_written: bool = False
+    cache_stats: dict[str, int] = field(default_factory=dict, compare=False)
 
 def detect_markers(repo_root: Path, exposed: set[str]) -> set[str]:
     mk: set[str] = set()
@@ -129,10 +93,8 @@ def detect_markers(repo_root: Path, exposed: set[str]) -> set[str]:
         mk.add("entry")
     return mk
 
-
 def _default_jobs() -> int:
     return min(32, (os.cpu_count() or 4) * 5)
-
 
 def _build_one_repo(item: tuple[str, Path], resolvers) -> _RepoBuild:
     name, root = item
@@ -145,16 +107,8 @@ def _build_one_repo(item: tuple[str, Path], resolvers) -> _RepoBuild:
             names |= resolver.exposed_names(root)
             raws += resolver.raw_edges(root)
     mk = detect_markers(root, names)
-    node = RepoNode(
-        name,
-        str(root),
-        tuple(ecos),
-        frozenset(names),
-        _description(root),
-        frozenset(mk),
-    )
+    node = RepoNode(name, str(root), tuple(ecos), frozenset(names), _description(root), frozenset(mk))
     return _RepoBuild(name, node, names, raws, mk)
-
 
 def _repo_build_to_json(build: _RepoBuild) -> dict:
     return {
@@ -179,7 +133,6 @@ def _repo_build_to_json(build: _RepoBuild) -> dict:
         ],
         "markers": sorted(build.markers),
     }
-
 
 def _repo_build_from_json(data: dict) -> _RepoBuild:
     node = data["node"]
@@ -207,7 +160,6 @@ def _repo_build_from_json(data: dict) -> _RepoBuild:
         markers=set(str(item) for item in data.get("markers", ())),
     )
 
-
 def _load_or_build_one_repo(
     item: tuple[str, Path],
     resolvers,
@@ -216,26 +168,53 @@ def _load_or_build_one_repo(
 ) -> _RepoBuild:
     name, requested_root = item
     source_item = (name, requested_root.resolve())
+    cache_stats = _cache.empty_repo_cache_stats()
 
     def presented(built: _RepoBuild) -> _RepoBuild:
         return replace(built, node=replace(built.node, path=str(requested_root)))
 
-    cache_allowed = use_cache and resolvers_use_shared_source_reads(resolvers)
+    cache_allowed = use_cache and _cache.resolvers_use_shared_source_reads(resolvers)
     with cached_file_scope():
         if not cache_allowed:
-            return presented(_build_one_repo(source_item, resolvers))
-        lookup = make_lookup(name, source_item[1], resolvers)
-        cached = read_repo_build(lookup)
+            build_started = perf_counter()
+            built = _build_one_repo(source_item, resolvers)
+            _cache.add_cache_timing(cache_stats, "fresh_build", build_started)
+            return presented(replace(
+                built,
+                cache_outcome="bypassed",
+                cache_reason="disabled_or_unsupported",
+                cache_stats=cache_stats,
+            ))
+        lookup = make_lookup(name, source_item[1], resolvers, stats=cache_stats)
+        cached, cache_outcome, cache_reason = _cache.read_repo_build_with_outcome(lookup, stats=cache_stats)
         if cached is not None:
+            rehydrate_started = perf_counter()
             try:
-                return presented(_repo_build_from_json(cached))
+                built = _repo_build_from_json(cached)
+                _cache.add_cache_timing(cache_stats, "cache_rehydrate", rehydrate_started)
+                return presented(replace(
+                    built,
+                    cache_outcome="hit",
+                    cache_reason=cache_reason,
+                    cache_stats=cache_stats,
+                ))
             except (KeyError, TypeError, ValueError):
-                pass
+                _cache.add_cache_timing(cache_stats, "cache_rehydrate", rehydrate_started)
+                cache_outcome = "invalid"
+                cache_reason = "build_payload"
+        build_started = perf_counter()
         built = _build_one_repo(source_item, resolvers)
+        _cache.add_cache_timing(cache_stats, "fresh_build", build_started)
+        cache_written = False
         if source_reuse_complete():
-            write_repo_build(lookup, _repo_build_to_json(built))
-        return presented(built)
-
+            cache_written = _cache.write_repo_build(lookup, _repo_build_to_json(built), stats=cache_stats)
+        return presented(replace(
+            built,
+            cache_outcome=cache_outcome,
+            cache_reason=cache_reason,
+            cache_written=cache_written,
+            cache_stats=cache_stats,
+        ))
 
 def _collect_repos(
     items: list[tuple[str, Path]],
@@ -268,7 +247,6 @@ def _collect_repos(
                 future.cancel()
             raise
 
-
 def build_graph(
     repo_paths: dict[str, Path],
     resolvers=ALL_RESOLVERS,
@@ -290,6 +268,7 @@ def build_graph(
     exposed: dict[str, set[str]] = {}
     repo_raw: dict[str, list[RawEdge]] = {}
     markers: dict[str, set[str]] = {}
+    cache_summary = _cache.empty_cache_summary()
     default_jobs = min(4, os.cpu_count() or 1) if executor == "process" else _default_jobs()
     worker_count = default_jobs if jobs is None else max(1, jobs)
     started = perf_counter()
@@ -305,6 +284,13 @@ def build_graph(
             sorted(repo_paths.items()), resolvers, worker_count, use_cache=use_cache,
             executor=executor,
         ):
+            _cache.record_cache_summary(
+                cache_summary,
+                built.cache_outcome,
+                built.cache_reason,
+                built.cache_written,
+                built.cache_stats,
+            )
             exposed[built.name] = built.exposed_names
             repo_raw[built.name] = built.raw_edges
             markers[built.name] = built.markers
@@ -320,7 +306,13 @@ def build_graph(
         index = build_index(exposed)
         edges, warnings = resolve_edges(repo_raw, index)
         roles = derive_roles(set(repo_paths), edges, markers)
-        graph = DependencyGraph(tuple(nodes), tuple(edges), roles, tuple(warnings))
+        graph = DependencyGraph(
+            tuple(nodes),
+            tuple(edges),
+            roles,
+            tuple(warnings),
+            _cache.final_cache_summary(cache_summary),
+        )
     except BaseException:
         report("failed")
         raise
