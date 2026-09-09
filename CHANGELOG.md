@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Router-job events distinguish graph completion/failure from terminal job
+  status. Progress and buffered timing rows use one worker-attempt emission
+  clock, with graph duration preserved separately. Result acceptance and
+  standalone graph progress semantics are unchanged.
+
 ## 2.12.0 (2026-09-07)
 
 - Status discovery derives MCP capabilities from the served tool definitions and
