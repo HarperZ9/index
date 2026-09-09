@@ -807,21 +807,37 @@ def run_router_job_worker(job_dir: Path | str, run_token: str | None = None) -> 
     run_token = run_token or status.get("run_token") or uuid.uuid4().hex
     if not isinstance(run_token, str) or not run_token:
         run_token = uuid.uuid4().hex
+    started = perf_counter()
+    worker_instance_id = uuid.uuid4().hex
+
+    def emit(event: dict[str, Any], *, scope: str = "job", terminal: bool = False) -> None:
+        # Timing records may have been buffered. Stamp their emission, not their
+        # earlier collection time, on the same clock as all other attempt events.
+        _append_event(job_dir, {
+            **event,
+            "scope": scope,
+            "status": event["phase"] if terminal else "running",
+            "terminal": terminal,
+            "run_token": run_token,
+            "worker_instance_id": worker_instance_id,
+            "elapsed_clock": "worker_monotonic",
+            "elapsed_ms": int((perf_counter() - started) * 1000),
+        })
+
     if status.get("run_token") and status.get("run_token") != run_token:
-        _append_event(
-            job_dir,
+        emit(
             {
                 "phase": "failed",
                 "error_type": "RouterJobLostOwnership",
                 "message": "worker token does not match current job status",
             },
+            scope="attempt", terminal=True,
         )
         return 1
-    started = perf_counter()
     started_epoch = time.time()
     stop_heartbeat: threading.Event | None = None
     lease_lock: BinaryIO | None = None
-    telemetry = RouterJobTelemetry(started, lambda event: _append_event(job_dir, event))
+    telemetry = RouterJobTelemetry(started, lambda event: emit(event, scope="stage"))
 
     def update(**fields: Any) -> dict[str, Any]:
         nonlocal status
@@ -850,10 +866,16 @@ def run_router_job_worker(job_dir: Path | str, run_token: str | None = None) -> 
 
     def progress(event: GraphProgress) -> None:
         payload = asdict(event)
-        _append_event(job_dir, payload)
+        phase = f"graph_{event.phase}" if event.phase in {"complete", "failed"} else event.phase
+        payload.update(
+            phase=phase,
+            graph_phase=event.phase,
+            graph_elapsed_ms=event.elapsed_ms,
+        )
+        emit(payload, scope="graph")
         update(
             status="running",
-            phase=event.phase,
+            phase=phase,
             completed_repos=event.completed_repos,
             total_repos=event.total_repos,
         )
@@ -1001,28 +1023,28 @@ def run_router_job_worker(job_dir: Path | str, run_token: str | None = None) -> 
                 pass
         telemetry.record_duration("result_write", telemetry.phase_timings_ms.get("result_write", 0))
         telemetry.flush()
-        _append_event(job_dir, {"phase": "complete", "completed_repos": len(paths), "total_repos": len(paths), "elapsed_ms": int((perf_counter() - started) * 1000)})
+        emit({"phase": "complete", "completed_repos": len(paths), "total_repos": len(paths)}, terminal=True)
         return 0
     except RouterJobAlreadyActive as exc:
-        _append_event(
-            job_dir,
+        emit(
             {
                 "phase": "failed",
                 "error_type": type(exc).__name__,
                 "message": _safe_error_message(exc),
                 "elapsed_ms": int((perf_counter() - started) * 1000),
             },
+            scope="attempt", terminal=True,
         )
         return 1
     except RouterJobLostOwnership as exc:
-        _append_event(
-            job_dir,
+        emit(
             {
                 "phase": "failed",
                 "error_type": type(exc).__name__,
                 "message": _safe_error_message(exc),
                 "elapsed_ms": int((perf_counter() - started) * 1000),
             },
+            scope="attempt", terminal=True,
         )
         return 1
     except RouterJobCancelled as exc:
@@ -1034,7 +1056,7 @@ def run_router_job_worker(job_dir: Path | str, run_token: str | None = None) -> 
             message=_safe_error_message(exc),
             finished_at=_now(),
         )
-        _append_event(job_dir, {"phase": "cancelled", "completed_repos": status.get("completed_repos", 0), "total_repos": status.get("total_repos"), "elapsed_ms": int((perf_counter() - started) * 1000)})
+        emit({"phase": "cancelled", "completed_repos": status.get("completed_repos", 0), "total_repos": status.get("total_repos")}, terminal=True)
         return 2
     except BaseException as exc:
         update(
@@ -1045,7 +1067,7 @@ def run_router_job_worker(job_dir: Path | str, run_token: str | None = None) -> 
             message=_safe_error_message(exc),
             finished_at=_now(),
         )
-        _append_event(job_dir, {"phase": "failed", "completed_repos": status.get("completed_repos", 0), "total_repos": status.get("total_repos"), "elapsed_ms": int((perf_counter() - started) * 1000)})
+        emit({"phase": "failed", "completed_repos": status.get("completed_repos", 0), "total_repos": status.get("total_repos")}, terminal=True)
         return 1
     finally:
         if stop_heartbeat is not None:

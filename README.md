@@ -37,6 +37,10 @@ Want to see the output before installing? Rendered samples ship with the repo: [
 
 New here? [`docs/INTRODUCTION.md`](docs/INTRODUCTION.md) is the ten-minute walkthrough.
 
+For router maps that exceed an interactive call's time limit, use
+[background router jobs](docs/ROUTER-JOBS.md). Their progress distinguishes graph
+completion from an accepted router result; the result API validates completion.
+
 ---
 
 ## What it does

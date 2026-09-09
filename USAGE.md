@@ -799,6 +799,11 @@ workspace paths and router content. See [Router jobs](docs/ROUTER-JOBS.md) for
 worker ownership, result validation, and recovery limits. Use background jobs for
 large workspaces that exceed an interactive request's time limit.
 
+Background progress distinguishes graph completion from accepted job completion.
+New local event rows carry scope and a worker-attempt clock; a `graph_complete`
+phase still means the router result is unavailable. Fetch through `result` to
+validate completion, including when an event log ends unexpectedly.
+
 ## Grounding a claim (`verify`)
 
 `index verify` is a deterministic oracle for a single structural claim, so a model can confirm what it is about to act on instead of trusting its memory. `--depends "A -> B"` asks whether A depends on B; `--exists NAME` asks whether a repo exists. The answer is one of three: MATCH (true, with the file:line that witnesses it), REFUTED (false), or UNVERIFIABLE (the claim names a repo not in the workspace).

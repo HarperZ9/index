@@ -41,7 +41,8 @@ not public release artifacts.
 - `status`: one of `running`, `cancellation_requested`, `complete`, `failed`,
   or `cancelled`.
 - `phase`: current worker phase, including `queued`, `started`, `discovering`,
-  `building`, `rendering`, `complete`, `failed`, or `cancelled`.
+  `building`, `resolving`, `graph_complete`, `graph_failed`, `rendering`,
+  `complete`, `failed`, or `cancelled`.
 - `completed_repos` and `total_repos`: actual graph progress reported by
   `build_graph`; `total_repos` is `null` until discovery finishes.
 - `phase_timings_ms`: private per-phase worker timings for local diagnosis,
@@ -76,6 +77,35 @@ A partial or interrupted job never returns router markdown as a successful resul
 matches `request_sha256`, and the canonical `router.md` regular file matches
 `result_sha256`. Missing, tampered, symlinked, reparse-point, or non-regular
 result files fail closed without returning content.
+
+## Progress event scope
+
+New `index.router-job-event/v1` rows in `events.jsonl` include `scope`,
+`status`, `terminal`, `run_token`, `worker_instance_id`, and
+`elapsed_clock: worker_monotonic`.
+`elapsed_ms` measures time since this worker attempt started, at event emission.
+It is nondecreasing within one `worker_instance_id` stream. Each worker invocation
+has a fresh ID and clock origin, including a rejected duplicate carrying the
+same `run_token`. The token governs ownership; the instance ID only identifies
+an event emitter. Buffered timing records retain their stage `duration_ms` but
+use their emission time for `elapsed_ms`.
+
+Graph progress has `scope: graph`, retains `graph_phase` and the graph-relative
+`graph_elapsed_ms`, and is nonterminal at the job level. Graph completion and
+failure use `phase: graph_complete` and `graph_failed`; neither means the job has
+finished. Stage timing records have `scope: stage`. A rejected or displaced
+worker has `scope: attempt`, so its failure does not claim the current job failed.
+The `status` on nonterminal progress describes running work, not an authoritative
+status snapshot; use the status/result APIs for current state.
+
+Only after the worker has accepted the canonical result and complete status does
+it emit `scope: job, phase: complete, status: complete, terminal: true`. Job
+failure and cancellation likewise follow their persisted status transition.
+Events are diagnostics, not result authority: a crash can occur after acceptance
+but before the completion event is written. Historical rows without the new
+fields may contain graph-relative clocks and an early ambiguous `complete` phase.
+Do not infer accepted results from those rows. Standalone graph progress and the
+synchronous CLI/MCP graph diagnostics retain their existing phases and clock.
 
 ## Recovery and cancellation
 
