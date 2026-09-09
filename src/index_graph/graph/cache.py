@@ -13,11 +13,20 @@ import os
 import sys
 from dataclasses import dataclass
 from pathlib import Path
+from time import perf_counter
 from types import CodeType
 from typing import Any
 
 from .walk import read_source_bytes
 from .resolvers import BUILTIN_SHARED_SOURCE_READER_TYPES
+from .cache_metrics import (
+    add_cache_stat,
+    add_cache_timing,
+    empty_cache_summary,
+    empty_repo_cache_stats,
+    final_cache_summary,
+    record_cache_summary,
+)
 from .. import __version__
 from ..freshness.fingerprint import repo_fingerprint
 
@@ -104,14 +113,21 @@ def resolvers_use_shared_source_reads(resolvers) -> bool:
     return all(resolver_uses_shared_source_reads(resolver) for resolver in resolvers)
 
 
-def _file_digest(path: Path) -> str:
+def _file_digest(path: Path, stats: dict[str, int] | None = None) -> str:
+    started = perf_counter()
     try:
-        return hashlib.sha256(read_source_bytes(path)).hexdigest()
+        data = read_source_bytes(path)
+        add_cache_stat(stats, "fingerprint_description_files", 1)
+        add_cache_stat(stats, "fingerprint_description_bytes", len(data))
+        return hashlib.sha256(data).hexdigest()
     except OSError:
+        add_cache_stat(stats, "fingerprint_description_unreadable", 1)
         return "unreadable"
+    finally:
+        add_cache_timing(stats, "description_read_hash", started)
 
 
-def repo_graph_fingerprint(repo_root: Path, resolvers) -> str:
+def repo_graph_fingerprint(repo_root: Path, resolvers, stats: dict[str, int] | None = None) -> str:
     """Fingerprint resolver-relevant content plus description files.
 
     `repo_fingerprint` covers files read by resolvers. The graph node also carries
@@ -119,20 +135,24 @@ def repo_graph_fingerprint(repo_root: Path, resolvers) -> str:
     to avoid stale inventory text.
     """
     root = Path(repo_root)
-    parts = [repo_fingerprint(root, resolvers)]
+    parts = [repo_fingerprint(root, resolvers, stats=stats)]
     for name in _DESCRIPTION_NAMES:
         path = root / name
         if path.is_file():
-            parts.append(f"{name}:{_file_digest(path)}")
+            parts.append(f"{name}:{_file_digest(path, stats=stats)}")
         else:
             parts.append(f"{name}:missing")
     return _sha256_text("|".join(parts))
 
 
-def make_lookup(repo_name: str, repo_root: Path, resolvers) -> RepoCacheLookup:
+def make_lookup(repo_name: str, repo_root: Path, resolvers, stats: dict[str, int] | None = None) -> RepoCacheLookup:
     root = Path(repo_root).resolve()
-    fingerprint = repo_graph_fingerprint(root, resolvers)
+    started = perf_counter()
+    fingerprint = repo_graph_fingerprint(root, resolvers, stats=stats)
+    add_cache_timing(stats, "fingerprint", started)
+    started = perf_counter()
     signature = _resolver_signature(resolvers)
+    add_cache_timing(stats, "resolver_signature", started)
     payload = {
         "version": CACHE_KEY_VERSION,
         "index_version": __version__,
@@ -152,26 +172,51 @@ def make_lookup(repo_name: str, repo_root: Path, resolvers) -> RepoCacheLookup:
     )
 
 
-def read_repo_build(lookup: RepoCacheLookup) -> dict[str, Any] | None:
+def read_repo_build_with_outcome(
+    lookup: RepoCacheLookup, stats: dict[str, int] | None = None
+) -> tuple[dict[str, Any] | None, str, str]:
+    started = perf_counter()
     try:
-        data = json.loads(lookup.path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError, ValueError):
-        return None
+        raw = lookup.path.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        add_cache_timing(stats, "cache_read", started)
+        return None, "miss", "not_found"
+    except OSError:
+        add_cache_timing(stats, "cache_read", started)
+        return None, "invalid", "unreadable"
+    add_cache_timing(stats, "cache_read", started)
+    started = perf_counter()
+    try:
+        data = json.loads(raw)
+    except (json.JSONDecodeError, ValueError):
+        add_cache_timing(stats, "cache_decode", started)
+        return None, "invalid", "invalid_json"
+    add_cache_timing(stats, "cache_decode", started)
     if data.get("schema") != SCHEMA:
-        return None
+        return None, "invalid", "schema"
     if data.get("repo_name") != lookup.repo_name:
-        return None
+        return None, "invalid", "repo_name"
     if data.get("repo_path") != lookup.repo_path:
-        return None
+        return None, "invalid", "repo_path"
     if data.get("fingerprint") != lookup.fingerprint:
-        return None
+        return None, "invalid", "fingerprint"
     if tuple(data.get("resolver_signature") or ()) != lookup.resolver_signature:
-        return None
+        return None, "invalid", "resolver_signature"
     build = data.get("build")
-    return build if isinstance(build, dict) else None
+    if not isinstance(build, dict):
+        return None, "invalid", "build"
+    return build, "hit", "hit"
 
 
-def write_repo_build(lookup: RepoCacheLookup, build: dict[str, Any]) -> None:
+def read_repo_build(lookup: RepoCacheLookup) -> dict[str, Any] | None:
+    build, _outcome, _reason = read_repo_build_with_outcome(lookup)
+    return build
+
+
+def write_repo_build(
+    lookup: RepoCacheLookup, build: dict[str, Any], stats: dict[str, int] | None = None
+) -> bool:
+    started = perf_counter()
     payload = {
         "schema": SCHEMA,
         "version": CACHE_KEY_VERSION,
@@ -187,5 +232,8 @@ def write_repo_build(lookup: RepoCacheLookup, build: dict[str, Any]) -> None:
             json.dumps(payload, sort_keys=True, separators=(",", ":")),
             encoding="utf-8",
         )
+        return True
     except OSError:
-        pass
+        return False
+    finally:
+        add_cache_timing(stats, "cache_write", started)

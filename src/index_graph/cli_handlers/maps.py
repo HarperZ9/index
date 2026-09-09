@@ -86,6 +86,7 @@ def cmd_router(args) -> int:
     from ..knowledge.atlas import build_router_pack
     from ..knowledge.docs import discover_router_docs
     from ..router import render_router
+    from ..router_inventory import build_router_inventory
 
     root = require_dir(args.root)
     max_docs = max(0, int(getattr(args, "max_docs", 500)))
@@ -96,12 +97,18 @@ def cmd_router(args) -> int:
         raise SystemExit("--budget-ms must be non-negative")
 
     def _build() -> str:
-        paths = repo_paths(root, budget_ms=budget_ms)
-        repo_dirs = {name: rel_to_root(root, p) for name, p in paths.items()}
-        pack = build_router_pack(build_graph(paths, executor="process",
-                                 use_cache=not getattr(args, "no_cache", False),
-                                 on_progress=stderr_progress()),
-                                 discover_router_docs(root), repo_dirs)
+        inventory = build_router_inventory(root, budget_ms=budget_ms)
+        pack = build_router_pack(
+            build_graph(
+                inventory.repo_paths,
+                executor="process",
+                use_cache=not getattr(args, "no_cache", False),
+                on_progress=stderr_progress(),
+                file_lists=inventory.repo_file_lists,
+            ),
+            discover_router_docs(root, paths=inventory.router_doc_paths),
+            inventory.repo_dirs,
+        )
         return render_router(pack, max_docs=max_docs)
 
     try:

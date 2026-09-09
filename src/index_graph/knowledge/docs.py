@@ -2,8 +2,10 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
+from time import perf_counter
 
 from ..graph.walk import walk_files
 
@@ -47,7 +49,12 @@ def discover_docs(root: Path) -> list[Doc]:
     return out
 
 
-def discover_router_docs(root: Path) -> list[Doc]:
+def discover_router_docs(
+    root: Path,
+    *,
+    paths: Iterable[Path] | None = None,
+    stats: dict[str, int] | None = None,
+) -> list[Doc]:
     """Markdown locations for router `describes` edges, without reading bodies.
 
     The router only needs each doc path and containing directory to connect docs
@@ -56,7 +63,19 @@ def discover_router_docs(root: Path) -> list[Doc]:
     """
     root = Path(root)
     out: list[Doc] = []
-    for p in walk_files(root, suffixes=_MD_SUFFIXES):
+    started = perf_counter()
+    if paths is None:
+        doc_paths = list(walk_files(root, suffixes=_MD_SUFFIXES))
+        if stats is not None:
+            stats["traversal_ms"] = int((perf_counter() - started) * 1000)
+            stats["physical_walks"] = 1
+    else:
+        doc_paths = list(paths)
+        if stats is not None:
+            stats["traversal_ms"] = 0
+            stats["physical_walks"] = 0
+    started = perf_counter()
+    for p in doc_paths:
         rel_path = p.relative_to(root).as_posix()
         parent = Path(rel_path).parent.as_posix()
         out.append(Doc(
@@ -67,4 +86,7 @@ def discover_router_docs(root: Path) -> list[Doc]:
             dir_rel="" if parent == "." else parent,
         ))
     out.sort(key=lambda d: d.rel_path)
+    if stats is not None:
+        stats["row_construction_ms"] = int((perf_counter() - started) * 1000)
+        stats["docs"] = len(out)
     return out

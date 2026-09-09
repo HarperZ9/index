@@ -495,23 +495,20 @@ def call_tool(name: str, args: dict) -> str:
         from .knowledge.atlas import build_router_pack
         from .knowledge.docs import discover_router_docs
         from .router import render_router
-
-        def _rel(p: Path) -> str:
-            r = p.resolve().relative_to(root).as_posix()
-            return "" if r == "." else r
+        from .router_inventory import build_router_inventory
 
         budget_ms = _interactive_budget_ms(args)
         max_docs = max(0, int(args.get("max_docs", 500)))
 
         def _build_router() -> str:
-            paths = _repo_paths(root, budget_ms=budget_ms)
-            repo_dirs = {nm: _rel(p) for nm, p in paths.items()}
+            inventory = build_router_inventory(root, budget_ms=budget_ms)
             return render_router(build_router_pack(
-                build_graph(paths, executor="process",
+                build_graph(inventory.repo_paths, executor="process",
                             use_cache=not args.get("no_cache", False),
-                            on_progress=stderr_progress()),
-                discover_router_docs(root),
-                repo_dirs,
+                            on_progress=stderr_progress(),
+                            file_lists=inventory.repo_file_lists),
+                discover_router_docs(root, paths=inventory.router_doc_paths),
+                inventory.repo_dirs,
             ), max_docs=max_docs)
 
         return _with_cache(

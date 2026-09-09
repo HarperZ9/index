@@ -7,7 +7,8 @@ import io
 import os
 import threading
 from contextlib import contextmanager
-from collections.abc import Iterator
+from collections.abc import Iterator, Mapping, Sequence
+from dataclasses import dataclass
 from pathlib import Path
 
 EXCLUDE_DIRS = frozenset({
@@ -32,6 +33,21 @@ class GraphSourceError(RuntimeError):
     """A complete graph cannot be derived because a source could not be read."""
 
 
+@dataclass(frozen=True)
+class DirectoryMembershipSnapshot:
+    path: Path
+    entries: tuple[tuple[str, str], ...]
+
+
+@dataclass(frozen=True)
+class PreloadedFileListing:
+    files: tuple[Path, ...]
+    directory_snapshots: tuple[DirectoryMembershipSnapshot, ...] = ()
+
+
+PreloadedFileValue = Sequence[Path | str] | PreloadedFileListing
+
+
 def _source_error(operation: str, path: Path, error: OSError) -> None:
     if getattr(_LOCAL, "file_cache", None) is not None:
         _LOCAL.source_reuse_complete = False
@@ -45,16 +61,79 @@ def _walk_error(error: OSError) -> None:
     _source_error("traversal", Path(error.filename) if error.filename else Path("source"), error)
 
 
+def _directory_entry_kind(entry: os.DirEntry) -> str:
+    try:
+        if entry.is_dir(follow_symlinks=False):
+            return "dir"
+        if entry.is_file(follow_symlinks=False):
+            return "file"
+    except OSError:
+        return "unreadable"
+    return "other"
+
+
+def directory_membership_from_walk(
+    path: Path,
+    dirnames: Sequence[str],
+    filenames: Sequence[str],
+) -> DirectoryMembershipSnapshot:
+    entries = [(name, "dir") for name in dirnames]
+    entries.extend((name, "file") for name in filenames)
+    return DirectoryMembershipSnapshot(
+        path=Path(path).resolve(),
+        entries=tuple(sorted(entries, key=lambda item: (item[0].lower(), item[0], item[1]))),
+    )
+
+
+def _scan_directory_membership(path: Path) -> tuple[tuple[str, str], ...]:
+    entries: list[tuple[str, str]] = []
+    with os.scandir(path) as scanner:
+        for entry in scanner:
+            entries.append((entry.name, _directory_entry_kind(entry)))
+    return tuple(sorted(entries, key=lambda item: (item[0].lower(), item[0], item[1])))
+
+
+def _preloaded_is_current(listing: PreloadedFileListing) -> bool:
+    for snapshot in listing.directory_snapshots:
+        try:
+            current = _scan_directory_membership(snapshot.path)
+        except OSError:
+            return False
+        if current != snapshot.entries:
+            return False
+    return True
+
+
+def _preloaded_file_listing(value: PreloadedFileValue) -> PreloadedFileListing:
+    if isinstance(value, PreloadedFileListing):
+        return value
+    return PreloadedFileListing(tuple(Path(path) for path in value))
+
+
+def _preloaded_file_cache(
+    file_lists: Mapping[Path | str, PreloadedFileValue] | None,
+) -> dict[str, PreloadedFileListing]:
+    if not file_lists:
+        return {}
+    return {
+        str(Path(root).resolve()): _preloaded_file_listing(paths)
+        for root, paths in file_lists.items()
+    }
+
+
 @contextmanager
-def cached_file_scope():
+def cached_file_scope(file_lists: Mapping[Path | str, PreloadedFileValue] | None = None):
     """Share one pruned filesystem listing across resolver walks in one repo build."""
     previous = getattr(_LOCAL, "file_cache", None)
+    preloaded = _preloaded_file_cache(file_lists)
     if previous is None:
-        _LOCAL.file_cache = {}
+        _LOCAL.file_cache = dict(preloaded)
         _LOCAL.source_cache = {}
         _LOCAL.source_digest_journal = {}
         _LOCAL.source_cache_bytes = 0
         _LOCAL.source_reuse_complete = True
+    elif preloaded:
+        _LOCAL.file_cache = {**previous, **preloaded}
     try:
         yield
     finally:
@@ -155,7 +234,15 @@ def _scoped_all_files(root: Path, checkpoint=None) -> list[Path]:
     key = str(root.resolve())
     cache = getattr(_LOCAL, "file_cache", None)
     if cache is not None and key in cache:
-        return cache[key]
+        cached = cache[key]
+        if isinstance(cached, PreloadedFileListing):
+            if _preloaded_is_current(cached):
+                files = list(cached.files)
+                cache[key] = files
+                return files
+            del cache[key]
+        else:
+            return cached
     out: list[Path] = []
     for dirpath, dirnames, filenames in os.walk(root, onerror=_walk_error):
         current = Path(dirpath)

@@ -406,6 +406,45 @@ def test_worker_acknowledges_cancel_marker_without_result(tmp_path):
     assert router_jobs.read_router_job_result(job["job_id"], job_root=job_root)["result_available"] is False
 
 
+def test_worker_cancels_during_inventory_without_graph_or_result(tmp_path, monkeypatch):
+    workspace = tmp_path / "workspace"
+    _repo(workspace, "a")
+    _repo(workspace, "z")
+    job_root = tmp_path / "jobs"
+    job = router_jobs.create_router_job(workspace, job_root=job_root)
+
+    import index_graph.router_inventory as inventory_mod
+
+    real_walk = inventory_mod.os.walk
+    cancellation_sent = {"value": False}
+
+    def cancel_before_second_repo(*args, **kwargs):
+        for dirpath, dirnames, filenames in real_walk(*args, **kwargs):
+            if Path(dirpath).name == "z" and not cancellation_sent["value"]:
+                router_jobs.cancel_router_job(job["job_id"], job_root=job_root)
+                cancellation_sent["value"] = True
+            yield dirpath, dirnames, filenames
+
+    def graph_after_inventory_cancel(*args, **kwargs):
+        pytest.fail("graph phase must not run after inventory cancellation")
+
+    monkeypatch.setattr(inventory_mod.os, "walk", cancel_before_second_repo)
+    monkeypatch.setattr(router_jobs, "build_graph", graph_after_inventory_cancel)
+
+    exit_code = router_jobs.run_router_job_worker(job["job_dir"])
+    status = router_jobs.read_router_job_status(job["job_id"], job_root=job_root)
+    result = router_jobs.read_router_job_result(job["job_id"], job_root=job_root)
+
+    assert cancellation_sent["value"] is True
+    assert exit_code == 2
+    assert status["status"] == "cancelled"
+    assert status["phase"] == "cancelled"
+    assert "router_inventory" not in status
+    assert result["status"] == "cancelled"
+    assert result["result_available"] is False
+    assert "content" not in result
+
+
 def test_cancel_terminate_does_not_use_pid_as_authority(tmp_path, monkeypatch):
     workspace = tmp_path / "workspace"
     workspace.mkdir()
