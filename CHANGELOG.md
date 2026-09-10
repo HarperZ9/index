@@ -2,10 +2,14 @@
 
 ## Unreleased
 
+## 2.13.0 (2026-09-10)
+
 - Router-job events distinguish graph completion/failure from terminal job
   status. Progress and buffered timing rows use one worker-attempt emission
   clock, with graph duration preserved separately. Result acceptance and
   standalone graph progress semantics are unchanged.
+- Router document-prefix indexing speeds navigation by avoiding full document
+  reads when a path prefix is enough, while preserving source-backed rows.
 
 ## 2.12.0 (2026-09-07)
 
