@@ -16,7 +16,10 @@ This guide aligns the flagship with Project Telos context envelopes and action r
 - `index map --root ROOT --json` before assignment or routing.
 - `index context --root ROOT --focus NAME --json --audit` for source-ref packets.
 - `index context-envelope --root ROOT --budget N --focus NAME --hops N --json` for budgeted,
-  receipt-backed context that keeps retained and omitted material explicit.
+  receipt-backed context that keeps retained and omitted material explicit. Add
+  `--bounded-output` when a host needs the serialized JSON response itself to fit the
+  budget; oversized source-ref lists then become omission counts, hashes, and reissue
+  handles rather than a large payload.
 - `index verify --root ROOT --depends "A -> B" --json` for claim grounding.
 - `index freshness --cert CERT --root ROOT --json` before trusting an old packet.
 
@@ -34,6 +37,12 @@ This guide aligns the flagship with Project Telos context envelopes and action r
 - A large codebase should be routed through focused packs and on-demand expansion instead of raw full-tree dumps.
 - Raw source remains outside the envelope; hosts receive source refs and hashes, then request
   expansion only for the exact files or repos needed for the next action.
+- The default envelope budget gates retained context entries. Bounded-output mode gates the
+  emitted response surface: CLI JSON stdout for CLI, the JSON-RPC tool response wrapper for
+  MCP, and the canonical serialized envelope for the default Python API. Bounded CLI JSON
+  stdout is written as the measured UTF-8 LF byte payload, avoiding host newline expansion.
+  Each surface uses serialized UTF-8 bytes divided by four and rounded up. That is a
+  deterministic transport-size heuristic, not a model tokenizer count.
 - Self-improving daemons should treat envelope omissions as control signals. A `budget_exceeded`
   failure code means request a wider pack or narrower focus; it is not evidence that the omitted
   repo is irrelevant.

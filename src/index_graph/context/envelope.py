@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 from pathlib import Path
 
 from ..freshness import SCHEMA as FRESHNESS_SCHEMA, workspace_fingerprint
@@ -24,6 +25,9 @@ def build_context_envelope(
     focus: str | None = None,
     hops: int | None = None,
     browser_evidence_refs: list[dict] | None = None,
+    bounded_output: bool = False,
+    bounded_output_transport: str = "canonical_json",
+    mcp_response_id: object | None = None,
 ) -> dict:
     """Return a deterministic, receipt-backed context packet within ``token_budget``."""
     if token_budget < 1:
@@ -113,7 +117,342 @@ def build_context_envelope(
     # all the metadata the caller receives), re-derivable from the dict itself
     packet_bytes = len(json.dumps(envelope, sort_keys=True).encode("utf-8"))
     envelope["budget"]["packet_approx_tokens"] = packet_bytes // BYTES_PER_TOKEN
+    if bounded_output:
+        envelope = _apply_bounded_output(
+            envelope,
+            token_budget=token_budget,
+            root=Path(root),
+            focus=focus,
+            hops=hops,
+            transport=bounded_output_transport,
+            mcp_response_id=mcp_response_id,
+        )
     return envelope
+
+
+def _apply_bounded_output(
+    envelope: dict,
+    *,
+    token_budget: int,
+    root: Path,
+    focus: str | None,
+    hops: int | None,
+    transport: str,
+    mcp_response_id: object | None,
+) -> dict:
+    """Compact an envelope so the serialized tool response fits the budget.
+
+    The default contract budgets the retained selection. This opt-in contract
+    budgets the emitted JSON packet itself, measured by serialized UTF-8 bytes
+    divided by ``BYTES_PER_TOKEN`` and rounded up. That is a deterministic
+    transport-size heuristic, not model-tokenizer output.
+    """
+    if token_budget < 2:
+        raise ValueError("bounded_output budget too small to emit overflow receipt")
+    envelope["context_policy"]["output_policy"] = "bounded_packet"
+    envelope["budget"]["output_policy"] = "bounded_packet"
+    envelope["budget"]["pre_compaction_packet_approx_tokens"] = _packet_tokens(
+        envelope, ceiling=True, transport=transport, mcp_response_id=mcp_response_id)
+    envelope["source_ref_omissions"] = []
+    _set_packet_measurement(envelope, transport=transport, mcp_response_id=mcp_response_id)
+    if envelope["budget"]["packet_approx_tokens"] <= token_budget:
+        return envelope
+
+    _compact_source_refs(
+        envelope,
+        root=root,
+        focus=focus,
+        hops=hops,
+        token_budget=token_budget,
+    )
+    _add_failure_code(envelope, "output_budget_exceeded")
+    envelope["verification_verdict"] = "UNVERIFIABLE"
+    _refresh_selection(envelope)
+    _set_packet_measurement(envelope, transport=transport, mcp_response_id=mcp_response_id)
+    if envelope["budget"]["packet_approx_tokens"] <= token_budget:
+        return envelope
+
+    minimal = _minimal_bounded_overflow_receipt(
+        envelope,
+        root=root,
+        focus=focus,
+        hops=hops,
+        token_budget=token_budget,
+    )
+    _set_packet_measurement(minimal, transport=transport, mcp_response_id=mcp_response_id)
+    if minimal["budget"]["packet_approx_tokens"] > token_budget:
+        raise ValueError("bounded_output budget too small to emit overflow receipt")
+    return minimal
+
+
+def _compact_source_refs(
+    envelope: dict,
+    *,
+    root: Path,
+    focus: str | None,
+    hops: int | None,
+    token_budget: int,
+) -> None:
+    retained_hashes = envelope.get("freshness", {}).get("retained_repo_sha256", {})
+    omissions = []
+    pre_compaction = envelope["budget"]["pre_compaction_packet_approx_tokens"]
+    for item in envelope.get("retained", []):
+        refs = list(item.get("source_refs") or [])
+        if not refs:
+            continue
+        item["source_refs"] = []
+        omissions.append(_source_ref_omission(
+            item,
+            original_source_refs=refs,
+            included_source_refs=[],
+            root=root,
+            focus=focus,
+            hops=hops,
+            token_budget=token_budget,
+            pre_compaction_packet_approx_tokens=pre_compaction,
+            retained_repo_sha256=retained_hashes.get(item.get("name")),
+        ))
+    envelope["source_ref_omissions"] = omissions
+
+
+def _source_ref_omission(
+    item: dict,
+    *,
+    original_source_refs: list[dict],
+    included_source_refs: list[dict],
+    root: Path,
+    focus: str | None,
+    hops: int | None,
+    token_budget: int,
+    pre_compaction_packet_approx_tokens: int,
+    retained_repo_sha256: str | None,
+) -> dict:
+    omitted = len(original_source_refs) - len(included_source_refs)
+    args = {
+        "root": str(root),
+        "budget": max(token_budget, pre_compaction_packet_approx_tokens),
+        "bounded_output": False,
+    }
+    if focus is not None:
+        args["focus"] = focus
+    if hops is not None:
+        args["hops"] = hops
+    reissue_args = {
+        "root": str(root),
+        "budget": token_budget,
+        "bounded_output": True,
+    }
+    if focus is not None:
+        reissue_args["focus"] = focus
+    if hops is not None:
+        reissue_args["hops"] = hops
+    return {
+        "repo": item["name"],
+        "reason": "source_refs_omitted_to_bound_serialized_packet",
+        "failure_code": "output_budget_exceeded",
+        "total_source_refs": len(original_source_refs),
+        "included_source_refs": len(included_source_refs),
+        "omitted_source_refs": omitted,
+        "source_refs_sha256": _sha(original_source_refs),
+        "included_source_refs_sha256": _sha(included_source_refs),
+        "approx_tokens": _approx_tokens(original_source_refs),
+        "expand": {"tool": TOOL, "arguments": args},
+        "reissue": {"tool": TOOL, "arguments": reissue_args},
+        "provenance": {
+            "source_ref_schema": "project-telos.source-ref/v1",
+            "retained_repo_sha256": retained_repo_sha256,
+        },
+    }
+
+
+def _minimal_bounded_overflow_receipt(
+    envelope: dict,
+    *,
+    root: Path,
+    focus: str | None,
+    hops: int | None,
+    token_budget: int,
+) -> dict:
+    pre_compaction = envelope["budget"]["pre_compaction_packet_approx_tokens"]
+    omitted_names = [item["name"] for item in envelope.get("retained", [])]
+    args = {"root": str(root), "budget": max(token_budget, pre_compaction),
+            "bounded_output": False}
+    if focus is not None:
+        args["focus"] = focus
+    if hops is not None:
+        args["hops"] = hops
+    preexisting_omitted = [dict(item) for item in envelope.get("omitted", [])]
+    retained_omitted = [
+        {
+            "name": name,
+            "reason": "bounded_output_minimal_receipt",
+            "failure_code": "output_budget_exceeded",
+            "approx_tokens": 0,
+            "expand": {"tool": TOOL, "arguments": args},
+        }
+        for name in omitted_names
+    ]
+    omitted = _dedupe_omitted(preexisting_omitted + retained_omitted)
+    omitted_failure_codes = sorted(
+        {"budget_overflow", "output_budget_exceeded"}
+        | {str(item.get("failure_code", "unknown")) for item in omitted}
+    )
+    return {
+        "schema": SCHEMA,
+        "tool": TOOL,
+        "verification_verdict": "UNVERIFIABLE",
+        "failure_codes": ["budget_overflow", "output_budget_exceeded"],
+        "root": str(root),
+        "focus": {"repo": focus, "hops": hops},
+        "budget": {
+            "token_budget": token_budget,
+            "approx_tokens": 0,
+            "bytes_per_token": BYTES_PER_TOKEN,
+            "output_policy": "bounded_packet",
+            "pre_compaction_packet_approx_tokens": pre_compaction,
+        },
+        "selection": {
+            "mode": "focused" if focus else "workspace",
+            "candidate_repos": envelope.get("selection", {}).get("candidate_repos", 0),
+            "selected_repos": envelope.get("selection", {}).get("selected_repos", 0),
+            "retained_repos": 0,
+            "omitted_repos": len(omitted),
+            "retained_names": [],
+            "omitted_failure_codes": omitted_failure_codes,
+        },
+        "retained": [],
+        "omitted": omitted,
+        "source_ref_omissions": envelope.get("source_ref_omissions", []),
+    }
+
+
+def _refresh_selection(envelope: dict) -> None:
+    retained = envelope.get("retained", [])
+    omitted = envelope.get("omitted", [])
+    envelope["selection"] = _selection(
+        mode=envelope["selection"]["mode"],
+        candidate_repo_count=envelope["selection"]["candidate_repos"],
+        selected_repo_count=envelope["selection"]["selected_repos"],
+        retained=retained,
+        omitted=omitted,
+    )
+    codes = set(envelope["selection"].get("omitted_failure_codes", []))
+    codes.update(item["failure_code"] for item in envelope.get("source_ref_omissions", []))
+    envelope["selection"]["omitted_failure_codes"] = sorted(codes)
+
+
+def _add_failure_code(envelope: dict, code: str) -> None:
+    codes = envelope.setdefault("failure_codes", [])
+    if code not in codes:
+        codes.append(code)
+
+
+def _set_packet_measurement(
+    envelope: dict,
+    *,
+    transport: str = "canonical_json",
+    mcp_response_id: object | None = None,
+) -> None:
+    budget = envelope["budget"]
+    prior: tuple[int | None, int | None] = (None, None)
+    for _ in range(8):
+        serialized_bytes = _packet_bytes(
+            envelope, transport=transport, mcp_response_id=mcp_response_id)
+        approx = max(1, math.ceil(serialized_bytes / BYTES_PER_TOKEN))
+        budget["packet_measurement"] = {
+            "scope": _transport_scope(transport),
+            "method": _transport_method(transport),
+            "unit": "serialized_utf8_json_bytes_ceiling_div_4",
+            "boundary": _transport_boundary(transport),
+            "serialized_bytes": serialized_bytes,
+        }
+        budget["packet_approx_tokens"] = approx
+        current = (serialized_bytes, approx)
+        if current == prior:
+            return
+        prior = current
+
+
+def _packet_bytes(
+    envelope: dict,
+    *,
+    transport: str = "canonical_json",
+    mcp_response_id: object | None = None,
+) -> int:
+    if transport == "canonical_json":
+        text = json.dumps(envelope, sort_keys=True)
+    elif transport == "cli_json_stdout":
+        text = json.dumps(envelope, indent=2, sort_keys=True) + "\n"
+    elif transport == "mcp_jsonrpc_tool_response":
+        tool_text = json.dumps(envelope, indent=2, sort_keys=True)
+        response = {
+            "jsonrpc": "2.0",
+            "id": mcp_response_id,
+            "result": {
+                "content": [{"type": "text", "text": tool_text}],
+                "isError": False,
+            },
+        }
+        text = json.dumps(response, sort_keys=True)
+    else:
+        raise ValueError(f"unknown bounded_output transport: {transport}")
+    return len(text.encode("utf-8"))
+
+
+def _transport_scope(transport: str) -> str:
+    if transport == "canonical_json":
+        return "entire_serialized_context_envelope"
+    if transport == "cli_json_stdout":
+        return "cli_json_stdout"
+    if transport == "mcp_jsonrpc_tool_response":
+        return "mcp_jsonrpc_tool_response"
+    raise ValueError(f"unknown bounded_output transport: {transport}")
+
+
+def _transport_method(transport: str) -> str:
+    if transport == "canonical_json":
+        return "json.dumps(sort_keys=True).encode('utf-8')"
+    if transport == "cli_json_stdout":
+        return (
+            "json.dumps(indent=2, sort_keys=True) + LF newline, "
+            "written as exact utf-8 bytes"
+        )
+    if transport == "mcp_jsonrpc_tool_response":
+        return "json.dumps(JSON-RPC tool response, sort_keys=True).encode('utf-8')"
+    raise ValueError(f"unknown bounded_output transport: {transport}")
+
+
+def _transport_boundary(transport: str) -> str:
+    if transport == "canonical_json":
+        return (
+            "Approximate serialized-byte budget for the canonical Python envelope JSON; "
+            "not model-tokenizer output."
+        )
+    if transport == "cli_json_stdout":
+        return (
+            "Approximate serialized-byte budget for the emitted CLI --json stdout, "
+            "including pretty JSON and trailing LF newline written as exact utf-8 bytes; "
+            "not model-tokenizer output."
+        )
+    if transport == "mcp_jsonrpc_tool_response":
+        return (
+            "Approximate serialized-byte budget for the MCP JSON-RPC tool response wrapper; "
+            "not model-tokenizer output."
+        )
+    raise ValueError(f"unknown bounded_output transport: {transport}")
+
+
+def _packet_tokens(
+    envelope: dict,
+    *,
+    ceiling: bool,
+    transport: str = "canonical_json",
+    mcp_response_id: object | None = None,
+) -> int:
+    raw = _packet_bytes(envelope, transport=transport, mcp_response_id=mcp_response_id)
+    if ceiling:
+        return max(1, math.ceil(raw / BYTES_PER_TOKEN))
+    return max(1, raw // BYTES_PER_TOKEN)
 
 
 def _ranked_repos(pack: dict, focus: str | None = None) -> list[dict]:

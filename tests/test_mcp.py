@@ -1,5 +1,6 @@
 import io
 import json
+import math
 
 from index_graph.mcp import handle_request, serve
 
@@ -42,6 +43,8 @@ def test_tools_list_has_core_tools():
     assert {"index.map", "index.context", "index.context.envelope", "index.status", "index.doctor"} <= names
     for t in r["result"]["tools"]:
         assert t["inputSchema"]["type"] == "object"
+    envelope = next(t for t in r["result"]["tools"] if t["name"] == "index.context.envelope")
+    assert envelope["inputSchema"]["properties"]["bounded_output"]["type"] == "boolean"
 
 
 def test_status_tool_returns_cli_action_envelope_without_root():
@@ -215,6 +218,21 @@ def test_context_envelope_tool_returns_budgeted_packet(tmp_path):
     assert rec["schema"] == "project-telos.context-envelope/v1"
     assert rec["budget"]["token_budget"] == 80
     assert rec["retained"][0]["name"] == "solo"
+
+
+def test_context_envelope_tool_supports_opt_in_bounded_output(tmp_path):
+    (tmp_path / "solo" / ".git").mkdir(parents=True)
+    (tmp_path / "solo" / "pyproject.toml").write_text(
+        "[project]\nname='solo'\nversion='0'\n", encoding="utf-8")
+    r = handle_request({"jsonrpc": "2.0", "id": 130, "method": "tools/call",
+                        "params": {"name": "index.context.envelope",
+                                   "arguments": {"root": str(tmp_path),
+                                                 "budget": 2000,
+                                                 "bounded_output": True}}})
+    assert r["result"]["isError"] is False
+    rec = json.loads(r["result"]["content"][0]["text"])
+    assert rec["context_policy"]["output_policy"] == "bounded_packet"
+    assert rec["budget"]["packet_approx_tokens"] <= 2000
 
 
 def test_select_tool_reconciles_and_missing_root_is_a_receipt(tmp_path):
@@ -422,3 +440,49 @@ def test_mcp_interactive_repo_limit_is_typed_error(tmp_path, monkeypatch):
     assert payload["status"] == "UNVERIFIABLE"
     assert payload["error_type"] == "ScanWorkloadExceeded"
     assert "3 repositories" in payload["message"]
+
+
+def test_context_envelope_tool_rejects_malformed_bounded_output_boolean(tmp_path):
+    (tmp_path / "solo" / ".git").mkdir(parents=True)
+    (tmp_path / "solo" / "pyproject.toml").write_text(
+        "[project]\nname='solo'\nversion='0'\n", encoding="utf-8")
+
+    r = handle_request({"jsonrpc": "2.0", "id": 131, "method": "tools/call",
+                        "params": {"name": "index.context.envelope",
+                                   "arguments": {"root": str(tmp_path),
+                                                 "budget": 2000,
+                                                 "bounded_output": "false"}}})
+
+    assert r["result"]["isError"] is True
+    rec = json.loads(r["result"]["content"][0]["text"])
+    assert rec["schema"] == "index.mcp-tool-error/v1"
+    assert "bounded_output" in rec["message"]
+
+
+def test_context_envelope_tool_bounded_output_caps_jsonrpc_transport(tmp_path):
+    repo = tmp_path / "canon"
+    (repo / ".git").mkdir(parents=True)
+    (repo / "pyproject.toml").write_text(
+        "[project]\nname='canon'\nversion='0'\n", encoding="utf-8")
+    (repo / "main.py").write_text(
+        "\n".join(f"import ext_{i:03d}" for i in range(120)) + "\n",
+        encoding="utf-8",
+    )
+    budget = 1000
+
+    r = handle_request({"jsonrpc": "2.0", "id": 132, "method": "tools/call",
+                        "params": {"name": "index.context.envelope",
+                                   "arguments": {"root": str(tmp_path),
+                                                 "budget": budget,
+                                                 "focus": "canon",
+                                                 "hops": 0,
+                                                 "bounded_output": True}}})
+
+    assert r["result"]["isError"] is False
+    actual_tokens = math.ceil(len(json.dumps(r, sort_keys=True).encode("utf-8")) / 4)
+    rec = json.loads(r["result"]["content"][0]["text"])
+    assert actual_tokens <= budget
+    measurement = rec["budget"]["packet_measurement"]
+    assert measurement["scope"] == "mcp_jsonrpc_tool_response"
+    assert measurement["serialized_bytes"] == len(json.dumps(r, sort_keys=True).encode("utf-8"))
+    assert rec["budget"]["packet_approx_tokens"] == actual_tokens

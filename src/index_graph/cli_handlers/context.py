@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import sys
 
 from ..context.focus import FocusRejection, focus_rejection, render_rejection
 from ..context.pack import closure, focus_subgraph, preservation, render_text, to_json
@@ -53,6 +54,18 @@ def _emit_scan_budget(args, command: str, exc: ScanBudgetExceeded | ScanWorkload
         print(f"{command}: UNVERIFIABLE: {exc}")
         print("next: increase --budget-ms, use --budget-ms 0, or run index map --resume-state PATH")
     return 2
+
+
+def _write_bounded_json_stdout(payload: dict) -> None:
+    text = json.dumps(payload, indent=2, sort_keys=True) + "\n"
+    data = text.encode("utf-8")
+    buffer = getattr(sys.stdout, "buffer", None)
+    if buffer is not None:
+        buffer.write(data)
+        buffer.flush()
+    else:
+        sys.stdout.write(text)
+        sys.stdout.flush()
 
 
 def cmd_context(args) -> int:
@@ -134,6 +147,10 @@ def cmd_context_envelope(args) -> int:
             token_budget=args.budget,
             focus=args.focus,
             hops=args.hops,
+            bounded_output=args.bounded_output,
+            bounded_output_transport=(
+                "cli_json_stdout" if args.bounded_output and args.json else "canonical_json"
+            ),
         )
     except FocusRejection as exc:
         print(
@@ -146,7 +163,10 @@ def cmd_context_envelope(args) -> int:
         print(str(exc))
         return 2
     if args.json:
-        print(json.dumps(env, indent=2, sort_keys=True))
+        if args.bounded_output:
+            _write_bounded_json_stdout(env)
+        else:
+            print(json.dumps(env, indent=2, sort_keys=True))
     else:
         print(
             f"context-envelope verdict={env['verification_verdict']} "
