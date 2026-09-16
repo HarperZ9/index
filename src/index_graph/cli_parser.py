@@ -85,6 +85,11 @@ def _add_context_envelope_parser(sub) -> None:
     )
     ce.add_argument("--focus", default=None)
     ce.add_argument("--hops", type=int, default=None)
+    ce.add_argument(
+        "--bounded-output",
+        action="store_true",
+        help="opt in to bounding the serialized JSON response, omitting source refs with expansion handles when needed",
+    )
     ce.add_argument("--json", action="store_true")
     _add_budget_ms_arg(ce)
     ce.add_argument(

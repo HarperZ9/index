@@ -188,6 +188,14 @@ def _with_cache(name: str, root: Path, args: dict, build):
     return _cache_write(key, build())
 
 
+
+
+def _bool_arg(args: dict, key: str, default: bool = False) -> bool:
+    value = args.get(key, default)
+    if isinstance(value, bool):
+        return value
+    raise ValueError(f"{key} must be a boolean")
+
 def _root_schema(extra: dict | None = None, required: list | None = None) -> dict:
     props = {"root": {"type": "string", "description": "workspace root path"}}
     if extra:
@@ -222,7 +230,8 @@ def _tool_defs() -> list[dict]:
              "budget": {"type": "integer"},
              "focus": {"type": "string"},
              "hops": {"type": "integer"},
-         })},
+             "bounded_output": {"type": "boolean"},
+          })},
         {"name": "index.select",
          "description": "Path selection with typed rejection receipts; candidates reconcile to selected + rejected, matching the `index select --json` CLI surface.",
          "inputSchema": _root_schema({
@@ -351,7 +360,7 @@ def _symbol_tool(name: str, root: Path, args: dict) -> str:
                        "unresolved_references": unresolved}, indent=2, sort_keys=True)
 
 
-def call_tool(name: str, args: dict) -> str:
+def call_tool(name: str, args: dict, response_id=None) -> str:
     if name.startswith("index.router.job."):
         from .router_job_surface import call_router_job
         return json.dumps(call_router_job(name.removeprefix("index.router.job."), args),
@@ -441,6 +450,7 @@ def call_tool(name: str, args: dict) -> str:
     if name == "index.context.envelope":
         from .context.envelope import build_context_envelope
         budget_ms = _interactive_budget_ms(args)
+        bounded_output = _bool_arg(args, "bounded_output", False)
 
         def _build_envelope():
             paths = _repo_paths(root, budget_ms=budget_ms)
@@ -451,13 +461,28 @@ def call_tool(name: str, args: dict) -> str:
                     token_budget=int(args.get("budget", 1200)),
                     focus=args.get("focus"),
                     hops=args.get("hops"),
+                    bounded_output=bounded_output,
+                    bounded_output_transport=(
+                        "mcp_jsonrpc_tool_response" if bounded_output else "canonical_json"
+                    ),
+                    mcp_response_id=response_id,
                 )
             except FocusRejection as exc:
                 # an unresolvable focus is a typed receipt, not a protocol error
                 # (the index.select not-found precedent)
                 return json.dumps(exc.receipt, indent=2, sort_keys=True)
             return json.dumps(env, indent=2, sort_keys=True)
-        return _with_cache(name, root, _cache_args(args, budget_ms=budget_ms), _build_envelope)
+
+        if bounded_output:
+            # The measurement includes the JSON-RPC response id, so cached text
+            # from a different id could understate or overstate the wrapper.
+            return _build_envelope()
+        return _with_cache(
+            name,
+            root,
+            _cache_args(args, budget_ms=budget_ms),
+            _build_envelope,
+        )
 
     if name == "index_focus":
         budget_ms = _interactive_budget_ms(args)
@@ -569,7 +594,7 @@ def handle_request(req: dict) -> dict | None:
             return {"jsonrpc": "2.0", "id": rid,
                     "error": {"code": -32602, "message": f"unknown tool: {name!r}"}}
         try:
-            text = call_tool(name, args)
+            text = call_tool(name, args, response_id=rid)
             return {"jsonrpc": "2.0", "id": rid,
                     "result": {"content": [{"type": "text", "text": text}], "isError": False}}
         except BaseException as exc:

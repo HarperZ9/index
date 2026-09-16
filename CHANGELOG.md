@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- Context envelopes: add opt-in bounded serialized output with `--bounded-output`,
+  the `bounded_output` MCP/Python argument, and `source_ref_omissions` records. The
+  default remains the existing lossless-by-reference retained-selection budget; the
+  opt-in mode compacts oversized source-ref lists into omission counts, hashes, and
+  reissue handles and reports packet size as serialized UTF-8 bytes divided by four,
+  rounded up, not as tokenizer truth. CLI and MCP calls now measure their emitted
+  transport surfaces; bounded CLI JSON writes the measured UTF-8 LF byte payload
+  directly so Windows newline translation cannot exceed the reported budget. MCP
+  rejects malformed boolean values, and minimal overflow receipts preserve
+  pre-existing omitted-repo metadata.
+
 ## 2.13.0 (2026-09-10)
 
 - Router-job events distinguish graph completion/failure from terminal job

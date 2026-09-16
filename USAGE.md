@@ -316,6 +316,18 @@ The same receipt shape covers `context-envelope --focus`, `viz --focus`, and the
 tool payload rather than a protocol error. Python callers of `build_context_envelope` get a
 `FocusRejection` (a `ValueError` subclass) carrying the receipt on `.receipt`.
 
+`index context-envelope --bounded-output --json` keeps the default retained-selection
+budget contract available while adding a host-response contract for native harnesses.
+In that opt-in mode, `budget.packet_approx_tokens` measures the response surface being
+emitted: CLI JSON stdout for the CLI, the JSON-RPC tool response wrapper for MCP, and
+the canonical serialized envelope for the default Python API. Bounded CLI JSON stdout
+is emitted as the measured UTF-8 byte payload with LF line endings, so host newline
+translation does not add unmeasured bytes. Each surface uses UTF-8 bytes divided by
+four and rounded up. It is a deterministic byte heuristic, not a model tokenizer count.
+If the response would exceed `--budget`, oversized source-ref lists are replaced by
+`source_ref_omissions` records with counts, hashes, provenance, and `index.context.envelope`
+reissue handles. Malformed MCP `bounded_output` values are rejected instead of being coerced.
+
 For MCP hosts, unexpected tool-call failures are also returned as payloads rather than
 stdio process exits where possible. The payload schema is `index.mcp-tool-error/v1`,
 with `status: "UNVERIFIABLE"`, the error type, message, root, and next actions. This
