@@ -102,6 +102,24 @@ def _add_context_envelope_parser(sub) -> None:
     )
 
 
+def _add_route_parser(sub) -> None:
+    route = sub.add_parser(
+        "route",
+        help="Build a bounded context envelope from explicit repository paths.",
+    )
+    route.add_argument("--root", type=Path, default=Path.cwd())
+    route.add_argument(
+        "--path",
+        dest="paths",
+        action="append",
+        required=True,
+        help="repository path under --root; repeat for multiple repositories",
+    )
+    route.add_argument("--budget", type=int, default=1200, help="context token budget")
+    route.add_argument("--hops", type=int, default=None)
+    route.add_argument("--json", action="store_true")
+
+
 def _add_lens_parser(sub) -> None:
     ln = sub.add_parser(
         "lens",
@@ -427,6 +445,7 @@ def build_parser() -> argparse.ArgumentParser:
     _add_graph_parser(sub)
     _add_context_parser(sub)
     _add_context_envelope_parser(sub)
+    _add_route_parser(sub)
     _add_watch_parser(sub)
     _add_lens_parser(sub)
     _add_select_parser(sub)

@@ -248,6 +248,55 @@ You do not trust a certificate. You re-run it.
 If the hashes and the verdict agree, the certificate held. If they do not, the structure
 or the criterion changed, which is itself the signal.
 
+
+## Explicit route receipt: `index.route/v1`
+
+`index route --json` and MCP `index.route` build a context envelope for explicit
+repository paths. It is for callers that already know the scope and want to avoid
+workspace-wide repository discovery. The command validates only the named paths,
+reconciles selected and rejected candidates, and embeds the existing context-envelope
+payload.
+
+```json
+{
+  "schema": "index.route/v1",
+  "status": "MATCH",
+  "failure_codes": [],
+  "root": {"sha256_prefix": "617a55395ac0d599"},
+  "mode": "explicit-path",
+  "selection": {
+    "selected": [{"key": "app", "path": "app"}],
+    "rejected": []
+  },
+  "reconciliation": {
+    "candidate_count": 1,
+    "selected_count": 1,
+    "rejected_count": 0,
+    "omitted_count": 0
+  },
+  "envelope": {"schema": "project-telos.context-envelope/v1"},
+  "privacy": {"absolute_paths_included": false},
+  "recheck": {"command": "index route --root ROOT --path PATH --json"}
+}
+```
+
+`status` is `MATCH` when every candidate is accounted for without rejection and the
+embedded envelope verifies. If at least one path is rejected while another selected
+repository still produces a verified envelope, status is `PARTIAL` and `failure_codes`
+includes `candidate_rejected`. If no selected repository remains, status is
+`UNVERIFIABLE`, `failure_codes` includes `no_selected_repositories`, and `envelope` is
+`null`. If selected repositories remain but the embedded envelope is unverified, status
+is `UNVERIFIABLE` and `failure_codes` includes `envelope_unverifiable`.
+
+Rejection reason codes currently include `empty-path`, `outside-root`, `not-found`,
+`not-directory`, `not-repository`, and `duplicate-path`. Counts reconcile every raw
+candidate: `candidate_count == selected_count + rejected_count + omitted_count`. A route
+receipt is portable: selected paths are root-relative and the root is represented by a
+hash prefix, not by an absolute local path. Rejected candidate paths are portable too:
+contained candidates use root-relative paths, while outside-root candidates use
+`outside-root:<sha256-prefix>` plus `path_kind`, `path_sha256`, and `was_absolute`
+metadata so callers can correlate the rejection without exposing the raw local path.
+
 ## The invalidation report: `index.invalidation/1`
 
 Freshness says that the workspace moved. The invalidation report says what that movement

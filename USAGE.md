@@ -172,7 +172,7 @@ from index_graph import (
     build_map, write_map, discover_repos,
     Map, RepoRow, SCHEMA_VERSION,
     Config, Rule, load_config, default_config,
-    classify, __version__,
+    classify, build_route, __version__,
 )
 ```
 
@@ -183,6 +183,7 @@ Key entry points:
 - `load_config(path: Path | None, root: Path) -> Config` and `default_config() -> Config`.
 - `classify(path: str, is_repo: bool, origin: str, config: Config) -> str`.
 - `Map.to_json()` and `RepoRow.to_json()`. Plain-dict serialization.
+- `build_route(root, paths=[...])` builds a portable `index.route/v1` receipt and context envelope from explicit repository paths without discovering siblings.
 
 ### Example, build a map in code
 
@@ -335,6 +336,25 @@ includes `SystemExit` raised by invalid workspace configuration, which prevents 
 `.index.toml` from surfacing to the host as an opaque transport close.
 
 The map subcommand (`index map`, or the flat `index --root ...`) is unaffected.
+
+
+### `route` subcommand
+
+```text
+index route --root ROOT --path REPO [--path REPO ...] [--budget N] [--hops N] [--json]
+```
+
+`route` is the explicit-scope path for callers that already know which
+repositories matter. Each `--path` is validated under `--root`, rejected with a
+stable reason code when it escapes the root or is not a repository, and then
+passed directly to the existing graph and context-envelope builders. It does not
+run workspace-wide repository discovery, so selecting `--path public/index` does
+not pay to inventory unrelated sibling repositories. The JSON receipt uses
+`schema: "index.route/v1"`, reconciles `selected + rejected`, omits absolute
+paths, and embeds the `project-telos.context-envelope/v1` payload under
+`envelope`.
+
+MCP exposes the same surface as `index.route` with `{root, paths, budget?, hops?}`. Python callers can use `build_route(root, paths=[...])`.
 
 ### `select` subcommand
 
@@ -894,7 +914,7 @@ Bytes are exact and model-agnostic. The token figures use the common ~4 bytes/to
 index mcp
 ```
 
-The tools are `index_graph`, `index_focus` (a repo's neighborhood plus the preservation manifest), `index_verify` (ground a depends or exists claim), `index_router` (the workspace map), `index_internals` (a repo's module graph), `index.select` (path selection with typed rejection receipts), `index.invalidate` (without `pin` it mints and returns a pin of the current tree; with `pin` it emits the `index.invalidation/1` report plus its reconciliation), `index.wiki` (the sealed single-repo wiki pack, or a verification report when called with `verify`), and the symbol quartet `index.symbol-graph` (the whole call/reference graph for a repo), `index.symbol-definition` (GO-TO-DEFINITION, the file:line of a symbol), `index.symbol-references` (FIND-REFERENCES, the resolved callers of a symbol, with unresolved references reported separately), and `index.symbol-implementations` (FIND-IMPLEMENTATIONS, in-repo subclasses of a class or overrides of a method, with an external base never guessed into an edge). Interactive workspace MCP tools accept `budget_ms`, where `0` means the caller chose the unbounded path; `index.map` accepts `resume_state` for the same JSONL checkpoint used by the CLI and is rebuilt for each call because it is an authoritative repository inventory. Each tool reuses the same function its matching subcommand does, so the protocol face never disagrees with the CLI. An unresolvable `focus` or `repo` argument returns an `index.focus-rejection/v1` receipt as the payload instead of a protocol error, and large-workspace budget failures return an `index.mcp-tool-error/v1` payload with `UNVERIFIABLE` status.
+The tools are `index_graph`, `index_focus` (a repo's neighborhood plus the preservation manifest), `index_verify` (ground a depends or exists claim), `index_router` (the workspace map), `index.route` (explicit-path context-envelope routing), `index_internals` (a repo's module graph), `index.select` (path selection with typed rejection receipts), `index.invalidate` (without `pin` it mints and returns a pin of the current tree; with `pin` it emits the `index.invalidation/1` report plus its reconciliation), `index.wiki` (the sealed single-repo wiki pack, or a verification report when called with `verify`), and the symbol quartet `index.symbol-graph` (the whole call/reference graph for a repo), `index.symbol-definition` (GO-TO-DEFINITION, the file:line of a symbol), `index.symbol-references` (FIND-REFERENCES, the resolved callers of a symbol, with unresolved references reported separately), and `index.symbol-implementations` (FIND-IMPLEMENTATIONS, in-repo subclasses of a class or overrides of a method, with an external base never guessed into an edge). Interactive workspace MCP tools accept `budget_ms`, where `0` means the caller chose the unbounded path; `index.map` accepts `resume_state` for the same JSONL checkpoint used by the CLI and is rebuilt for each call because it is an authoritative repository inventory. Each tool reuses the same function its matching subcommand does, so the protocol face never disagrees with the CLI. An unresolvable `focus` or `repo` argument returns an `index.focus-rejection/v1` receipt as the payload instead of a protocol error, and large-workspace budget failures return an `index.mcp-tool-error/v1` payload with `UNVERIFIABLE` status.
 
 ## Notes
 

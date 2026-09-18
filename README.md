@@ -71,7 +71,7 @@ its witness rather than as an assertion you have to take on faith.
 
 **`index atlas`, the two-layer map.** Most dependency tools stop at the code. The atlas joins your markdown to it: every doc becomes a node next to the repo it lives in, `[[wiki-links]]` become edges you can click, and you read the rendered doc without leaving the map. Search covers repos and docs at once, double-click narrows to a node's neighborhood, and a breadcrumb trail makes every jump reversible. Four edge kinds, each derived from something real: depends-on (import or manifest line), describes (the doc lives in that repo), links-to (a wiki-link in the body), mentions (name in prose, dimmed, hideable).
 
-**`index lens`, the context lens.** Agent context assembly is usually invisible: a budget retains some files and silently drops the rest. The lens renders it. One page shows what a token budget retains and what it drops with typed failure codes, and a slider replays the exact greedy rule the CLI runs over the exact same numbers, live, without re-running Python. `index context-envelope` is the machine face of the same thing: a budgeted context packet where each retained repo carries hashed source references and every omission carries a failure code such as `budget_exceeded`, so a downstream agent can ask for more instead of inheriting confidence from a missing file. The default budget applies to retained context entries; `--bounded-output` opts in to bounding the emitted JSON response itself, measuring CLI stdout and MCP JSON-RPC wrappers at their actual surfaces; bounded CLI JSON emits the measured UTF-8 LF byte payload directly while oversized source-ref lists become omission counts, hashes, and reissue handles. And `context-envelope --verify` re-derives a cached envelope's freshness against the current workspace: it re-fingerprints the repos, confirms the sealed hashes still hold, and names the repos that drifted, exiting non-zero if the map moved under the envelope, so stale context is caught by a check instead of acted on by mistake.
+**`index lens`, the context lens.** Agent context assembly is usually invisible: a budget retains some files and silently drops the rest. The lens renders it. One page shows what a token budget retains and what it drops with typed failure codes, and a slider replays the exact greedy rule the CLI runs over the exact same numbers, live, without re-running Python. `index context-envelope` is the machine face of the same thing: a budgeted context packet where each retained repo carries hashed source references and every omission carries a failure code such as `budget_exceeded`, so a downstream agent can ask for more instead of inheriting confidence from a missing file. `index route --path REPO` builds that envelope from explicit repository paths without discovering unrelated workspace repositories, for callers that already know the scope. The default budget applies to retained context entries; `--bounded-output` opts in to bounding the emitted JSON response itself, measuring CLI stdout and MCP JSON-RPC wrappers at their actual surfaces; bounded CLI JSON emits the measured UTF-8 LF byte payload directly while oversized source-ref lists become omission counts, hashes, and reissue handles. And `context-envelope --verify` re-derives a cached envelope's freshness against the current workspace: it re-fingerprints the repos, confirms the sealed hashes still hold, and names the repos that drifted, exiting non-zero if the map moved under the envelope, so stale context is caught by a check instead of acted on by mistake.
 
 **`index symbols` and `index lsp`, IDE navigation from the graph.** Go-to-definition, find-references, and find-implementations for any Python symbol, from the CLI (`index symbols Class::method`) with `file:line` on every hop, or inside VSCode, Neovim, and JetBrains via a stdio LSP server with hand-rolled JSON-RPC framing and zero new dependencies. An unresolved reference returns empty, never a guessed jump. LSP content checks reject detected disk changes; its unchanged-metadata fast path expires after two seconds, so older same-size edits with restored timestamps can remain undetected within that interval. `index internals` and `index internals-symbols` expose the underlying module and call graphs directly.
 
@@ -89,7 +89,7 @@ max_cycles = 0
 
 **`index serve`, the on-demand wiki server.** A local stdlib server: request any repo by its forge path (`http://127.0.0.1:8000/github.com/org/repo`) and get its wiki, derived that moment by the same code path as `index wiki`, then discarded. Nothing is crawled or pre-indexed, `robots.txt` disallows indexing, every page defers to the repo owner's authored docs, and it binds loopback by default.
 
-**`index mcp`, the agent face.** A stdio MCP server exposing the map, context, envelope, selection, wiki, symbol, and verification surfaces as native tools, so an agent host gets the same evidence-backed answers the CLI gives.
+**`index mcp`, the agent face.** A stdio MCP server exposing the map, context, route, envelope, selection, wiki, symbol, and verification surfaces as native tools, so an agent host gets the same evidence-backed answers the CLI gives.
 
 ---
 
@@ -109,6 +109,7 @@ index lens      [--root ROOT] [--budget N] [--focus REPO] [--out FILE] [--json]
 index context   [--root ROOT] [--focus REPO] [--hops N] [--json] [--audit] [--budget-ms MS]
 index context-envelope [--root ROOT] [--budget N] [--focus REPO] [--bounded-output] [--json] [--budget-ms MS]
 index context-envelope --verify ENVELOPE_JSON [--root ROOT]   # is a cached envelope still fresh? exit 1 if it drifted
+index route     [--root ROOT] --path REPO [--path REPO ...] [--budget N] [--hops N] [--json]
 index select    [--root ROOT] [--suffix S ...] [--max-files N] [--json]
 index internals [--root REPO] [--json] [--cycles]
 index internals-symbols [--root REPO] [--json] [--coverage]
@@ -130,7 +131,7 @@ The full flag reference, the importable Python API, and worked examples live in 
 
 ## Command reference
 
-**Operator surface.** For hosts and unattended workflows, `index status --json`, `index doctor --json`, and `index demo --json` expose the machine-readable action envelope, and `index mcp` serves the same map, context, envelope, selection, wiki, symbol, and verification surfaces as native MCP tools. The status payload advertises the shared CLI/MCP/plugin/IDE contracts, so an agent host can discover what this installation supports before calling it:
+**Operator surface.** For hosts and unattended workflows, `index status --json`, `index doctor --json`, and `index demo --json` expose the machine-readable action envelope, and `index mcp` serves the same map, context, route, envelope, selection, wiki, symbol, and verification surfaces as native MCP tools. The status payload advertises the shared CLI/MCP/plugin/IDE contracts, so an agent host can discover what this installation supports before calling it:
 
 ```bash
 # from a source checkout
@@ -178,7 +179,8 @@ Everything works with zero configuration. An optional `.index.toml` at the works
 - Interactive bounds: router, graph, context, and context-envelope calls use a
   repository-discovery budget by default and return an UNVERIFIABLE message when
   a workspace is too large for an interactive graph build. Use `--budget-ms 0`
-  for the explicit unbounded path.
+  for the explicit unbounded path. `index route --path REPO` is the explicit-scope
+  path: it validates only the named repositories and does not discover siblings.
 - Resumable inventory: `index map --resume-state STATE` appends completed repo
   rows as JSONL so a large complete map can resume after a process timeout;
   rows are reused only while their Git/config/marker identity still matches, and

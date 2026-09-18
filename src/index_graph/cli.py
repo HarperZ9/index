@@ -32,6 +32,7 @@ from .cli_handlers import (
 )
 from .cli_parser import build_parser
 from .router_job_surface import cmd_router_job
+from .route import cmd_route
 from .config import load_config
 from .context.select import cmd_select
 from .flagship import cmd_demo, cmd_doctor, cmd_status
@@ -59,6 +60,7 @@ _SUBCOMMANDS = {
     "drift",
     "router",
     "router-job",
+    "route",
     "verify",
     "freshness",
     "watch",
@@ -95,6 +97,7 @@ _DISPATCH = {
     "drift": cmd_drift,
     "router": cmd_router,
     "router-job": cmd_router_job,
+    "route": cmd_route,
     "verify": cmd_verify,
     "freshness": cmd_freshness,
     "watch": cmd_watch,
