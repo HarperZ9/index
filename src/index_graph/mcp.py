@@ -216,6 +216,7 @@ def _workspace_schema(extra: dict | None = None, required: list | None = None) -
 
 
 def _tool_defs() -> list[dict]:
+    from .route import tool_definition as route_tool_definition
     from .router_job_surface import tool_definitions
     return [
         {"name": "index.map",
@@ -288,7 +289,8 @@ def _tool_defs() -> list[dict]:
          "description": "Build a deterministic CLAUDE.md/AGENTS.md workspace map synchronously. For large workspaces, use index.router.job.start, then index.router.job.status and index.router.job.result to avoid an interactive request timeout.",
          "inputSchema": _workspace_schema({"max_docs": {"type": "integer"},
              "no_cache": {"type": "boolean",
-                          "description": "Bypass result and per-repository graph caches."}})},
+                           "description": "Bypass result and per-repository graph caches."}})},
+        route_tool_definition(),
         {"name": "index_internals",
          "description": "Intra-repo module dependency graph for one repo, with cycles and coverage.",
          "inputSchema": _workspace_schema({"repo": {"type": "string"}}, required=["root", "repo"])},
@@ -382,6 +384,10 @@ def call_tool(name: str, args: dict, response_id=None) -> str:
         suffixes = tuple(args["suffixes"]) if args.get("suffixes") else None
         payload = run_select(Path(args["root"]), suffixes, args.get("max_files"))
         return json.dumps(payload, indent=2, sort_keys=True)
+
+    if name == "index.route":
+        from .route import call_route
+        return json.dumps(call_route(args, response_id=response_id), indent=2, sort_keys=True)
 
     from .graph.build import build_graph
     from .context.focus import FocusRejection, focus_rejection

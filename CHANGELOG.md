@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Route: add `index route --path REPO --json`, the `index.route` MCP tool, and
+  the `build_route()` Python entry point for explicit-path context envelopes that
+  validate named repositories under the root without discovering unrelated sibling
+  repositories. The route receipt is portable, reconciles selected and rejected
+  paths, and embeds the existing context-envelope payload.
 - Context envelopes: add opt-in bounded serialized output with `--bounded-output`,
   the `bounded_output` MCP/Python argument, and `source_ref_omissions` records. The
   default remains the existing lossless-by-reference retained-selection budget; the
