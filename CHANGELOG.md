@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 2.14.0 (2026-09-27)
+
 - Route: add `index route --path REPO --json`, the `index.route` MCP tool, and
   the `build_route()` Python entry point for explicit-path context envelopes that
   validate named repositories under the root without discovering unrelated sibling
