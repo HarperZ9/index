@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-__version__ = "2.13.0"
+__version__ = "2.14.0"
 
 from .classify import classify
 from .config import Config, Rule, default_config, load_config
