@@ -17,6 +17,12 @@
   directly so Windows newline translation cannot exceed the reported budget. MCP
   rejects malformed boolean values, and minimal overflow receipts preserve
   pre-existing omitted-repo metadata.
+- Releases: a tag push runs the test suite and checks the tag against the package
+  version before it builds, uploads to PyPI with `skip-existing` so a partial
+  upload can be re-run, and creates the GitHub Release with the wheel, the sdist
+  and `SHA256SUMS.txt` once PyPI serves those same files. `RELEASE.md` lists the
+  steps, and `tests/test_version_sites.py` fails when the README or CHANGELOG
+  names a version other than the package's.
 
 ## 2.13.0 (2026-09-10)
 
