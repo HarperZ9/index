@@ -1,45 +1,175 @@
 name: Release Artifacts
 
+# Keep this file name: a PyPI trusted publisher for index-graph, once configured, names it.
+# A v* tag push tests, builds, publishes to PyPI and then creates the GitHub
+# Release. A manual run on a branch stops after the build: it tests, builds and
+# checks the package without publishing anything.
 on:
   workflow_dispatch:
   push:
     tags:
       - 'v*'
 
+# Nothing by default; each job names the one permission it needs.
+permissions: {}
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@v6
         with:
           python-version: '3.11'
-      - name: Build and check the package
+      - name: Read the package version
+        run: |
+          python - <<'PY' >> "${GITHUB_ENV}"
+          import re, sys
+          source = open("src/index_graph/__init__.py", encoding="utf-8").read()
+          match = re.search(r'^__version__ = "([^"]+)"$', source, re.M)
+          if match is None:
+              sys.exit("src/index_graph/__init__.py has no __version__ line")
+          print(f"PACKAGE_VERSION={match.group(1)}")
+          PY
+      - name: Check the tag matches the package version
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          test "${GITHUB_REF_NAME}" = "v${PACKAGE_VERSION}" || { echo "tag ${GITHUB_REF_NAME} does not match version ${PACKAGE_VERSION}"; exit 1; }
+      - name: Run the test suite before building
+        env:
+          PYTHONDONTWRITEBYTECODE: "1"
         run: |
           python -m pip install --upgrade pip
-          python -m pip install build twine
+          python -m pip install -e ".[test]"
+          python -m pytest -q -p no:cacheprovider
+      - name: Build sdist and wheel
+        run: |
+          python -m pip install --upgrade build twine
           python -m build
           python -m twine check dist/*
+          # Exactly one wheel and one sdist, both named for this version.
+          test "$(ls dist | wc -l)" = "2" || { ls dist; echo "dist holds more than one wheel and one sdist"; exit 1; }
+          test -f "dist/index_graph-${PACKAGE_VERSION}-py3-none-any.whl"
+          test -f "dist/index_graph-${PACKAGE_VERSION}.tar.gz"
+      - name: Verify the wheel installs and reports the version
+        run: |
+          python -m venv /tmp/v
+          /tmp/v/bin/pip install dist/*.whl
+          # The installed command and the installed metadata both report the
+          # package version, which the tag check above tied to the tag: a bump
+          # that missed a version site stops the release here.
+          test "$(/tmp/v/bin/index --version)" = "index ${PACKAGE_VERSION}" || { echo "installed index --version does not match ${PACKAGE_VERSION}"; exit 1; }
+          /tmp/v/bin/python -I -c "import importlib.metadata as m, os, sys; v = m.version('index-graph'); sys.exit(0 if v == os.environ['PACKAGE_VERSION'] else 'installed metadata ' + v + ' does not match ' + os.environ['PACKAGE_VERSION'])"
+          # Every public name resolves from the installed wheel (-I keeps the
+          # source tree off the import path).
+          /tmp/v/bin/python -I -c "import index_graph; missing = [n for n in index_graph.__all__ if not hasattr(index_graph, n)]; assert not missing, missing"
+      - name: Write checksums and release notes
+        run: |
+          mkdir release
+          (cd dist && sha256sum *.whl *.tar.gz > ../release/SHA256SUMS.txt)
+          cat release/SHA256SUMS.txt
+          awk -v v="${PACKAGE_VERSION}" '$0 ~ "^## "v" " {on=1; next} on && /^## / {exit} on {print}' CHANGELOG.md > release/notes.md
+          test -s release/notes.md || echo "See CHANGELOG.md for v${PACKAGE_VERSION}." > release/notes.md
       - uses: actions/upload-artifact@v7
         with:
           name: index-graph-dist
-          path: dist/*
+          path: dist/
+      - uses: actions/upload-artifact@v7
+        with:
+          name: index-graph-release
+          path: release/
 
   pypi-publish:
     name: Publish to PyPI
     needs: build
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write   # trusted publishing, used when no API token secret is set
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-    environment: pypi
     steps:
       - uses: actions/download-artifact@v7
         with:
           name: index-graph-dist
-          path: dist
-      - uses: pypa/gh-action-pypi-publish@release/v1
+          path: dist/
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
         with:
+          # With the secret set, the upload uses the token. Without it, the
+          # action falls back to trusted publishing through the permission above.
           password: ${{ secrets.PYPI_API_TOKEN }}
+          skip-existing: true   # a re-run after a partial upload finishes instead of failing
+
+  github-release:
+    name: Create the GitHub Release
+    needs: [build, pypi-publish]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # create the release and attach its files
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    steps:
+      - uses: actions/download-artifact@v7
+        with:
+          name: index-graph-dist
+          path: dist/
+      - uses: actions/download-artifact@v7
+        with:
+          name: index-graph-release
+          path: release/
+      - name: Verify the files match the checksums
+        run: (cd dist && sha256sum -c ../release/SHA256SUMS.txt)
+      - name: Check PyPI serves exactly the files SHA256SUMS.txt names
+        # skip-existing lets a re-run finish, but it also keeps any file already on
+        # PyPI for this version. Stop before the GitHub Release if the two differ.
+        run: |
+          python3 - <<'PY'
+          import json, os, sys, time, urllib.request
+
+          version = os.environ["GITHUB_REF_NAME"].removeprefix("v")
+          want = {}
+          for line in open("release/SHA256SUMS.txt", encoding="utf-8"):
+              if line.strip():
+                  digest, name = line.split()
+                  want[name.lstrip("*")] = digest
+          url = f"https://pypi.org/pypi/index-graph/{version}/json"
+          request = urllib.request.Request(url, headers={"User-Agent": "index-graph-release-check"})
+          have = {}
+          for attempt in range(10):
+              try:
+                  with urllib.request.urlopen(request, timeout=30) as response:
+                      files = json.load(response)["urls"]
+                  have = {f["filename"]: f["digests"]["sha256"] for f in files}
+              except Exception as exc:
+                  print(f"attempt {attempt + 1}: {type(exc).__name__}: {exc}")
+              if set(have) >= set(want):
+                  break
+              time.sleep(30)
+          if have != want:
+              print("PyPI serves different files than SHA256SUMS.txt names:")
+              for name in sorted(set(want) | set(have)):
+                  print(f"  {name}: release {want.get(name, '-')} pypi {have.get(name, '-')}")
+              sys.exit(1)
+          print("PyPI serves the same files:", ", ".join(sorted(have)))
+          PY
+      - name: Create the GitHub Release, or refresh its files on a re-run
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          cp release/SHA256SUMS.txt SHA256SUMS.txt
+          if gh release view "${GITHUB_REF_NAME}" > /dev/null 2>&1; then
+            gh release upload "${GITHUB_REF_NAME}" dist/*.whl dist/*.tar.gz SHA256SUMS.txt --clobber
+          else
+            gh release create "${GITHUB_REF_NAME}" dist/*.whl dist/*.tar.gz SHA256SUMS.txt \
+              --verify-tag --title "index-graph ${GITHUB_REF_NAME#v}" --notes-file release/notes.md
+          fi
