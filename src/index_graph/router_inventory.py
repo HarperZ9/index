@@ -52,7 +52,7 @@ def _relative(path: Path, root: Path) -> str:
 
 
 def _rel_to_root(root: Path, path: Path) -> str:
-    rel = path.resolve().relative_to(root).as_posix()
+    rel = path.relative_to(root).as_posix()
     return "" if rel == "." else rel
 
 
@@ -116,10 +116,10 @@ def _discover_repo_paths(
         if not _inside_config_prune(repo, root, config.prune)
         and not _blocked_by_repo_boundary(repo, root, repo_markers, config)
     ]
-    repos = sorted(set(repos), key=lambda path: path.relative_to(root).as_posix().lower())
-    keyed = repo_key_map(root, repos, include_root_repo=config.include_root_repo)
     if budget.exhausted:
         raise ScanBudgetExceeded(root=root, budget=budget, repo_count=len(repos), skipped=skipped)
+    repos = sorted(set(repos), key=lambda path: path.relative_to(root).as_posix().lower())
+    keyed = repo_key_map(root, repos, include_root_repo=config.include_root_repo)
     enforce_interactive_repo_limit(len(keyed), budget_ms=budget.budget_ms)
     return keyed
 
@@ -134,6 +134,10 @@ def _assign_repo_file_lists(
 ) -> tuple[dict[str, PreloadedFileListing], int]:
     repo_by_root = {path: name for name, path in repo_paths.items()}
     repo_roots = set(repo_by_root)
+    physical_roots = {
+        name: directory_snapshots[path].path for name, path in repo_paths.items()
+    }
+    physical_markers = {directory_snapshots[path].path for path in repo_markers}
     buckets: dict[str, list[Path]] = {name: [] for name in repo_paths}
     seal_buckets: dict[str, dict[Path, DirectoryMembershipSnapshot]] = {
         name: {} for name in repo_paths
@@ -157,7 +161,11 @@ def _assign_repo_file_lists(
             continue
         name = repo_by_root[owner]
         if name not in repo_error_names:
-            buckets[name].append(path)
+            physical_path = directory_snapshots[path.parent].path / path.name
+            physical_owner = _nearest_ancestor(physical_path.parent, physical_markers, physical_roots[name])
+            if (physical_owner == physical_roots[name]
+                    and _is_relative_to(physical_path, physical_roots[name])):
+                buckets[name].append(physical_path)
 
     for directory, snapshot in directory_snapshots.items():
         owner = _nearest_ancestor(directory, repo_roots, root)
@@ -166,7 +174,10 @@ def _assign_repo_file_lists(
         boundary = _nearest_ancestor(directory, repo_markers, root)
         if boundary is None or boundary == owner or directory == boundary:
             name = repo_by_root[owner]
-            if name not in repo_error_names:
+            physical_boundary = _nearest_ancestor(snapshot.path, physical_markers, physical_roots[name])
+            if (name not in repo_error_names
+                    and _is_relative_to(snapshot.path, physical_roots[name])
+                    and physical_boundary in {physical_roots[name], snapshot.path}):
                 seal_buckets[name][directory] = snapshot
 
     for marker in repo_markers:
@@ -175,12 +186,14 @@ def _assign_repo_file_lists(
             continue
         parent_name = repo_by_root[parent_owner]
         snapshot = directory_snapshots.get(marker)
-        if snapshot is not None and parent_name not in repo_error_names:
+        if (snapshot is not None and parent_name not in repo_error_names
+                and _is_relative_to(snapshot.path, physical_roots[parent_name])):
             seal_buckets[parent_name][marker] = snapshot
 
     return {
         name: PreloadedFileListing(
             files=tuple(paths),
+            captured_root=physical_roots[name],
             directory_snapshots=tuple(
                 snapshot
                 for _path, snapshot in sorted(
@@ -240,7 +253,9 @@ def build_router_inventory(
 
     started = perf_counter()
     for dirpath, dirnames, filenames in os.walk(root, onerror=onerror):
-        current = Path(dirpath).resolve()
+        # Keep the workspace spelling: resolving a junction can move this path
+        # outside root and break relative repository keys and document routes.
+        current = Path(dirpath)
         if checkpoint is not None and not checkpoint(current):
             skipped.append(f"router-inventory-checkpoint-rejected:{current}")
             dirnames[:] = []

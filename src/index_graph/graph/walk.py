@@ -43,6 +43,7 @@ class DirectoryMembershipSnapshot:
 class PreloadedFileListing:
     files: tuple[Path, ...]
     directory_snapshots: tuple[DirectoryMembershipSnapshot, ...] = ()
+    captured_root: Path | None = None
 
 
 PreloadedFileValue = Sequence[Path | str] | PreloadedFileListing
@@ -225,6 +226,19 @@ def _matches(filename: str, suffixes: tuple[str, ...] | None,
     return globs is not None and any(fnmatch.fnmatchcase(filename, g) for g in globs)
 
 
+def _within_captured_repo(path: Path, root: Path) -> bool:
+    physical = path.resolve()
+    if not physical.is_relative_to(root):
+        return False
+    while physical != root:
+        # A junction may enter below a nested repository's marker, bypassing
+        # the lexical walker's ordinary stop-at-.git check.
+        if os.path.lexists(physical / ".git"):
+            return False
+        physical = physical.parent
+    return True
+
+
 def _scoped_all_files(root: Path, checkpoint=None) -> list[Path]:
     """All local files under existing pruning and nested repository boundaries.
 
@@ -233,9 +247,13 @@ def _scoped_all_files(root: Path, checkpoint=None) -> list[Path]:
     """
     key = str(root.resolve())
     cache = getattr(_LOCAL, "file_cache", None)
+    contained_root = None
     if cache is not None and key in cache:
         cached = cache[key]
         if isinstance(cached, PreloadedFileListing):
+            contained_root = cached.captured_root
+            if contained_root is not None and root.resolve() != contained_root:
+                raise GraphSourceError("repository root changed after router inventory")
             if _preloaded_is_current(cached):
                 files = list(cached.files)
                 cache[key] = files
@@ -246,6 +264,11 @@ def _scoped_all_files(root: Path, checkpoint=None) -> list[Path]:
     out: list[Path] = []
     for dirpath, dirnames, filenames in os.walk(root, onerror=_walk_error):
         current = Path(dirpath)
+        # A stale router preload must not widen its original physical scope
+        # when the fallback walker encounters a repository-internal junction.
+        if contained_root is not None and not _within_captured_repo(current, contained_root):
+            dirnames[:] = []
+            continue
         if checkpoint is not None and not checkpoint(current):
             # An interrupted listing is never reusable as a complete scope.
             return out

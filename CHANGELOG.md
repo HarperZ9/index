@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+## 2.14.1 (2026-09-29)
+
+- Router inventory preserves workspace-relative repository and document names
+  when Windows directory junctions point to offloaded repositories. Duplicate
+  basenames retain distinct relative keys instead of raising a path error.
+- Graph preloads retain each repository's captured physical root. A changed root
+  fails explicitly; repository-internal junctions outside that root stay excluded
+  during preload reuse and fallback after an ordinary file change. Junctions
+  entering below a nested repository's marker retain that ownership boundary.
+  This preserves the shared traversal without claiming an atomic filesystem
+  snapshot.
+- An exhausted inventory budget raises the existing `ScanBudgetExceeded` result
+  before repository sorting. Partial discovery does not become a complete map.
+
 ## 2.14.0 (2026-09-27)
 
 - Route: add `index route --path REPO --json`, the `index.route` MCP tool, and
