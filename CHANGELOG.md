@@ -2,9 +2,10 @@
 
 ## Unreleased
 
-## 2.15.0 (2026-09-30)
+## 2.15.0 (2026-10-01)
 
-Publication is held pending full-workflow and installed-client qualification.
+Adds local client packages with explicit launch permissions. Client-specific installation
+and marketplace acceptance remain separate qualification steps.
 
 - Add a local MCP profile with an explicit readable workspace, typed permission refusals, and process/network denial at launch. The full CLI/MCP remains available separately.
 - Add portable source plugins for Claude/Codex-compatible clients and Windows x64 ZIP/MCPB packages containing the runtime, licenses, source hashes and checksums.

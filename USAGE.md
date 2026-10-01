@@ -922,7 +922,7 @@ The tools are `index_graph`, `index_focus` (a repo's neighborhood plus the prese
 - Maps are portable by default. Repo paths are root-relative, the absolute root is replaced by a short hash prefix, and credential-shaped material in remote URLs is redacted.
 - The output schema is versioned (`schema_version: 1`).
 
-## Local client package candidate
+## Local client packages
 
 Add `--state-directory ABSOLUTE_DIRECTORY` to the launcher only when the client
 may write private map/cache/job state there. The directory must already exist.
@@ -936,5 +936,5 @@ worker processes remain unavailable on this profile.
 The optional client bundle adds a bounded MCP profile that defaults to read-only access with an explicit
 workspace selected at launch. See [client package setup](client-plugin/README.md).
 Windows x64 MCPB and ZIP bundles include their runtime; source plugins require
-Python 3.11+. The full CLI/MCP retains advanced operations. This profile alone
-does not qualify the full product's mature workflows or marketplace acceptance.
+Python 3.11+. The full CLI/MCP retains advanced operations. Client-specific
+installation and marketplace acceptance require separate verification.

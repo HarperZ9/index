@@ -239,7 +239,7 @@ The long form of this belief: [The Unbundling](https://github.com/HarperZ9/flywh
 
 **[Zentropy Labs](https://github.com/ZentropyLabs-ai)** · order out of entropy. An independent lab building evidence-first tools that leave a re-checkable artifact behind. Built by Zain Dana Harper in Seattle. The full workbench is at [Project Telos](https://harperz9.github.io).
 
-## Local client package candidate
+## Local client packages
 
 Persistence is opt-in through `--state-directory`: cached maps and
 existing owned job inspection/cancellation retain process and network denial.
@@ -247,5 +247,5 @@ existing owned job inspection/cancellation retain process and network denial.
 The optional client bundle adds a bounded MCP profile that defaults to read-only access with an explicit
 workspace selected at launch. See [client package setup](client-plugin/README.md).
 Windows x64 MCPB and ZIP bundles include their runtime; source plugins require
-Python 3.11+. The full CLI/MCP retains advanced operations. This profile alone
-does not qualify the full product's mature workflows or marketplace acceptance.
+Python 3.11+. The full CLI/MCP retains advanced operations. Client-specific
+installation and marketplace acceptance require separate verification.

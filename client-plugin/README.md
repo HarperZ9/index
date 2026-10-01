@@ -1,6 +1,6 @@
 # index local client package
 
-Map local repositories and inspect source symbols without inference. This unpublished development candidate defaults to read-only access.
+Map local repositories and inspect source symbols without inference. The client profile defaults to read-only access.
 It requires an explicit workspace at launch and refuses other tools, path escapes,
 links, and tool-supplied permission grants. It does not read ambient grants.
 Concurrent filesystem mutation is outside this convenience boundary; it is not
@@ -28,7 +28,7 @@ Job start/resume still require processes and remain on the full CLI/MCP surface.
 This opt-in retains process and network denial. State links and hard links are
 refused. It does not protect against concurrent filesystem mutation.
 
-This profile does not yet qualify the full product's mature workflow. Do not infer a grant from a
+Do not infer a grant from a
 request, document or plugin installation. Public marketplace acceptance, macOS,
 Linux native bundles and installed-client compatibility remain unverified.
 
