@@ -1,0 +1,18 @@
+{
+  "author": {
+    "name": "Zain Dana Harper"
+  },
+  "description": "Map local repositories and inspect source symbols without inference.",
+  "license": "FSL-1.1-MIT",
+  "name": "index-local",
+  "repository": "https://github.com/HarperZ9/index",
+  "userConfig": {
+    "workspace": {
+      "description": "Absolute path to an existing folder this plugin may read. No network or process permission is granted.",
+      "required": true,
+      "title": "Index workspace",
+      "type": "directory"
+    }
+  },
+  "version": "2.15.0"
+}

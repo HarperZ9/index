@@ -1,0 +1,248 @@
+"""Context handlers: context pack and budgeted context envelope."""
+
+from __future__ import annotations
+
+import json
+import sys
+
+from ..context.focus import FocusRejection, focus_rejection, render_rejection
+from ..context.pack import closure, focus_subgraph, preservation, render_text, to_json
+from ..graph.build import build_graph
+from ..scan import ScanBudgetExceeded, ScanWorkloadExceeded, default_interactive_budget_ms
+from ._common import repo_paths
+
+
+def _budget_ms(args) -> int:
+    value = getattr(args, "budget_ms", None)
+    if value is None:
+        value = default_interactive_budget_ms()
+    if value < 0:
+        raise SystemExit("--budget-ms must be non-negative")
+    return value
+
+
+def _scan_budget_payload(command: str, exc: ScanBudgetExceeded | ScanWorkloadExceeded) -> dict:
+    payload = {
+        "schema": "index.scan-budget-exceeded/v1",
+        "command": command,
+        "status": "UNVERIFIABLE",
+        "message": str(exc),
+        "budget_ms": getattr(exc, "budget_ms", None),
+        "partial_repos": getattr(exc, "repo_count", None),
+        "next_actions": [
+            "Increase --budget-ms for a larger bounded interactive scan.",
+            "Use --budget-ms 0 for an unbounded interactive run.",
+            "Use index map --resume-state PATH for complete repository inventory over large workspaces.",
+        ],
+    }
+    if hasattr(exc, "elapsed_ms"):
+        payload["elapsed_ms"] = exc.elapsed_ms
+    if hasattr(exc, "last_path"):
+        payload["last_path"] = exc.last_path
+    if hasattr(exc, "skipped"):
+        payload["skipped"] = exc.skipped
+    if hasattr(exc, "repo_limit"):
+        payload["repo_limit"] = exc.repo_limit
+    return payload
+
+
+def _emit_scan_budget(args, command: str, exc: ScanBudgetExceeded | ScanWorkloadExceeded) -> int:
+    payload = _scan_budget_payload(command, exc)
+    if getattr(args, "json", False):
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        print(f"{command}: UNVERIFIABLE: {exc}")
+        print("next: increase --budget-ms, use --budget-ms 0, or run index map --resume-state PATH")
+    return 2
+
+
+def _write_bounded_json_stdout(payload: dict) -> None:
+    text = json.dumps(payload, indent=2, sort_keys=True) + "\n"
+    data = text.encode("utf-8")
+    buffer = getattr(sys.stdout, "buffer", None)
+    if buffer is not None:
+        buffer.write(data)
+        buffer.flush()
+    else:
+        sys.stdout.write(text)
+        sys.stdout.flush()
+
+
+def cmd_context(args) -> int:
+    if args.hops is not None and args.hops < 0:
+        raise SystemExit("--hops must be >= 0")
+    try:
+        graph = build_graph(repo_paths(args.root.resolve(), budget_ms=_budget_ms(args)))
+    except (ScanBudgetExceeded, ScanWorkloadExceeded) as exc:
+        return _emit_scan_budget(args, "index context", exc)
+    names = {n.name for n in graph.repos}
+    if args.audit:
+        return _context_audit(graph)
+    preserved = None
+    if args.focus:
+        if args.focus not in names:
+            receipt = focus_rejection(args.focus, names)
+            print(
+                json.dumps(receipt, indent=2, sort_keys=True)
+                if args.json
+                else render_rejection(receipt)
+            )
+            return 2
+        keep = closure(list(graph.edges), args.focus, hops=args.hops)
+        preserved = preservation(list(graph.edges), keep, args.focus, args.hops)
+        graph = focus_subgraph(graph, keep)
+        title = f"focus={args.focus}" + (
+            f" hops={args.hops}" if args.hops is not None else ""
+        )
+    else:
+        title = "workstation context"
+    return _context_emit(args, graph, title, preserved)
+
+
+def _context_audit(graph) -> int:
+    data = to_json(graph)
+    print(f"salience-faithfulness warnings: {len(data['salience_audit'])}")
+    for w in data["salience_audit"]:
+        print(f"  [{w['kind']}] {w['node']} (in={w['in_degree']}): {w['note']}")
+    return 0
+
+
+def _context_emit(args, graph, title, preserved) -> int:
+    if args.json:
+        pack = to_json(graph)
+        if preserved is not None:
+            pack["preserved"] = preserved
+        print(json.dumps(pack, indent=2, sort_keys=True))
+    else:
+        text = render_text(graph, title)
+        if preserved is not None:
+            b = preserved["boundary"]
+            text += (
+                f"\n## Preserved\n- focus: {', '.join(preserved['focus'])}; "
+                f"hops: {preserved['hops']}; kept: {preserved['kept_nodes']} nodes\n"
+                f"- boundary dropped: {len(b['dropped_edges'])} edge(s) to "
+                f"{len(b['dropped_nodes'])} node(s)"
+            )
+        print(text)
+    return 0
+
+
+def cmd_context_envelope(args) -> int:
+    if getattr(args, "verify", None) is not None:
+        return _verify_envelope(args)
+    if args.budget < 1:
+        raise SystemExit("--budget must be a positive integer")
+    if args.hops is not None and args.hops < 0:
+        raise SystemExit("--hops must be >= 0")
+    from ..context.envelope import build_context_envelope
+
+    try:
+        graph = build_graph(repo_paths(args.root.resolve(), budget_ms=_budget_ms(args)))
+    except (ScanBudgetExceeded, ScanWorkloadExceeded) as exc:
+        return _emit_scan_budget(args, "index context-envelope", exc)
+    try:
+        env = build_context_envelope(
+            graph,
+            root=args.root.resolve(),
+            token_budget=args.budget,
+            focus=args.focus,
+            hops=args.hops,
+            bounded_output=args.bounded_output,
+            bounded_output_transport=(
+                "cli_json_stdout" if args.bounded_output and args.json else "canonical_json"
+            ),
+        )
+    except FocusRejection as exc:
+        print(
+            json.dumps(exc.receipt, indent=2, sort_keys=True)
+            if args.json
+            else render_rejection(exc.receipt)
+        )
+        return 2
+    except ValueError as exc:
+        print(str(exc))
+        return 2
+    if args.json:
+        if args.bounded_output:
+            _write_bounded_json_stdout(env)
+        else:
+            print(json.dumps(env, indent=2, sort_keys=True))
+    else:
+        print(
+            f"context-envelope verdict={env['verification_verdict']} "
+            f"tokens={env['budget']['approx_tokens']}/{env['budget']['token_budget']}"
+        )
+        print(f"retained={len(env['retained'])} omitted={len(env['omitted'])}")
+    return 0
+
+
+def _verify_envelope(args) -> int:
+    from ..context.envelope import verify_envelope_freshness
+
+    try:
+        envelope = json.loads(args.verify.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        print(f"could not read envelope {args.verify}: {exc}")
+        return 2
+    try:
+        graph = build_graph(repo_paths(args.root.resolve(), budget_ms=_budget_ms(args)))
+    except (ScanBudgetExceeded, ScanWorkloadExceeded) as exc:
+        return _emit_scan_budget(args, "index context-envelope --verify", exc)
+    verdict = verify_envelope_freshness(envelope, graph)
+    if args.json:
+        print(json.dumps(verdict, indent=2, sort_keys=True))
+    else:
+        print(f"envelope-freshness verdict={verdict['verdict']} "
+              f"root_ok={verdict['workspace_root_ok']}")
+        if verdict["drifted_repos"]:
+            print(f"drifted: {', '.join(verdict['drifted_repos'])}")
+        if verdict["missing_repos"]:
+            print(f"missing: {', '.join(verdict['missing_repos'])}")
+    return 0 if verdict["fresh"] else 1
+
+
+def cmd_lens(args) -> int:
+    if args.budget < 1:
+        raise SystemExit("--budget must be a positive integer")
+    if args.hops is not None and args.hops < 0:
+        raise SystemExit("--hops must be >= 0")
+    from ..context.lens import build_lens_pack
+    from ..viz.lens_html import render_lens_html
+
+    graph = build_graph(repo_paths(args.root.resolve()))
+    try:
+        lens = build_lens_pack(
+            graph,
+            root=args.root.resolve(),
+            token_budget=args.budget,
+            focus=args.focus,
+            hops=args.hops,
+        )
+    except FocusRejection as exc:
+        print(
+            json.dumps(exc.receipt, indent=2, sort_keys=True)
+            if args.json
+            else render_rejection(exc.receipt)
+        )
+        return 2
+    except ValueError as exc:
+        print(str(exc))
+        return 2
+    if args.json:
+        print(json.dumps(lens, indent=2, sort_keys=True))
+        return 0
+    out = getattr(args, "out", None)
+    if out:
+        from pathlib import Path
+
+        Path(out).write_text(render_lens_html(lens), encoding="utf-8")
+        env = lens["envelope"]
+        print(
+            f"context lens -> {out}  "
+            f"(verdict={env['verification_verdict']}, "
+            f"{len(env['retained'])} retained / {len(env['omitted'])} omitted "
+            f"at budget {env['budget']['token_budget']})"
+        )
+    else:
+        print(render_lens_html(lens))
+    return 0

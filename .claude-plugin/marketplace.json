@@ -1,0 +1,14 @@
+{
+  "description": "Map local repositories and inspect source symbols without inference.",
+  "name": "index-local",
+  "owner": {
+    "name": "Zain Dana Harper"
+  },
+  "plugins": [
+    {
+      "description": "Map local repositories and inspect source symbols without inference.",
+      "name": "index-local",
+      "source": "./"
+    }
+  ]
+}
