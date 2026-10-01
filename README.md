@@ -194,7 +194,7 @@ Everything works with zero configuration. An optional `.index.toml` at the works
 
 ## Status
 
-`index-graph` 2.14.1, command `index`, Python 3.11+, Development Status Beta. It is used as the workspace map layer of [Project Telos](https://harperz9.github.io), alongside [gather](https://github.com/HarperZ9/gather), [crucible](https://github.com/HarperZ9/crucible), [forum](https://github.com/HarperZ9/forum), and [telos](https://github.com/HarperZ9/telos). The PyPI badge shows the latest published package.
+`index-graph` 2.15.0, command `index`, Python 3.11+, Development Status Beta. It is used as the workspace map layer of [Project Telos](https://harperz9.github.io), alongside [gather](https://github.com/HarperZ9/gather), [crucible](https://github.com/HarperZ9/crucible), [forum](https://github.com/HarperZ9/forum), and [telos](https://github.com/HarperZ9/telos). The PyPI badge shows the latest published package.
 
 One note on why the outputs look the way they do: every claim an `index` artifact makes, an edge, a page, a verdict, carries the evidence to re-derive it, and the verifiers are built to be able to fail. If you only remember one command, make it `index wiki --verify`.
 
@@ -238,3 +238,11 @@ The long form of this belief: [The Unbundling](https://github.com/HarperZ9/flywh
 ---
 
 **[Zentropy Labs](https://github.com/ZentropyLabs-ai)** · order out of entropy. An independent lab building evidence-first tools that leave a re-checkable artifact behind. Built by Zain Dana Harper in Seattle. The full workbench is at [Project Telos](https://harperz9.github.io).
+
+## Local client package candidate
+
+The optional client bundle adds a bounded read-only MCP profile with an explicit
+workspace selected at launch. See [client package setup](client-plugin/README.md).
+Windows x64 MCPB and ZIP bundles include their runtime; source plugins require
+Python 3.11+. The full CLI/MCP retains advanced operations. This profile alone
+does not qualify the full product's mature workflows or marketplace acceptance.
