@@ -1,6 +1,16 @@
 # index local client package
 
-Map local repositories and inspect source symbols without inference. The client profile defaults to read-only access.
+Index maps a repository you choose and finds symbol definitions, references and implementations from the source itself, with file and line evidence.
+
+## Try it
+
+- Map this repository and list its main modules.
+- Where is the function parse_config defined?
+- Find every caller of parse_config.
+
+## Details
+
+Map a local repository and find symbol definitions and references with file and line evidence. The client profile defaults to read-only access.
 It requires an explicit workspace at launch and refuses other tools, path escapes,
 links, and tool-supplied permission grants. It does not read ambient grants.
 Concurrent filesystem mutation is outside this convenience boundary; it is not

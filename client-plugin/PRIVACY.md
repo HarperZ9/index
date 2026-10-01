@@ -10,3 +10,14 @@ The optional launch flag `--state-directory` grants reads and writes in one
 existing private state directory for cached maps and existing job
 receipts. Inspection can update recovery metadata; cancellation writes a request.
 Tool arguments and inherited environment variables cannot select that directory.
+
+## What it sends
+
+This profile opens no network connection and starts no process; the launcher denies
+both.
+
+## Retention and support
+
+Without a state directory Index keeps no data after a call returns. Files in a state
+directory stay until you delete them. Support and security reports:
+https://github.com/HarperZ9/index/issues

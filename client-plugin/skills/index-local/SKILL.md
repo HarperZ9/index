@@ -1,6 +1,6 @@
 ---
 name: index-local
-description: Map local repositories and inspect source symbols without inference.
+description: Map a local repository and find symbol definitions and references with file and line evidence.
 ---
 
 Use the index local tools only for files in the operator-selected workspace.
