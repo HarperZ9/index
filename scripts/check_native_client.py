@@ -2,12 +2,14 @@
 import hashlib
 import json
 import os
-from pathlib import Path
 import tempfile
+from pathlib import Path
+
 from native_windows_process import run_process
+
 SPEC = json.loads(Path(__file__).with_name("client-package.json").read_text())
 
-EXPECTED_TOOLS = set(["index.map","index.select","index.symbol-graph","index.symbol-definition","index.symbol-references","index.symbol-implementations"])
+EXPECTED_TOOLS = {"index.map","index.select","index.symbol-graph","index.symbol-definition","index.symbol-references","index.symbol-implementations"}
 
 def strict_json(text):
     def unique(pairs):
@@ -27,7 +29,7 @@ def payload_of(result):
         raise ValueError("invalid native content shape")
     value = strict_json(content[0]["text"])
     if not isinstance(value, dict):
-        raise ValueError("native tool payload must be an object")
+        raise TypeError("native tool payload must be an object")
     return value
 
 def check(executable, version):
@@ -86,10 +88,30 @@ def check(executable, version):
         code, out, err = run_process(executable,[],env,home,"",timeout=15)
         if code != 2 or out or "--workspace" not in err:
             raise ValueError("missing workspace did not fail closed")
+        state = home / "owned-state"
+        state.mkdir()
+        requests = [call(7, "index.map", {"root": "."}),
+                    call(8, "index.router.job.start", {"root": "."}),
+                    call(9, "index.map", {"root": ".", "state_directory": str(home)})]
+        wire = "".join(json.dumps(row)+"\n" for row in requests)
+        code, out, err = run_process(executable, ["--workspace", str(workspace),
+            "--state-directory", str(state)], env, home, wire, timeout=45)
+        rows = [strict_json(line) for line in out.splitlines()]
+        if code or err or [r.get("id") for r in rows] != [7, 8, 9]:
+            raise ValueError("owned state protocol failed")
+        if rows[0]["result"].get("isError") is not False or payload_of(rows[0]["result"]).get("repo_count") != 0:
+            raise ValueError("owned state map failed")
+        if not list((state / "cache").glob("*.json")):
+            raise ValueError("owned cache was not written")
+        if any(r["result"].get("isError") is not True for r in rows[1:]):
+            raise ValueError("state authority was widened")
+        if [payload_of(r["result"]).get("code") for r in rows[1:]] != ["TOOL_NOT_GRANTED", "ARGUMENTS_DENIED"]:
+            raise ValueError("state refusals were internal errors")
     if hashlib.sha256(executable.read_bytes()).hexdigest() != before:
         raise ValueError("executable changed during verification")
     return {"status":"PASS","version":version,"executable_sha256":before,
             "tools":sorted(tools),"checks":["safe local workflow","outside path refused",
-            "unknown permission refused","ungranted tool refused","launch root required"],
+            "unknown permission refused","ungranted tool refused","launch root required",
+            "explicit owned cache written", "state grant does not grant processes"],
             "does_not_prove":["installed client compatibility","global egress isolation",
                               "full product workflow","semantic truth"]}

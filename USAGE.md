@@ -924,7 +924,16 @@ The tools are `index_graph`, `index_focus` (a repo's neighborhood plus the prese
 
 ## Local client package candidate
 
-The optional client bundle adds a bounded read-only MCP profile with an explicit
+Add `--state-directory ABSOLUTE_DIRECTORY` to the launcher only when the client
+may write private map/cache/job state there. The directory must already exist.
+The MCPB exposes the same option as **Optional private state directory**;
+its empty default grants no writes.
+With this grant, `index.map` accepts `no_cache: true`. Existing
+jobs under `DIRECTORY/jobs` support status, result and cooperative cancellation;
+their request roots must remain in the selected workspace. Start and resume of
+worker processes remain unavailable on this profile.
+
+The optional client bundle adds a bounded MCP profile that defaults to read-only access with an explicit
 workspace selected at launch. See [client package setup](client-plugin/README.md).
 Windows x64 MCPB and ZIP bundles include their runtime; source plugins require
 Python 3.11+. The full CLI/MCP retains advanced operations. This profile alone

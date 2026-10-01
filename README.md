@@ -241,7 +241,10 @@ The long form of this belief: [The Unbundling](https://github.com/HarperZ9/flywh
 
 ## Local client package candidate
 
-The optional client bundle adds a bounded read-only MCP profile with an explicit
+Persistence is opt-in through `--state-directory`: cached maps and
+existing owned job inspection/cancellation retain process and network denial.
+
+The optional client bundle adds a bounded MCP profile that defaults to read-only access with an explicit
 workspace selected at launch. See [client package setup](client-plugin/README.md).
 Windows x64 MCPB and ZIP bundles include their runtime; source plugins require
 Python 3.11+. The full CLI/MCP retains advanced operations. This profile alone

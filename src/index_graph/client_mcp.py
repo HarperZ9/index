@@ -57,7 +57,7 @@ def confined(root: Path, value: object, *, tree=False) -> Path:
     return path
 
 
-def handle(req, root):
+def handle(req, root, state=None):
     if not isinstance(req, dict):
         return {"jsonrpc": "2.0", "id": None, "error": {"code": -32600, "message": "invalid request"}}
     if "id" not in req:
@@ -71,13 +71,13 @@ def handle(req, root):
     elif method == "ping":
         response["result"] = {}
     elif method == "tools/list":
-        response["result"] = {"tools": definitions()}
+        response["result"] = {"tools": definitions(state)}
     elif method == "tools/call":
         try:
             params = req.get("params") or {}
             args = params.get("arguments") or {}
             name = params.get("name")
-            definition = next((d for d in definitions() if d["name"] == name), None)
+            definition = next((d for d in definitions(state) if d["name"] == name), None)
             if definition is None:
                 raise ClientRefusal("tool requires the separately configured full MCP surface", "TOOL_NOT_GRANTED")
             if not isinstance(args, dict) or set(args) - set(definition["inputSchema"]["properties"]):
@@ -85,7 +85,7 @@ def handle(req, root):
             missing = set(definition["inputSchema"].get("required", [])) - set(args)
             if missing:
                 raise ClientRefusal("missing required arguments", "ARGUMENTS_DENIED")
-            data = invoke(name, dict(args), root)
+            data = invoke(name, dict(args), root, state)
             response["result"] = {"content": [{"type": "text", "text": data}], "isError": False}
         except Exception as exc:  # noqa: BLE001 - MCP returns typed engine errors.
             response["result"] = {"content": [{"type": "text", "text": json.dumps(
@@ -109,18 +109,25 @@ def install_process_boundary():
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--workspace", required=True, help="explicit local directory this client may read")
+    parser.add_argument("--state-directory", help="existing private directory for cache and owned jobs")
     args = parser.parse_args(argv)
     root_arg = Path(args.workspace).absolute()
     root = confined(root_arg, str(root_arg))
     if not root.is_dir():
         parser.error("workspace must be a directory")
+    state = None
+    if args.state_directory:
+        from .client_state import validate_state
+        if not Path(args.state_directory).is_absolute():
+            parser.error("state directory must be an absolute path or empty")
+        state = validate_state(Path(args.state_directory).absolute())
     install_process_boundary()
     # The local profile does not read permission grants from the environment.
     for line in sys.stdin:
         if len(line) > MAX_FILE:
             return 2
         try:
-            response = handle(json.loads(line), root)
+            response = handle(json.loads(line), root, state)
         except json.JSONDecodeError:
             response = {"jsonrpc": "2.0", "id": None,
                         "error": {"code": -32700, "message": "parse error"}}
@@ -129,7 +136,7 @@ def main(argv=None):
             sys.stdout.flush()
     return 0
 
-def definitions():
+def definitions(state=None):
     from index_graph.mcp import _tool_defs
     result = [d for d in _tool_defs() if d["name"] in {
         "index.map", "index.select", "index.symbol-graph",
@@ -137,10 +144,20 @@ def definitions():
     for tool in result:
         if tool["name"] == "index.map":
             tool["inputSchema"] = {"type": "object", "properties": {"root": {"type": "string"}}, "required": ["root"]}
+            if state is not None:
+                tool["inputSchema"]["properties"]["no_cache"] = {"type": "boolean"}
+    if state is not None:
+        from .router_job_surface import tool_definitions
+        result += [d for d in tool_definitions() if d["name"].rsplit(".", 1)[-1] in {"status", "result", "cancel"}]
     return result
 
 
-def invoke(name, args, root):
+def invoke(name, args, root, state=None):
+    if state is not None:
+        from .client_state import invoke_state, validate_state
+        validate_state(state)
+        if name.startswith("index.router.job."):
+            return invoke_state(name, args, root, state)
     path = confined(root, args["root"], tree=True)
     if not path.is_dir():
         raise ClientRefusal("root must be a directory")
@@ -150,6 +167,8 @@ def invoke(name, args, root):
         from index_graph.config import default_config
         from index_graph.scan import build_map
         # No workspace-provided configuration, resume state or persistent caches.
+        if state is not None:
+            return invoke_state(name, args, root, state)
         return json.dumps(build_map(path, default_config(), __version__).to_json())
     from index_graph.mcp import call_tool
     return call_tool(name, args)
