@@ -1,7 +1,7 @@
 {
   "pkg": "index_graph",
   "version": "2.15.0",
-  "desc": "Map local repositories and inspect source symbols without inference.",
+  "desc": "Map a local repository and find symbol definitions and references with file and line evidence.",
   "tool": "index.select",
   "args": {
     "root": ".",

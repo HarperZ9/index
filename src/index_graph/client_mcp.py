@@ -146,9 +146,15 @@ def definitions(state=None):
             tool["inputSchema"] = {"type": "object", "properties": {"root": {"type": "string"}}, "required": ["root"]}
             if state is not None:
                 tool["inputSchema"]["properties"]["no_cache"] = {"type": "boolean"}
+            else:
+                # Without a state directory this profile's map takes no resume_state
+                # and writes nothing.
+                tool["annotations"] = {**tool["annotations"], "readOnlyHint": True}
     if state is not None:
+        from .mcp import annotate
         from .router_job_surface import tool_definitions
-        result += [d for d in tool_definitions() if d["name"].rsplit(".", 1)[-1] in {"status", "result", "cancel"}]
+        result += [annotate(d) for d in tool_definitions()
+                   if d["name"].rsplit(".", 1)[-1] in {"status", "result", "cancel"}]
     return result
 
 

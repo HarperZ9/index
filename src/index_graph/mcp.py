@@ -215,7 +215,53 @@ def _workspace_schema(extra: dict | None = None, required: list | None = None) -
     return _root_schema(props, required=required)
 
 
+def _hints(title: str, *, read_only: bool = True, idempotent: bool = True) -> dict:
+    return {"title": title, "readOnlyHint": read_only, "destructiveHint": False,
+            "idempotentHint": idempotent, "openWorldHint": False}
+
+
+# MCP tool annotations. A hint describes the tool to the client and grants
+# nothing. index.map writes only when given resume_state; router jobs keep
+# private state files.
+TOOL_ANNOTATIONS = {
+    "index.map": _hints("Map a repository", read_only=False),
+    "index.context": _hints("Repository dependency context"),
+    "index.context.envelope": _hints("Budgeted context envelope"),
+    "index.select": _hints("Select paths with receipts"),
+    "index.invalidate": _hints("Name what changes invalidate"),
+    "index.wiki": _hints("Build or verify a repository wiki"),
+    "index.symbol-graph": _hints("Symbol call graph"),
+    "index.symbol-definition": _hints("Go to a symbol definition"),
+    "index.symbol-references": _hints("Find symbol references"),
+    "index.symbol-implementations": _hints("Find symbol implementations"),
+    "index.status": _hints("Index status"),
+    "index.doctor": _hints("Index readiness check"),
+    "index_graph": _hints("Workspace dependency graph"),
+    "index_focus": _hints("Repository neighborhood"),
+    "index_verify": _hints("Check a structural claim"),
+    "index_router": _hints("Build a workspace map"),
+    "index.route": _hints("Context envelope for named paths"),
+    "index_internals": _hints("Module dependency graph"),
+    "index.router.job.start": _hints("Start a workspace map job", read_only=False,
+                                     idempotent=False),
+    "index.router.job.status": _hints("Workspace map job status"),
+    "index.router.job.result": _hints("Workspace map job result"),
+    "index.router.job.cancel": _hints("Cancel a workspace map job", read_only=False),
+    "index.router.job.resume": _hints("Resume a workspace map job", read_only=False,
+                                      idempotent=False),
+}
+
+
+def annotate(tool: dict) -> dict:
+    notes = dict(TOOL_ANNOTATIONS[tool["name"]])
+    return {**tool, "title": notes["title"], "annotations": notes}
+
+
 def _tool_defs() -> list[dict]:
+    return [annotate(tool) for tool in _raw_tool_defs()]
+
+
+def _raw_tool_defs() -> list[dict]:
     from .route import tool_definition as route_tool_definition
     from .router_job_surface import tool_definitions
     return [
