@@ -2,10 +2,16 @@ name: Release Artifacts
 
 # Keep this file name: a PyPI trusted publisher for index-graph, once configured, names it.
 # A v* tag push tests, builds, publishes to PyPI and then creates the GitHub
-# Release. A manual run on a branch stops after the build: it tests, builds and
-# checks the package without publishing anything.
+# Release. A manual run without a release tag only builds; an explicit existing
+# tag recovers publication from that immutable product source.
 on:
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Existing immutable version tag to publish; empty runs a branch build only
+        required: false
+        type: string
+        default: ''
   push:
     tags:
       - 'v*'
@@ -13,8 +19,48 @@ on:
 # Nothing by default; each job names the one permission it needs.
 permissions: {}
 
+env:
+  RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
+
 jobs:
+  release-source:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      commit: ${{ steps.source.outputs.commit }}
+      tag: ${{ steps.source.outputs.tag }}
+      publish: ${{ steps.source.outputs.publish }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - id: source
+        name: Resolve and validate immutable release source
+        env:
+          INPUT_RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          tag="$INPUT_RELEASE_TAG"
+          if [[ "$GITHUB_EVENT_NAME" == push && "$GITHUB_REF" == refs/tags/v* ]]; then tag="$GITHUB_REF_NAME"; fi
+          if [ -z "$tag" ]; then
+            echo "commit=$GITHUB_SHA" >> "$GITHUB_OUTPUT"
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          [[ "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo 'Invalid release tag'; exit 1; }
+          if [ "$GITHUB_EVENT_NAME" = workflow_dispatch ]; then
+            [[ "$tag" =~ ^v[0-9]+\.[0-9]+\.0$ ]] || { echo 'Manual releases must end in .0'; exit 1; }
+          fi
+          commit=$(git rev-parse --verify "refs/tags/$tag^{commit}")
+          version=$(git show "$commit:src/index_graph/__init__.py" | python -c 'import re, sys; print(re.search(r"^__version__ = \"([^\"]+)\"$", sys.stdin.read(), re.M).group(1))')
+          test "$tag" = "v$version"
+          echo "commit=$commit" >> "$GITHUB_OUTPUT"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "publish=true" >> "$GITHUB_OUTPUT"
+          echo "Workflow $GITHUB_SHA builds product $commit from $tag" >> "$GITHUB_STEP_SUMMARY"
   build:
+    needs: [release-source]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -24,6 +70,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+          ref: ${{ needs.release-source.outputs.commit }}
       - uses: actions/setup-python@v6
         with:
           python-version: '3.11'
@@ -38,9 +85,9 @@ jobs:
           print(f"PACKAGE_VERSION={match.group(1)}")
           PY
       - name: Check the tag matches the package version
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: needs.release-source.outputs.publish == 'true'
         run: |
-          test "${GITHUB_REF_NAME}" = "v${PACKAGE_VERSION}" || { echo "tag ${GITHUB_REF_NAME} does not match version ${PACKAGE_VERSION}"; exit 1; }
+          test "${RELEASE_TAG}" = "v${PACKAGE_VERSION}" || { echo "tag ${RELEASE_TAG} does not match version ${PACKAGE_VERSION}"; exit 1; }
       - name: Run the test suite before building
         env:
           PYTHONDONTWRITEBYTECODE: "1"
@@ -87,8 +134,8 @@ jobs:
 
   pypi-publish:
     name: Publish to PyPI
-    needs: [build, native-client]
-    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [release-source, build, native-client]
+    if: needs.release-source.outputs.publish == 'true'
     runs-on: ubuntu-latest
     environment: pypi
     permissions:
@@ -110,8 +157,8 @@ jobs:
 
   github-release:
     name: Create the GitHub Release
-    needs: [build, pypi-publish]
-    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [release-source, build, pypi-publish]
+    if: needs.release-source.outputs.publish == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write   # create the release and attach its files
@@ -135,7 +182,7 @@ jobs:
           python3 - <<'PY'
           import json, os, sys, time, urllib.request
 
-          version = os.environ["GITHUB_REF_NAME"].removeprefix("v")
+          version = os.environ["RELEASE_TAG"].removeprefix("v")
           want = {}
           for line in open("release/SHA256SUMS.txt", encoding="utf-8"):
               if line.strip():
@@ -167,13 +214,14 @@ jobs:
           GH_REPO: ${{ github.repository }}
         run: |
           cp release/SHA256SUMS.txt SHA256SUMS.txt
-          if gh release view "${GITHUB_REF_NAME}" > /dev/null 2>&1; then
-            gh release upload "${GITHUB_REF_NAME}" dist/*.whl dist/*.tar.gz SHA256SUMS.txt --clobber
+          if gh release view "${RELEASE_TAG}" > /dev/null 2>&1; then
+            gh release upload "${RELEASE_TAG}" dist/*.whl dist/*.tar.gz SHA256SUMS.txt --clobber
           else
-            gh release create "${GITHUB_REF_NAME}" dist/*.whl dist/*.tar.gz SHA256SUMS.txt \
-              --verify-tag --title "index-graph ${GITHUB_REF_NAME#v}" --notes-file release/notes.md
+            gh release create "${RELEASE_TAG}" dist/*.whl dist/*.tar.gz SHA256SUMS.txt \
+              --verify-tag --title "index-graph ${RELEASE_TAG#v}" --notes-file release/notes.md
           fi
   native-client:
+    needs: [release-source]
     name: Qualify and bundle local Windows client tools
     runs-on: windows-latest
     permissions:
@@ -182,10 +230,18 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
+          ref: ${{ needs.release-source.outputs.commit }}
           fetch-depth: 0
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
           python-version: '3.12'
+      - name: Use a canonical native temporary directory
+        shell: pwsh
+        run: |
+          $nativeTemp = python -c "import os; from pathlib import Path; p=Path(os.environ['RUNNER_TEMP'])/'native-client-temp'; p.mkdir(exist_ok=True); print(p.resolve())"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          "TEMP=$nativeTemp" >> $env:GITHUB_ENV
+          "TMP=$nativeTemp" >> $env:GITHUB_ENV
       - name: Install native build and test tools
         run: python -m pip install pyinstaller==6.21.0 pytest==8.4.2
       - name: Exercise local client boundaries
@@ -193,7 +249,8 @@ jobs:
       - name: Build native client and verify actual stdio
         shell: pwsh
         run: |
-          $mode = if ($env:GITHUB_REF.StartsWith('refs/tags/v')) { 'release' } else { 'dev' }
+          $mode = if ('${{ needs.release-source.outputs.publish }}' -eq 'true') { 'release' } else { 'dev' }
+          if ($mode -eq 'release') { $env:GITHUB_REF = "refs/tags/$env:RELEASE_TAG" }
           python scripts/build_client_package.py "$env:RUNNER_TEMP/client-package" --mode $mode --native
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
@@ -204,8 +261,8 @@ jobs:
 
   attach-client:
     name: Attach checked client packages to the same product release
-    needs: [github-release, native-client]
-    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [release-source, github-release, native-client]
+    if: needs.release-source.outputs.publish == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -220,4 +277,4 @@ jobs:
           GH_REPO: ${{ github.repository }}
         run: |
           (cd client-assets && sha256sum -c CLIENT-SHA256SUMS.txt)
-          gh release upload "$GITHUB_REF_NAME" client-assets/*
+          gh release upload "$RELEASE_TAG" client-assets/*
