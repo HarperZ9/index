@@ -1,0 +1,10 @@
+{
+  "name": "index-local",
+  "version": "2.15.0",
+  "description": "Map local repositories and inspect source symbols without inference.",
+  "author": {
+    "name": "Zain Dana Harper"
+  },
+  "license": "FSL-1.1-MIT",
+  "repository": "https://github.com/HarperZ9/index"
+}

@@ -92,12 +92,13 @@ def cached_text(
     build: Callable[[], str],
     *,
     enabled: bool = True,
+    cache_root: Path | None = None,
 ) -> str:
     ttl = _ttl_seconds()
     if not enabled or ttl <= 0:
         return build()
     key = _key(tool, root, args)
-    path = _path(key)
+    path = _path(key) if cache_root is None else cache_root / f"{key}.json"
     now = time()
     try:
         data = json.loads(path.read_text(encoding="utf-8"))

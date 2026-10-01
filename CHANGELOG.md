@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+## 2.15.0 (2026-10-01)
+
+Adds local client packages with explicit launch permissions. Client-specific installation
+and marketplace acceptance remain separate qualification steps.
+
+- Add a local MCP profile with an explicit readable workspace, typed permission refusals, and process/network denial at launch. The full CLI/MCP remains available separately.
+- Add portable source plugins for Claude/Codex-compatible clients and Windows x64 ZIP/MCPB packages containing the runtime, licenses, source hashes and checksums.
+- Check actual stdio behavior before packaging, reject untracked or credential-like release payloads, and attach checked client assets to the same product release.
+- Add an explicit launch-time state directory for bounded map caching and existing job status, result and cooperative cancellation. Tool arguments cannot grant writes. Job start/resume and Git remain unavailable because processes are denied.
+
 ## 2.14.1 (2026-09-29)
 
 - Router inventory preserves workspace-relative repository and document names

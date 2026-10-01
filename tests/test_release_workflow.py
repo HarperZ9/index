@@ -80,7 +80,11 @@ def test_the_workflow_grants_nothing_by_default():
 
 def test_each_job_holds_only_the_permission_it_needs():
     jobs = _jobs(_text())
-    assert set(jobs) == {"build", "pypi-publish", "github-release"}
+    assert set(jobs) == {"build", "pypi-publish", "github-release", "native-client", "attach-client"}
+    assert _permissions(jobs["native-client"]) == {"contents": "read"}
+    assert _permissions(jobs["attach-client"]) == {"contents": "write"}
+    assert "needs: [github-release, native-client]" in jobs["attach-client"]
+    assert "--clobber" not in jobs["attach-client"]
     assert _permissions(jobs["build"]) == {"contents": "read"}
     assert _permissions(jobs["pypi-publish"]) == {"id-token": "write"}
     assert _permissions(jobs["github-release"]) == {"contents": "write"}
@@ -192,6 +196,6 @@ def test_the_suite_step_runs_unconditionally():
     assert _step_if(suite) is None, "the test suite step can be skipped"
 
 
-def test_publish_needs_exactly_the_build():
+def test_publish_requires_distribution_and_native_client_checks():
     publish = _jobs(_text())["pypi-publish"]
-    assert re.search(r"^    needs: (.+)$", publish, re.M).group(1).strip() == "build"
+    assert re.search(r"^    needs: (.+)$", publish, re.M).group(1).strip() == "[build, native-client]"

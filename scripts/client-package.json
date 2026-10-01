@@ -1,0 +1,14 @@
+{
+  "pkg": "index_graph",
+  "version": "2.15.0",
+  "desc": "Map local repositories and inspect source symbols without inference.",
+  "tool": "index.select",
+  "args": {
+    "root": ".",
+    "suffixes": [
+      ".md"
+    ]
+  },
+  "danger": "index.router.job.start",
+  "name": "index"
+}
