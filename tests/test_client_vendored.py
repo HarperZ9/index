@@ -36,7 +36,10 @@ def test_builder_inputs_do_not_count_the_vendored_copy_twice():
 def test_plugin_folder_fits_directory_limits():
     files = [p for p in PLUGIN.rglob("*") if p.is_file() and "__pycache__" not in p.parts]
     assert len(files) <= 512, len(files)
-    large = [(p.relative_to(PLUGIN).as_posix(), p.stat().st_size) for p in files if p.stat().st_size >= 256 * 1024]
+    # The directory's 256 KiB rule covers every file that is not an image or font.
+    exempt = {".png", ".jpg", ".jpeg", ".gif", ".webp"}
+    large = [(p.relative_to(PLUGIN).as_posix(), p.stat().st_size) for p in files
+             if p.suffix.lower() not in exempt and p.stat().st_size >= 256 * 1024]
     assert not large, large
     assert not list(PLUGIN.rglob(".gitattributes"))
 
