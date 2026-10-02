@@ -9,6 +9,10 @@
   launch arguments with the same settings and defaults as the MCPB. Portable and Codex
   manifests are unchanged.
 - The client README gains a data and network table derived from the launcher code.
+- The client README and PRIVACY.md gain a "What this plugin runs and handles" section:
+  hooks (none), the exact launch command, network (none), files written in the state
+  directory, and every environment variable the client code reads, including the
+  environment copy prepared for a Git call that the audit hook refuses.
 
 ## 2.15.0 (2026-10-01)
 

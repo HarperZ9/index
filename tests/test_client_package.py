@@ -159,3 +159,18 @@ def test_committed_icon_is_a_square_png_the_directory_accepts():
 
 def test_client_plugin_has_no_root_instruction_file():
     assert not (ROOT / "client-plugin/CLAUDE.md").exists()
+
+
+def test_readme_and_privacy_disclose_the_exact_launch_command():
+    heading = "## What this plugin runs and handles"
+    server = json.loads((ROOT / "client-plugin/.mcp.json").read_text(encoding="utf-8"))["mcpServers"]["index"]
+    launch = " ".join([server["command"], *server["args"]])
+    sections = []
+    for name in ("README.md", "PRIVACY.md"):
+        text = (ROOT / "client-plugin" / name).read_text(encoding="utf-8")
+        assert text.count(heading) == 1
+        section = text.split(heading, 1)[1].split("\n## ", 1)[0]
+        assert launch in section and "This plugin has no hooks." in section
+        sections.append(section)
+    assert sections[0] == sections[1]
+    assert not (ROOT / "client-plugin/hooks").exists()
