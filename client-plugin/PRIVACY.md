@@ -61,8 +61,9 @@ The plugin asks for no credentials and has no sensitive settings. It reads these
 
 - `INDEX_CACHE_TTL_SECONDS` sets how many seconds a saved map stays in use. Default 900. Read only with a state directory.
 - `INDEX_ROUTER_JOB_HEARTBEAT_STALE_SECONDS` sets how many seconds after a job's worker started the server still treats the job as starting rather than interrupted. Default 60. Read only with a state directory.
-- `INDEX_GIT_TIMEOUT_SECONDS` sets the time limit for a Git call. When the workspace holds a Git repository, `index.map` prepares a Git call. It reads this value and copies every environment variable, adding `GIT_CEILING_DIRECTORIES`, to pass to Git. The audit hook then refuses to start Git, so the copy is dropped. It never leaves the server and is not written to disk. The copy can include tokens you keep in environment variables.
 - `COLUMNS` and `LINES` are read by Python's argument parser to wrap startup messages.
 - `LANG`, `LANGUAGE`, `LC_ALL` and `LC_MESSAGES` are read by Python's argument parser to pick the language of startup messages.
 
-The server code also contains these variables, but the plugin's tools never read them: `INDEX_CACHE_DIR`, `INDEX_GRAPH_REPO_CACHE_DIR`, `INDEX_MCP_CACHE_DIR`, `INDEX_MCP_CACHE_TTL_SECONDS`, `INDEX_MCP_DEBUG_ERRORS`, `INDEX_ROUTER_JOB_DIR`, `INDEX_INTERACTIVE_BUDGET_MS`, `INDEX_INTERACTIVE_REPO_LIMIT` and `LOCALAPPDATA`. They belong to the full Index command line and MCP server. The plugin passes the state directory to the cache and job code directly, so their default folders are never used.
+When the workspace holds a Git repository, `index.map` marks its Git details as unavailable without building a Git command. The server reads no Git setting and copies no environment variables.
+
+The server code also contains these variables, but the plugin's tools never read them: `INDEX_GIT_TIMEOUT_SECONDS`, `GIT_CEILING_DIRECTORIES`, `INDEX_CACHE_DIR`, `INDEX_GRAPH_REPO_CACHE_DIR`, `INDEX_MCP_CACHE_DIR`, `INDEX_MCP_CACHE_TTL_SECONDS`, `INDEX_MCP_DEBUG_ERRORS`, `INDEX_ROUTER_JOB_DIR`, `INDEX_INTERACTIVE_BUDGET_MS`, `INDEX_INTERACTIVE_REPO_LIMIT` and `LOCALAPPDATA`. They belong to the full Index command line and MCP server. The plugin passes the state directory to the cache and job code directly, so their default folders are never used.

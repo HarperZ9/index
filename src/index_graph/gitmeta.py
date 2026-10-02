@@ -81,12 +81,28 @@ def sanitize_credentials(origin: str) -> str:
     return _SECRET_QUERY.sub(r"\1=<redacted>", clean)
 
 
+_GIT_UNAVAILABLE: str | None = None
+
+
+def disable_git(reason: str) -> None:
+    """Mark Git unavailable for this process.
+
+    Later calls return a failed result before building a command, a timeout or
+    an environment for Git. The local client profile uses this because its
+    audit hook refuses every process start.
+    """
+    global _GIT_UNAVAILABLE
+    _GIT_UNAVAILABLE = reason
+
+
 def run_git_checked(
     repo: Path,
     args: list[str],
     *,
     global_args: list[str] | None = None,
 ) -> GitCommandResult:
+    if _GIT_UNAVAILABLE is not None:
+        return GitCommandResult(False, "", _GIT_UNAVAILABLE)
     try:
         result = subprocess.run(
             ["git", *(global_args or []), "-C", str(repo), *args],

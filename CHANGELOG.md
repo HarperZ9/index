@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- The local client profile marks Git as unavailable before any Git code runs. In a
+  Git workspace, `index.map` no longer reads `INDEX_GIT_TIMEOUT_SECONDS` or copies the
+  environment for a Git call that the audit hook would refuse. A test with a planted
+  token checks that the client tools never read it. The full CLI and MCP server keep
+  their Git behavior.
 - The plugin folder now carries its own copy of the server code under
   `client-plugin/server/src`, so a directory install that receives only that folder
   starts. `python scripts/build_client_package.py --sync-vendored` rewrites it from
@@ -17,8 +22,7 @@
 - The client README gains a data and network table derived from the launcher code.
 - The client README and PRIVACY.md gain a "What this plugin runs and handles" section:
   hooks (none), the exact launch command, network (none), files written in the state
-  directory, and every environment variable the client code reads, including the
-  environment copy prepared for a Git call that the audit hook refuses.
+  directory, and every environment variable the client code reads.
 
 ## 2.15.0 (2026-10-01)
 
