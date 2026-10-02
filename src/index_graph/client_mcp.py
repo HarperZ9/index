@@ -121,6 +121,10 @@ def main(argv=None):
         if not Path(args.state_directory).is_absolute():
             parser.error("state directory must be an absolute path or empty")
         state = validate_state(Path(args.state_directory).absolute())
+    from .gitmeta import disable_git
+    # Git can never start here, so map reports Git metadata as unavailable
+    # without reading the environment to prepare a Git call.
+    disable_git("not-granted")
     install_process_boundary()
     # The local profile does not read permission grants from the environment.
     for line in sys.stdin:
