@@ -18,7 +18,8 @@ def test_source_bundle_is_deterministic_and_contains_runtime_source(tmp_path):
     with zipfile.ZipFile(first[0]) as archive:
         names = archive.namelist()
         assert "server/src/" + package.SPEC["pkg"] + "/client_mcp.py" in names
-        assert {"plugin.json", ".claude-plugin/plugin.json", ".codex-plugin/plugin.json"} <= set(names)
+        assert {"plugin.json", ".claude-plugin/plugin.json", ".codex-plugin/plugin.json",
+                ".claude-plugin/icon.png"} <= set(names)
         assert all(".." not in Path(name).parts and not Path(name).is_absolute() for name in names)
         assert json.loads(archive.read("plugin.json"))["version"] == package.version()
     with pytest.raises(ValueError, match="new directory"):
@@ -96,3 +97,65 @@ def test_extracted_source_plugin_runs_without_installed_project(tmp_path):
     row = json.loads(result.stdout)
     assert row["result"]["isError"] is False, row
     assert isinstance(row["result"]["content"][0]["text"], str)
+
+def test_claude_manifest_carries_directory_listing_and_prompts_for_bindings():
+    from client_manifest import claude_mcp, claude_plugin, manifest
+    plugin_dir = ROOT / "client-plugin"
+    claude = json.loads((plugin_dir / ".claude-plugin/plugin.json").read_text(encoding="utf-8"))
+    assert claude == claude_plugin(package.SPEC, package.version())
+    portable = json.loads((plugin_dir / "plugin.json").read_text(encoding="utf-8"))
+    codex = json.loads((plugin_dir / ".codex-plugin/plugin.json").read_text(encoding="utf-8"))
+    for key in ("homepage", "documentationUrl", "supportUrl", "privacyPolicyUrl", "termsOfServiceUrl"):
+        assert claude[key].startswith("https://")
+    assert claude["repository"] == "https://github.com/HarperZ9/index"
+    assert claude["displayName"] == "Index" and 5 <= len(claude["keywords"]) <= 8
+    assert all(k == k.lower() for k in claude["keywords"])
+    for key in ("name", "version", "license", "author", "description"):
+        assert claude[key] == portable[key] == codex[key]
+    for other in (portable, codex):
+        assert "userConfig" not in other and "icon" not in other and "displayName" not in other
+    # The Claude plugin offers the same settings and defaults as the native MCPB.
+    native = manifest(package.SPEC, package.version(), "index-local.exe")["user_config"]
+    assert claude["userConfig"] == native
+    assert claude["userConfig"]["workspace"] == {**native["workspace"], "type": "directory", "required": True}
+    assert claude["userConfig"]["state_directory"]["default"] == ""
+    mcp = json.loads((plugin_dir / ".mcp.json").read_text(encoding="utf-8"))
+    assert mcp == claude_mcp()
+    args = mcp["mcpServers"]["index"]["args"]
+    assert [a for a in args if "${" in a] == ["${CLAUDE_PLUGIN_ROOT}/server/serve.py",
+        "${user_config.workspace}", "--state-directory=${user_config.state_directory}"]
+    assert "REPLACE_WITH" not in (plugin_dir / ".mcp.json").read_text(encoding="utf-8")
+    assert "REPLACE_WITH_ABSOLUTE_WORKSPACE" in json.loads((plugin_dir / "mcp.json").read_text())["mcpServers"]["index"]["args"]
+
+
+def test_claude_launch_arguments_parse_after_substitution(tmp_path):
+    """Substituted userConfig values, including an empty state directory, start the server."""
+    import subprocess
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    state = tmp_path / "state"
+    state.mkdir()
+    wire = json.dumps({"jsonrpc": "2.0", "id": 1, "method": "tools/list"}) + "\n"
+    names = []
+    for value in ("", str(state)):
+        args = [a.replace("${CLAUDE_PLUGIN_ROOT}", str(ROOT / "client-plugin"))
+                 .replace("${user_config.workspace}", str(workspace))
+                 .replace("${user_config.state_directory}", value)
+                for a in json.loads((ROOT / "client-plugin/.mcp.json").read_text())["mcpServers"]["index"]["args"]]
+        result = subprocess.run([sys.executable, *args], input=wire, capture_output=True, text=True,
+                                timeout=20, check=False)
+        assert result.returncode == 0, result.stderr
+        names.append({t["name"] for t in json.loads(result.stdout)["result"]["tools"]})
+    assert "index.symbol-definition" in names[0] and "index.router.job.status" not in names[0]
+    assert "index.router.job.status" in names[1]
+
+
+def test_committed_icon_is_a_square_png_the_directory_accepts():
+    data = (ROOT / "client-plugin/.claude-plugin/icon.png").read_bytes()
+    assert data[:8] == bytes([137, 80, 78, 71, 13, 10, 26, 10]) and data[12:16] == b"IHDR"
+    width, height = int.from_bytes(data[16:20], "big"), int.from_bytes(data[20:24], "big")
+    assert width == height and 512 <= width <= 2048 and len(data) < 2 * 1024 * 1024
+
+
+def test_client_plugin_has_no_root_instruction_file():
+    assert not (ROOT / "client-plugin/CLAUDE.md").exists()

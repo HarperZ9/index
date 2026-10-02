@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- The Claude plugin manifest carries directory listing fields: display name, keywords,
+  homepage, documentation, support, privacy and terms links, and a 1024 px icon.
+- Claude Code now asks for the readable workspace and the optional state directory
+  when the plugin is enabled. The Claude `.mcp.json` passes them as `${user_config.*}`
+  launch arguments with the same settings and defaults as the MCPB. Portable and Codex
+  manifests are unchanged.
+- The client README gains a data and network table derived from the launcher code.
+
 ## 2.15.0 (2026-10-01)
 
 Adds local client packages with explicit launch permissions. Client-specific installation

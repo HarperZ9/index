@@ -6,5 +6,36 @@
     "name": "Zain Dana Harper"
   },
   "license": "FSL-1.1-MIT",
-  "repository": "https://github.com/HarperZ9/index"
+  "repository": "https://github.com/HarperZ9/index",
+  "displayName": "Index",
+  "keywords": [
+    "code-navigation",
+    "symbols",
+    "references",
+    "repository-map",
+    "local-first",
+    "read-only",
+    "static-analysis"
+  ],
+  "homepage": "https://harperz9.github.io/index-graph.html",
+  "documentationUrl": "https://github.com/HarperZ9/index/blob/main/client-plugin/README.md",
+  "supportUrl": "https://harperz9.github.io/plugins/index/support.html",
+  "privacyPolicyUrl": "https://harperz9.github.io/plugins/index/privacy.html",
+  "termsOfServiceUrl": "https://harperz9.github.io/plugins/index/terms.html",
+  "icon": "./.claude-plugin/icon.png",
+  "userConfig": {
+    "workspace": {
+      "type": "directory",
+      "title": "Readable workspace",
+      "description": "Local directory this profile may read. Choose only approved files.",
+      "required": true
+    },
+    "state_directory": {
+      "type": "directory",
+      "title": "Optional private state directory",
+      "description": "Leave empty for read-only access. Existing directory for cached maps and existing job receipts/cancellation; no process workers or Git checkpoints.",
+      "required": false,
+      "default": ""
+    }
+  }
 }
