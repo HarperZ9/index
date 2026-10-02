@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- The plugin folder now carries its own copy of the server code under
+  `client-plugin/server/src`, so a directory install that receives only that folder
+  starts. `python scripts/build_client_package.py --sync-vendored` rewrites it from
+  `src/`, and a test fails when the copy drifts. The launcher no longer falls back to
+  the repository's `src` and reports a missing copy in one line.
+- The Claude plugin icon is the 512 px PNG, which keeps every plugin file under 256 KiB.
 - The Claude plugin manifest carries directory listing fields: display name, keywords,
   homepage, documentation, support, privacy and terms links, and a 1024 px icon.
 - Claude Code now asks for the readable workspace and the optional state directory

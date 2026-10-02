@@ -22,7 +22,9 @@ private state directory** that you can leave empty for read-only access. The
 Claude manifest passes these values as `${user_config.*}` launch arguments.
 Portable and Codex manifests keep the REPLACE_WITH_ABSOLUTE_WORKSPACE
 placeholder; replace it with the directory you want the client to read, and
-select your installed Python executable. Keep the complete extracted bundle. The Windows x64 binary MCPB and ZIP include Python;
+select your installed Python executable. The plugin folder carries its own copy
+of the server code under `server/src`, so keep the complete folder or extracted
+bundle together. The Windows x64 binary MCPB and ZIP include Python;
 open the MCPB in a compatible desktop client and choose a workspace directory,
 or configure the ZIP's server executable with --workspace ABSOLUTE_DIRECTORY.
 No model, API key, hosting account, automatic client configuration, or publisher
