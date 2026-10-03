@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 2.16.0 (2026-10-03)
+
+Adds `index navigate` and `index outline-map`: code for a plain-language question, found one
+typed question per level, with a frozen benchmark beside it.
+
 - `index navigate ROOT "question"` finds the code for a plain-language question. It walks
   directory, file and symbol with one typed question per level, follows every child at
   least half as likely as the top child (up to four), keeps the rest in a backlog for

@@ -1,6 +1,6 @@
 {
   "name": "index-local",
-  "version": "2.15.0",
+  "version": "2.16.0",
   "description": "Map a local repository and find symbol definitions and references with file and line evidence.",
   "author": {
     "name": "Zain Dana Harper"

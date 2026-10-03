@@ -1,6 +1,6 @@
 {
   "pkg": "index_graph",
-  "version": "2.15.0",
+  "version": "2.16.0",
   "desc": "Map a local repository and find symbol definitions and references with file and line evidence.",
   "tool": "index.select",
   "args": {
