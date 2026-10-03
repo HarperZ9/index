@@ -1,0 +1,695 @@
+{
+ "rows": [
+  {
+   "answer": [
+    "client-plugin/server/src/index_graph/client_mcp.py",
+    "client-plugin/server/src/index_graph/gitmeta.py",
+    "src/index_graph/client_mcp.py",
+    "src/index_graph/gitmeta.py"
+   ],
+   "base": "a3b905a243e4af23a231f258c1d13b6106c71443",
+   "merge": "276bad1689135f77d33d873f19f8312ec18cd611",
+   "pr": 56,
+   "query": "Keep the client profile from copying the environment for Git",
+   "repo": "index"
+  },
+  {
+   "answer": [
+    "client-plugin/server/serve.py",
+    "scripts/build_client_package.py"
+   ],
+   "base": "b41ff62cdd3bb5ae62a33992d323fb6159dc83dd",
+   "merge": "a0ad9d1d8f8681c164745b8ece36f7329658d15a",
+   "pr": 54,
+   "query": "Vendor the server code into the client plugin folder",
+   "repo": "index"
+  },
+  {
+   "answer": [
+    "scripts/client_manifest.py"
+   ],
+   "base": "bcdd604450f8b954dd9a76fa7db177f8005f9a24",
+   "merge": "4a4a35de29cfd324f7511e03cf7b03b0c40e5496",
+   "pr": 52,
+   "query": "Prepare the Claude plugin for the plugin directory",
+   "repo": "index"
+  },
+  {
+   "answer": [
+    "scripts/repo_art.py"
+   ],
+   "base": "006688fc1fc21614053fb1d98db3724b46fd9278",
+   "merge": "bcdd604450f8b954dd9a76fa7db177f8005f9a24",
+   "pr": 51,
+   "query": "Publish under the operating name Zain Dana Harper",
+   "repo": "index"
+  },
+  {
+   "answer": [
+    "src/index_graph/client_mcp.py",
+    "src/index_graph/mcp.py"
+   ],
+   "base": "eb0d55a0405b5cce65230825749643c94bd384bf",
+   "merge": "006688fc1fc21614053fb1d98db3724b46fd9278",
+   "pr": 50,
+   "query": "Marketplace readiness: tool annotations, privacy policy, listing copy",
+   "repo": "index"
+  },
+  {
+   "answer": [
+    "src/index_graph/__init__.py",
+    "src/index_graph/cache.py"
+   ],
+   "base": "61dae884dd1464085fca3fdfbc4e353ccbcbf96b",
+   "merge": "b2e4dcefff9d9d9a339e23d64c58bb4a5149ef92",
+   "pr": 48,
+   "query": "Index 2.15.0: native client packages and scoped permissions",
+   "repo": "index"
+  },
+  {
+   "answer": [
+    "src/index_graph/__init__.py",
+    "src/index_graph/graph/walk.py",
+    "src/index_graph/router_inventory.py"
+   ],
+   "base": "665ea7e24055266a9f3c26c5c84f0f3555b8234c",
+   "merge": "61dae884dd1464085fca3fdfbc4e353ccbcbf96b",
+   "pr": 47,
+   "query": "Fix router junction paths and prepare Index 2.14.1",
+   "repo": "index"
+  },
+  {
+   "answer": [
+    "src/index_graph/__init__.py",
+    "src/index_graph/cli.py",
+    "src/index_graph/cli_parser.py",
+    "src/index_graph/flagship.py",
+    "src/index_graph/mcp.py"
+   ],
+   "base": "71c26eabde266b394370392816aaa74e1a55d88b",
+   "merge": "a21ecacd51f116c2f2916237df77c0c4d13a3779",
+   "pr": 45,
+   "query": "Route explicit repository paths with portable evidence",
+   "repo": "index"
+  },
+  {
+   "answer": [
+    "src/index_graph/cli_handlers/context.py",
+    "src/index_graph/cli_parser.py",
+    "src/index_graph/context/envelope.py",
+    "src/index_graph/mcp.py"
+   ],
+   "base": "6383d43dab9fd7426d5d9dc7d8beffebfb9e6461",
+   "merge": "71c26eabde266b394370392816aaa74e1a55d88b",
+   "pr": 44,
+   "query": "Add bounded context-envelope output",
+   "repo": "index"
+  },
+  {
+   "answer": [
+    "src/index_graph/router_jobs.py"
+   ],
+   "base": "e91cbfa2110ff3dbc3240a903c76ee196fe1b16f",
+   "merge": "c3ff368067ee9766c990254dde73935a4f87a731",
+   "pr": 42,
+   "query": "Fix router job completion events and worker clock identity",
+   "repo": "index"
+  },
+  {
+   "answer": [
+    "scripts/repo_card.py"
+   ],
+   "base": "ae9cda056d50647182795866ee22efb42388a7fb",
+   "merge": "b2ca830ce8c88dcd2db925f310c56b94bb8d465c",
+   "pr": 38,
+   "query": "Measure card text against the real faces instead of a guess",
+   "repo": "index"
+  },
+  {
+   "answer": [
+    "scripts/render_repo_art.py",
+    "src/index_graph/gitmeta.py"
+   ],
+   "base": "a3babae2d80c6078714e1ab491f6bba0b52d7de5",
+   "merge": "ae9cda056d50647182795866ee22efb42388a7fb",
+   "pr": 37,
+   "query": "Draw what a shared map carries, and close two redaction gaps it found",
+   "repo": "index"
+  },
+  {
+   "answer": [
+    "scripts/render_repo_art.py"
+   ],
+   "base": "6576b134ef6e8637778dcb53c561c91e060f109c",
+   "merge": "a3babae2d80c6078714e1ab491f6bba0b52d7de5",
+   "pr": 36,
+   "query": "the art check compares text, not bytes",
+   "repo": "index"
+  },
+  {
+   "answer": [
+    "src/index_graph/cli.py",
+    "src/index_graph/cli_handlers/__init__.py",
+    "src/index_graph/cli_handlers/context.py",
+    "src/index_graph/cli_handlers/maps.py",
+    "src/index_graph/cli_parser.py"
+   ],
+   "base": "f388d1a936406253aaebe531c1f16a186c0b1b75",
+   "merge": "3a8c1f9b2592de03c510efccba475059159c8aff",
+   "pr": 25,
+   "query": "spectrum banner + feature-first README header",
+   "repo": "index"
+  },
+  {
+   "answer": [
+    "src/index_graph/cli.py",
+    "src/index_graph/cli_handlers/__init__.py",
+    "src/index_graph/cli_parser.py",
+    "src/index_graph/lsp/symbols_lsp.py",
+    "src/index_graph/mcp.py",
+    "src/index_graph/symbols/__init__.py",
+    "src/index_graph/symbols/build.py"
+   ],
+   "base": "bda6f2a24c6f86141a94147bd6cdd806ca74c373",
+   "merge": "4bc7ddba3e1a0da423a9c14c317099e51f334f19",
+   "pr": 24,
+   "query": "`index symbols` navigation with find-implementations",
+   "repo": "index"
+  },
+  {
+   "answer": [
+    "src/index_graph/cli.py",
+    "src/index_graph/cli_handlers/__init__.py",
+    "src/index_graph/cli_parser.py",
+    "src/index_graph/flagship.py",
+    "src/index_graph/wiki/__init__.py",
+    "src/index_graph/wiki/cli.py"
+   ],
+   "base": "160df67bbe12916905fe3119101253f0249c52d2",
+   "merge": "65b2c0992c6324f4622cd9162843ddc274599f98",
+   "pr": 23,
+   "query": "index serve, on-demand consent-clean verified-wiki server",
+   "repo": "index"
+  },
+  {
+   "answer": [
+    "src/index_graph/knowledge/atlas.py",
+    "src/index_graph/router.py",
+    "src/index_graph/wiki/cli.py"
+   ],
+   "base": "0f275971f6d40845b6496d3d67cce0005fe1047c",
+   "merge": "160df67bbe12916905fe3119101253f0249c52d2",
+   "pr": 22,
+   "query": "Index elevation P3-P5: wiki URL ingestion, router wiki pointers, Beta classifier",
+   "repo": "index"
+  },
+  {
+   "answer": [
+    "src/index_graph/cli.py"
+   ],
+   "base": "0e090a72caa781297652453942fd0fc0d2e436a7",
+   "merge": "0f275971f6d40845b6496d3d67cce0005fe1047c",
+   "pr": 21,
+   "query": "split cli.py into handler and parser modules",
+   "repo": "index"
+  },
+  {
+   "answer": [
+    "src/index_graph/cli.py"
+   ],
+   "base": "a56a2af1c77328085163d629d602db4c62e4c54e",
+   "merge": "0e090a72caa781297652453942fd0fc0d2e436a7",
+   "pr": 20,
+   "query": "index onboarding overhaul P2 (README wow-first, map write notice, --dry-run)",
+   "repo": "index"
+  },
+  {
+   "answer": [
+    "src/index_graph/cli.py",
+    "src/index_graph/context/envelope.py",
+    "src/index_graph/flagship.py",
+    "src/index_graph/mcp.py"
+   ],
+   "base": "dd8b58214e5ea2977495d89737c7ac7ea3305ad9",
+   "merge": "a56a2af1c77328085163d629d602db4c62e4c54e",
+   "pr": 18,
+   "query": "staleness contract (index.invalidation/1) + typed focus rejection",
+   "repo": "index"
+  },
+  {
+   "answer": [
+    "src/index_graph/context/envelope.py"
+   ],
+   "base": "51e02e2ff3fb68b2226efee87c7f231e38d10751",
+   "merge": "dd8b58214e5ea2977495d89737c7ac7ea3305ad9",
+   "pr": 19,
+   "query": "Browser-evidence pipeline (parallel-session work, preserved + integrated)",
+   "repo": "index"
+  },
+  {
+   "answer": [
+    "src/index_graph/cli.py",
+    "src/index_graph/flagship.py",
+    "src/index_graph/knowledge/markdown.py",
+    "src/index_graph/mcp.py"
+   ],
+   "base": "58af555f38f5ed041f55d148646efcbe6deee222",
+   "merge": "51e02e2ff3fb68b2226efee87c7f231e38d10751",
+   "pr": 17,
+   "query": "index wiki: the verified wiki (derived, receipted, commit-pinned)",
+   "repo": "index"
+  },
+  {
+   "answer": [
+    "src/index_graph/cli.py",
+    "src/index_graph/flagship.py",
+    "src/index_graph/mcp.py"
+   ],
+   "base": "7cc2146149203c8cb17b643c2372ebd8dec707cb",
+   "merge": "58af555f38f5ed041f55d148646efcbe6deee222",
+   "pr": 16,
+   "query": "path selector with typed rejection receipts (index.path-selection/v1)",
+   "repo": "index"
+  },
+  {
+   "answer": [
+    "src/index_graph/mcp.py"
+   ],
+   "base": "1d3129b29c1d9facde9e00532080eace0c30185c",
+   "merge": "ab38fc30cd66bcad549a47af6e6488e715e0a095",
+   "pr": 9,
+   "query": "Index 2.5.0: MCP-shaped protocol face",
+   "repo": "index"
+  },
+  {
+   "answer": [
+    "src/index_graph/cli.py",
+    "src/index_graph/verify.py"
+   ],
+   "base": "daad25fe75ba99af898c3a023b7d3b80495e57e2",
+   "merge": "e290da5f71c53fe1a414feaea27994ac025b3d8a",
+   "pr": 8,
+   "query": "Index 2.4.0: the grounding oracle (verify)",
+   "repo": "index"
+  },
+  {
+   "answer": [
+    "src/index_graph/cli.py"
+   ],
+   "base": "90fc72b0bf24ab2e4ee71afcec19c1e7047d80d7",
+   "merge": "9d72c11baf50e908a997c831f19899e93109dbf6",
+   "pr": 7,
+   "query": "Index 2.3.0: workspace router + information-bottleneck focus",
+   "repo": "index"
+  },
+  {
+   "answer": [
+    "client-plugin/server/serve.py",
+    "scripts/build_client_package.py",
+    "src/crucible/mcp_tools.py"
+   ],
+   "base": "4fe73945275b548203d82ecce78cdb3f8faa6e09",
+   "merge": "955ea1b81c8b9daf767a01d203e56e5bc774d012",
+   "pr": 30,
+   "query": "Ship the server code inside the client plugin folder",
+   "repo": "crucible"
+  },
+  {
+   "answer": [
+    "scripts/repo_art.py"
+   ],
+   "base": "77c6f41148d698169bc7e8bcd44f25317a59861d",
+   "merge": "f9a9ad89614285453dc94d2727b05eefe429193f",
+   "pr": 26,
+   "query": "Publish under the operating name Zain Dana Harper",
+   "repo": "crucible"
+  },
+  {
+   "answer": [
+    "src/crucible/client_process.py",
+    "src/crucible/mcp_tools.py"
+   ],
+   "base": "7c2a3d570217362bdd131279739fc187c4c46bc1",
+   "merge": "77c6f41148d698169bc7e8bcd44f25317a59861d",
+   "pr": 25,
+   "query": "Marketplace readiness: tool annotations, privacy policy, listing copy",
+   "repo": "crucible"
+  },
+  {
+   "answer": [
+    "src/crucible/__init__.py"
+   ],
+   "base": "a47ae7981ae51f2062d2a395359b4c1bab0f9c66",
+   "merge": "f06b8d1d06ad0c9a3ff31de3fda1a2fa7fe036de",
+   "pr": 23,
+   "query": "Crucible 1.4.0: native client packages and scoped permissions",
+   "repo": "crucible"
+  },
+  {
+   "answer": [
+    "src/crucible/flagship.py",
+    "src/crucible/mcp_tools.py",
+    "src/crucible/recheck_cmd.py"
+   ],
+   "base": "1ed20c6d7ab7c17654125723a2afab1ce100d52d",
+   "merge": "7d198214417945b9eeb60b814d4e518f4553b72f",
+   "pr": 21,
+   "query": "Add MCP recheck template support",
+   "repo": "crucible"
+  },
+  {
+   "answer": [
+    "scripts/repo_card.py"
+   ],
+   "base": "d1e2ed0b3e3e2bf96380c30dd82567d825d896a8",
+   "merge": "1ed20c6d7ab7c17654125723a2afab1ce100d52d",
+   "pr": 20,
+   "query": "Measure card text against the real faces instead of a guess",
+   "repo": "crucible"
+  },
+  {
+   "answer": [
+    "scripts/render_repo_art.py"
+   ],
+   "base": "652218c6a8fe940d3cdae68d9c079457327e52ad",
+   "merge": "d1e2ed0b3e3e2bf96380c30dd82567d825d896a8",
+   "pr": 19,
+   "query": "Draw the order crucible checks a claim in",
+   "repo": "crucible"
+  },
+  {
+   "answer": [
+    "scripts/render_repo_art.py"
+   ],
+   "base": "43011cefe808814e3b070703c6f696731e720f3b",
+   "merge": "652218c6a8fe940d3cdae68d9c079457327e52ad",
+   "pr": 18,
+   "query": "the art check compares text, not bytes",
+   "repo": "crucible"
+  },
+  {
+   "answer": [
+    "src/crucible/recheck_cmd.py"
+   ],
+   "base": "d749d76d6d793845738dffeba662466330669a2f",
+   "merge": "10e380d0e423025c4413a5fa6d9262e6734b6a79",
+   "pr": 12,
+   "query": "Require replay assessment binding",
+   "repo": "crucible"
+  },
+  {
+   "answer": [
+    "src/crucible/claim.py",
+    "src/crucible/proof_measure.py"
+   ],
+   "base": "16e2453bf2c1609b5ba6fa2d5aaa39494c3f2838",
+   "merge": "d749d76d6d793845738dffeba662466330669a2f",
+   "pr": 11,
+   "query": "Restore CI and fail closed on invalid checker commands",
+   "repo": "crucible"
+  },
+  {
+   "answer": [
+    "src/crucible/__init__.py",
+    "src/crucible/cli.py"
+   ],
+   "base": "01012360248d386fa9501ad9c2496a8417b2620d",
+   "merge": "e73e9e3d14e014f19241123618edecfe69f01df6",
+   "pr": 7,
+   "query": "native CI regression gate over registry verdicts",
+   "repo": "crucible"
+  },
+  {
+   "answer": [
+    "src/crucible/cli.py",
+    "src/crucible/commands.py",
+    "src/crucible/flagship.py",
+    "src/crucible/mcp_tools.py",
+    "src/crucible/run_cmd.py"
+   ],
+   "base": "f36e736da2a98a377844007ae325dd4f2c1ed16a",
+   "merge": "77a002d83ae89d5ed4d2aec30d46d810ea24d7de",
+   "pr": 5,
+   "query": "explain missing evidence for UNVERIFIABLE and warn on ill-posed measurements",
+   "repo": "crucible"
+  },
+  {
+   "answer": [
+    "src/crucible/__init__.py"
+   ],
+   "base": "718c82b9f19eb2dbb065aaaf8f9d5d65142572c2",
+   "merge": "f36e736da2a98a377844007ae325dd4f2c1ed16a",
+   "pr": 6,
+   "query": "Browser-evidence pipeline (parallel-session work, preserved + integrated)",
+   "repo": "crucible"
+  },
+  {
+   "answer": [
+    "src/crucible/cli.py",
+    "src/crucible/commands.py",
+    "src/crucible/registry_cmd.py",
+    "src/crucible/registry_ops.py"
+   ],
+   "base": "2a8ac11d19c8258dca802b163cc7f71eca40dd6d",
+   "merge": "718c82b9f19eb2dbb065aaaf8f9d5d65142572c2",
+   "pr": 4,
+   "query": "MATCH-provenance gate: witnessed vs asserted verdicts (--require-witnessed-match)",
+   "repo": "crucible"
+  },
+  {
+   "answer": [
+    "client-plugin/server/src/gather/client_mcp.py",
+    "client-plugin/server/src/gather/grants.py",
+    "scripts/build_client_package.py",
+    "src/gather/client_mcp.py",
+    "src/gather/grants.py",
+    "src/gather/mcp.py",
+    "src/gather/run_config.py"
+   ],
+   "base": "01074841a5d71f8d9498b2aea80469fa2f2afead",
+   "merge": "1bbf4608d4ebbc7e8226b3962146d4952de2983f",
+   "pr": 43,
+   "query": "Vendor only the modules the client server can import",
+   "repo": "gather"
+  },
+  {
+   "answer": [
+    "client-plugin/server/serve.py",
+    "scripts/build_client_package.py"
+   ],
+   "base": "938c984cc486933abf58ff7d534009f1f92c5062",
+   "merge": "01074841a5d71f8d9498b2aea80469fa2f2afead",
+   "pr": 42,
+   "query": "Vendor the server code into the client plugin folder",
+   "repo": "gather"
+  },
+  {
+   "answer": [
+    "scripts/client_manifest.py"
+   ],
+   "base": "bcb214b15f5d42f3cd415d4b294a353493a6f281",
+   "merge": "6761c16ca5a696ad0bdcb023254b47dac887d928",
+   "pr": 40,
+   "query": "Add directory listing fields, icon and userConfig bindings to the Claude plugin",
+   "repo": "gather"
+  },
+  {
+   "answer": [
+    "scripts/repo_art.py"
+   ],
+   "base": "cc1beb244fb88c0ba81c86ddf650d7706a2b4143",
+   "merge": "bcb214b15f5d42f3cd415d4b294a353493a6f281",
+   "pr": 39,
+   "query": "Publish under the operating name Zain Dana Harper",
+   "repo": "gather"
+  },
+  {
+   "answer": [
+    "src/gather/client_mcp.py",
+    "src/gather/mcp.py"
+   ],
+   "base": "d37814eee1295b1773ee9c86c8892a1dde739293",
+   "merge": "cc1beb244fb88c0ba81c86ddf650d7706a2b4143",
+   "pr": 38,
+   "query": "Marketplace readiness: tool annotations, privacy policy, listing copy",
+   "repo": "gather"
+  },
+  {
+   "answer": [
+    "src/gather/__init__.py",
+    "src/gather/flagship.py"
+   ],
+   "base": "d75f0fd86cbfc8fcfe9868e2e008f0e678b76b70",
+   "merge": "d37814eee1295b1773ee9c86c8892a1dde739293",
+   "pr": 37,
+   "query": "Gather 2.1.0: native client packages and scoped permissions",
+   "repo": "gather"
+  },
+  {
+   "answer": [
+    "src/gather/__init__.py",
+    "src/gather/channel.py",
+    "src/gather/channel_ledger.py",
+    "src/gather/flagship.py",
+    "src/gather/video_cmd.py",
+    "src/gather/video_source.py",
+    "src/gather/ytdlp.py"
+   ],
+   "base": "976cfea1bd630d72c1f72717d1fb9e1cc0546c9e",
+   "merge": "d75f0fd86cbfc8fcfe9868e2e008f0e678b76b70",
+   "pr": 36,
+   "query": "gather 2.0.0",
+   "repo": "gather"
+  },
+  {
+   "answer": [
+    "src/gather/backends.py",
+    "src/gather/fetch.py"
+   ],
+   "base": "5b73a1b17508f671f215e3c9677f28d371b54517",
+   "merge": "976cfea1bd630d72c1f72717d1fb9e1cc0546c9e",
+   "pr": 35,
+   "query": "Remove stealth capability backend (curl_cffi TLS impersonation)",
+   "repo": "gather"
+  },
+  {
+   "answer": [
+    "src/gather/cli.py",
+    "src/gather/commands.py",
+    "src/gather/run_config.py",
+    "src/gather/spawn.py",
+    "src/gather/video.py"
+   ],
+   "base": "6b5d4dd5920a248bafaeefef4f596e67a42889fb",
+   "merge": "5b73a1b17508f671f215e3c9677f28d371b54517",
+   "pr": 30,
+   "query": "Video intake: one caption track, separate passes, bounded backoff, resumable channel runs",
+   "repo": "gather"
+  },
+  {
+   "answer": [
+    "src/gather/context.py"
+   ],
+   "base": "022dd116ba6ff065a28b441ceb37a378cab4b2a4",
+   "merge": "83cec6f3bec22a1afea08d2cb1869d9080098440",
+   "pr": 31,
+   "query": "Split the corpus catalog on universal newlines only",
+   "repo": "gather"
+  },
+  {
+   "answer": [
+    "src/gather/mcp.py"
+   ],
+   "base": "387621499c3f53c6786c613cecf638000844110a",
+   "merge": "21de787ae7d5ed0de421de1751439eb1de69ec79",
+   "pr": 27,
+   "query": "Clarify Gather MCP scope filtering",
+   "repo": "gather"
+  },
+  {
+   "answer": [
+    "src/gather/__init__.py",
+    "src/gather/context.py",
+    "src/gather/flagship.py"
+   ],
+   "base": "34572f338304760e95cfd1503b9635a455f65d79",
+   "merge": "387621499c3f53c6786c613cecf638000844110a",
+   "pr": 26,
+   "query": "refuse unstable Linux mount authority in 1.8.1",
+   "repo": "gather"
+  },
+  {
+   "answer": [
+    "src/gather/__init__.py",
+    "src/gather/cli.py",
+    "src/gather/corpus_cmd.py",
+    "src/gather/flagship.py",
+    "src/gather/mcp.py"
+   ],
+   "base": "01d47b9907e6690d1476f00c7e6b7f665252fe14",
+   "merge": "25b1f65bc9c8146f60eef0eccc8116360842a508",
+   "pr": 23,
+   "query": "Select bounded readable context through Python, CLI and MCP",
+   "repo": "gather"
+  },
+  {
+   "answer": [
+    "scripts/repo_card.py"
+   ],
+   "base": "d31ea6d6ea279370e5251b590df8274d1a1d923c",
+   "merge": "01d47b9907e6690d1476f00c7e6b7f665252fe14",
+   "pr": 22,
+   "query": "Measure card text against the real faces instead of a guess",
+   "repo": "gather"
+  },
+  {
+   "answer": [
+    "scripts/render_repo_art.py"
+   ],
+   "base": "0fa4dfb639e7c3462e2a73a6926aef468c71f1d7",
+   "merge": "d31ea6d6ea279370e5251b590df8274d1a1d923c",
+   "pr": 21,
+   "query": "Draw what gather does when a capability has no backend",
+   "repo": "gather"
+  },
+  {
+   "answer": [
+    "scripts/render_repo_art.py"
+   ],
+   "base": "63ed77d7d7c075b9af728dde7938fc36754ecb75",
+   "merge": "0fa4dfb639e7c3462e2a73a6926aef468c71f1d7",
+   "pr": 20,
+   "query": "the art check compares text, not bytes",
+   "repo": "gather"
+  },
+  {
+   "answer": [
+    "src/gather/cli.py",
+    "src/gather/flagship.py",
+    "src/gather/mcp.py",
+    "src/gather/web_commands.py"
+   ],
+   "base": "de40aa94c3dd80592621d29e2da224ecd7637923",
+   "merge": "20dbaf177e05234807cb23668a456c5e837b7712",
+   "pr": 14,
+   "query": "accountable pilot evidence engine",
+   "repo": "gather"
+  },
+  {
+   "answer": [
+    "src/gather/flagship.py"
+   ],
+   "base": "817c3e35af4bbec3d3cc718e0f87f1fc08e11d30",
+   "merge": "de40aa94c3dd80592621d29e2da224ecd7637923",
+   "pr": 15,
+   "query": "align current_status with shipped 1.6.1",
+   "repo": "gather"
+  },
+  {
+   "answer": [
+    "src/gather/browser_evidence.py",
+    "src/gather/cli.py",
+    "src/gather/commands.py",
+    "src/gather/method.py"
+   ],
+   "base": "9bb947d5bf1a1b67fe73df9fcf7f1c21995e7209",
+   "merge": "1268b1f963b3ac5d24629d2d39867e0746edb5df",
+   "pr": 8,
+   "query": "scholarly-graph federation (OpenAlex + Semantic Scholar + Crossref) with citation-edge provenance",
+   "repo": "gather"
+  },
+  {
+   "answer": [
+    "src/gather/cli.py",
+    "src/gather/federation_cmd.py",
+    "src/gather/payloads.py"
+   ],
+   "base": "ee691de39d87d69bc58e9922461ed24568836ee9",
+   "merge": "9bb947d5bf1a1b67fe73df9fcf7f1c21995e7209",
+   "pr": 7,
+   "query": "policy-as-receipt and entity-resolution under the federation seal",
+   "repo": "gather"
+  }
+ ],
+ "schema": "index.navigate-queries/v1"
+}

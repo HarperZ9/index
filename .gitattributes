@@ -3,3 +3,6 @@
 # SHA-256 stay the same whoever cloned the repository.
 docs/art/*.svg text eol=lf
 docs/art/*.json text eol=lf
+
+# The navigation benchmark files are hashed; keep their bytes identical on every checkout.
+benchmarks/navigate/*.json text eol=lf

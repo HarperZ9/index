@@ -144,7 +144,8 @@ def definitions(state=None):
     from index_graph.mcp import _tool_defs
     result = [d for d in _tool_defs() if d["name"] in {
         "index.map", "index.select", "index.symbol-graph",
-        "index.symbol-definition", "index.symbol-references", "index.symbol-implementations"}]
+        "index.symbol-definition", "index.symbol-references", "index.symbol-implementations",
+        "index.navigate", "index.outline-map"}]
     for tool in result:
         if tool["name"] == "index.map":
             tool["inputSchema"] = {"type": "object", "properties": {"root": {"type": "string"}}, "required": ["root"]}

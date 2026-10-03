@@ -11,6 +11,7 @@ import argparse
 from pathlib import Path
 
 from . import __version__
+from .cli_handlers.navigate import add_navigate_parsers
 from .wiki.cli import add_wiki_parser
 
 
@@ -456,6 +457,7 @@ def build_parser() -> argparse.ArgumentParser:
     _add_internals_parser(sub)
     _add_internals_symbols_parser(sub)
     _add_symbols_parser(sub)
+    add_navigate_parsers(sub)
     _add_check_parser(sub)
     _add_snapshot_parser(sub)
     _add_drift_parser(sub)

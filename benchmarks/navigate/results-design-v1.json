@@ -1,0 +1,1250 @@
+{
+ "params": {
+  "beam": 4,
+  "ratio": 0.5,
+  "temperature": 0.3
+ },
+ "queries_sha256": "73214d6164cc0e54b9b037384df9c9cf71a88e6e45f1b8b0c0e1e1bef8293c7c",
+ "rows": [
+  {
+   "bm25-chunk": {
+    "files": [
+     "tests/test_client_package.py",
+     "tests/test_client_plugin_folder.py",
+     "scripts/build_client_package.py",
+     "tests/test_verify_recall.py",
+     "client-plugin/server/serve.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 1717
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "tests/test_client_package.py",
+     "tests/test_client_plugin_folder.py",
+     "scripts/build_client_package.py",
+     "tests/test_verify_recall.py",
+     "client-plugin/server/serve.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 765
+   },
+   "bm25-file": {
+    "files": [
+     "tests/test_client_package.py",
+     "tests/test_client_plugin_folder.py",
+     "scripts/build_client_package.py",
+     "tests/test_mcpb_setup.py",
+     "tests/test_client_memory_workflow.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 9424
+   },
+   "grep": {
+    "files": [
+     "tests/test_client_package.py",
+     "scripts/build_client_package.py",
+     "tests/test_client_plugin_folder.py",
+     "client-plugin/server/src/mneme/mcp.py",
+     "src/mneme/mcp.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 2509
+   },
+   "map": {
+    "files": [
+     "tests/test_client_package.py",
+     "tests/test_verify_recall.py",
+     "tests/test_forget_copy.py",
+     "client-plugin/server/serve.py",
+     "scripts/build_client_package.py"
+    ],
+    "question_tokens": 126658,
+    "recall": 1.0,
+    "tokens_shown": 924
+   },
+   "navigate": {
+    "files": [
+     "scripts/build_client_package.py",
+     "client-plugin/server/serve.py",
+     "client-plugin/server/src/mneme/__main__.py",
+     "client-plugin/server/src/mneme/__init__.py",
+     "client-plugin/server/src/mneme/snapshot_binding.py"
+    ],
+    "question_tokens": 24394,
+    "recall": 1.0,
+    "tokens_shown": 492
+   },
+   "pr": 28,
+   "repo": "mneme"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "tests/test_client_package.py",
+     "scripts/build_client_package.py",
+     "src/mneme/mcp.py",
+     "tests/test_erase_kept_residue.py",
+     "tests/test_state_path_disclosure.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.6666666666666666,
+    "tokens_shown": 2597
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "tests/test_client_package.py",
+     "scripts/build_client_package.py",
+     "src/mneme/mcp.py",
+     "tests/test_erase_kept_residue.py",
+     "tests/test_state_path_disclosure.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.6666666666666666,
+    "tokens_shown": 1070
+   },
+   "bm25-file": {
+    "files": [
+     "tests/test_client_package.py",
+     "scripts/build_client_package.py",
+     "src/mneme/os_facts.py",
+     "tests/test_client_memory_workflow.py",
+     "tests/test_llm_extract.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.3333333333333333,
+    "tokens_shown": 8889
+   },
+   "grep": {
+    "files": [
+     "tests/test_client_package.py",
+     "scripts/build_client_package.py",
+     "tests/test_scenario_mcp.py",
+     "src/mneme/mcp.py",
+     "src/mneme/state_report.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.6666666666666666,
+    "tokens_shown": 2804
+   },
+   "map": {
+    "files": [
+     "scripts/build_client_package.py",
+     "tests/test_client_package.py",
+     "client-plugin/server/serve.py",
+     "tests/test_scenario_mcp.py",
+     "tools/check_repo_card.py"
+    ],
+    "question_tokens": 88993,
+    "recall": 0.6666666666666666,
+    "tokens_shown": 3635
+   },
+   "navigate": {
+    "files": [
+     "scripts/build_client_package.py",
+     "client-plugin/server/serve.py",
+     "tests/test_client_package.py",
+     "tools/check_repo_art.py",
+     "scripts/check_mcpb_setup.py"
+    ],
+    "question_tokens": 39214,
+    "recall": 0.6666666666666666,
+    "tokens_shown": 1002
+   },
+   "pr": 27,
+   "repo": "mneme"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "scripts/build_client_package.py",
+     "tests/test_client_package.py",
+     "scripts/check_mcpb_setup.py",
+     "src/mneme/snapshot_dir.py",
+     "tests/test_snapshot_hostile.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 1335
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "scripts/build_client_package.py",
+     "tests/test_client_package.py",
+     "scripts/check_mcpb_setup.py",
+     "src/mneme/snapshot_dir.py",
+     "tests/test_snapshot_hostile.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 1069
+   },
+   "bm25-file": {
+    "files": [
+     "scripts/build_client_package.py",
+     "tests/test_client_package.py",
+     "src/mneme/cli_forget.py",
+     "tests/test_mcpb_setup.py",
+     "scripts/check_mcpb_setup.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 8326
+   },
+   "grep": {
+    "files": [
+     "scripts/build_client_package.py",
+     "src/mneme/cli_forget.py",
+     "tests/test_client_package.py",
+     "tests/test_crucible_replay.py",
+     "src/mneme/erase_scan.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 2066
+   },
+   "map": {
+    "files": [
+     "scripts/build_client_package.py",
+     "tests/test_client_package.py",
+     "src/mneme/snapshot_dir.py",
+     "tests/test_snapshot_hostile.py",
+     "scripts/check_mcpb_setup.py"
+    ],
+    "question_tokens": 88125,
+    "recall": 1.0,
+    "tokens_shown": 1271
+   },
+   "navigate": {
+    "files": [
+     "scripts/build_client_package.py",
+     "client-plugin/server/serve.py",
+     "scripts/check_mcpb_setup.py",
+     "src/mneme/cli_forget.py",
+     "tests/test_snapshot_hostile.py"
+    ],
+    "question_tokens": 49262,
+    "recall": 1.0,
+    "tokens_shown": 1552
+   },
+   "pr": 25,
+   "repo": "mneme"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "scripts/build_client_package.py",
+     "src/mneme/cli.py",
+     "verify_release_metadata.py",
+     "tests/test_true_forget_targets.py",
+     "tests/test_erase_surfaces_privacy.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 1461
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "scripts/build_client_package.py",
+     "src/mneme/cli.py",
+     "verify_release_metadata.py",
+     "tests/test_true_forget_targets.py",
+     "tests/test_erase_surfaces_privacy.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 1461
+   },
+   "bm25-file": {
+    "files": [
+     "tests/test_version_metadata.py",
+     "scripts/build_client_package.py",
+     "src/mneme/os_facts.py",
+     "verify_release_metadata.py",
+     "tests/test_erase_surfaces_privacy.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 7908
+   },
+   "grep": {
+    "files": [
+     "scripts/build_client_package.py",
+     "tests/test_version_metadata.py",
+     "tests/test_crucible_replay.py",
+     "tests/test_true_forget.py",
+     "src/mneme/cli.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 2272
+   },
+   "map": {
+    "files": [
+     "scripts/build_client_package.py",
+     "src/mneme/os_facts.py",
+     "src/mneme/cli.py",
+     "verify_release_metadata.py",
+     "tests/test_version_metadata.py"
+    ],
+    "question_tokens": 88118,
+    "recall": 0.0,
+    "tokens_shown": 1477
+   },
+   "navigate": {
+    "files": [
+     "scripts/build_client_package.py",
+     "verify_release_metadata.py",
+     "tests/test_version_metadata.py",
+     "tests/test_crucible_replay.py",
+     "scripts/native_build_provenance.py"
+    ],
+    "question_tokens": 39702,
+    "recall": 0.0,
+    "tokens_shown": 1204
+   },
+   "pr": 24,
+   "repo": "mneme"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "src/mneme/erase_outside.py",
+     "scripts/build_client_package.py",
+     "src/mneme/snapshot_dir.py",
+     "tests/test_crucible_replay.py",
+     "src/mneme/mcp_forget.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.5,
+    "tokens_shown": 3022
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "src/mneme/erase_outside.py",
+     "scripts/build_client_package.py",
+     "src/mneme/snapshot_dir.py",
+     "tests/test_crucible_replay.py",
+     "src/mneme/mcp_forget.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.5,
+    "tokens_shown": 3022
+   },
+   "bm25-file": {
+    "files": [
+     "scripts/build_client_package.py",
+     "src/mneme/erase_outside.py",
+     "src/mneme/erase_receipt.py",
+     "src/mneme/snapshot_dir.py",
+     "src/mneme/mcp_forget.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.5,
+    "tokens_shown": 10371
+   },
+   "grep": {
+    "files": [
+     "src/mneme/erase_receipt.py",
+     "scripts/build_client_package.py",
+     "src/mneme/mcp.py",
+     "src/mneme/snapshot_dir.py",
+     "src/mneme/erase_outside.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 1620
+   },
+   "map": {
+    "files": [
+     "tests/test_client_package.py",
+     "scripts/build_client_package.py",
+     "tests/test_erase_copies.py",
+     "tests/test_forget_copy.py",
+     "src/mneme/snapshot_binding.py"
+    ],
+    "question_tokens": 87413,
+    "recall": 0.5,
+    "tokens_shown": 1978
+   },
+   "navigate": {
+    "files": [
+     "tests/test_client_package.py",
+     "tests/test_snapshot_hostile.py",
+     "tests/test_erase_copies.py",
+     "tests/test_forget_copy.py",
+     "scripts/build_client_package.py"
+    ],
+    "question_tokens": 34959,
+    "recall": 0.5,
+    "tokens_shown": 2015
+   },
+   "pr": 22,
+   "repo": "mneme"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "src/mneme/erase_outside.py",
+     "tests/test_erase_output_privacy.py",
+     "tests/test_snapshot_hostile.py",
+     "tests/test_origin_recheck.py",
+     "verify_release_metadata.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.3333333333333333,
+    "tokens_shown": 959
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "src/mneme/erase_outside.py",
+     "tests/test_erase_output_privacy.py",
+     "tests/test_snapshot_hostile.py",
+     "tests/test_origin_recheck.py",
+     "verify_release_metadata.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.3333333333333333,
+    "tokens_shown": 959
+   },
+   "bm25-file": {
+    "files": [
+     "src/mneme/erase_outside.py",
+     "tests/test_erase_output_privacy.py",
+     "tests/test_origin_recheck.py",
+     "tests/test_snapshot_hostile.py",
+     "tests/test_multiuser.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.3333333333333333,
+    "tokens_shown": 8367
+   },
+   "grep": {
+    "files": [
+     "tests/test_origin_recheck.py",
+     "tests/test_erase_truth.py",
+     "tests/test_scope_isolation.py",
+     "tests/test_erase_output_privacy.py",
+     "tests/test_snapshot_hostile.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 1694
+   },
+   "map": {
+    "files": [
+     "verify_release_metadata.py",
+     "tests/test_erase_output_privacy.py",
+     "tests/test_snapshot_hostile.py",
+     "src/mneme/erase_outside.py",
+     "src/mneme/source.py"
+    ],
+    "question_tokens": 83033,
+    "recall": 0.3333333333333333,
+    "tokens_shown": 928
+   },
+   "navigate": {
+    "files": [
+     "verify_release_metadata.py",
+     "verify_audit.py",
+     "tests/test_erase_output_privacy.py",
+     "tests/test_snapshot_hostile.py",
+     "tests/test_ingest.py"
+    ],
+    "question_tokens": 33297,
+    "recall": 0.0,
+    "tokens_shown": 850
+   },
+   "pr": 21,
+   "repo": "mneme"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "tools/repo_flow.py",
+     "src/mneme/source.py",
+     "src/mneme/store.py",
+     "tools/repo_card.py",
+     "tests/test_ingest.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 1214
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "tools/repo_flow.py",
+     "src/mneme/source.py",
+     "src/mneme/store.py",
+     "tools/repo_card.py",
+     "tests/test_ingest.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 1214
+   },
+   "bm25-file": {
+    "files": [
+     "src/mneme/source.py",
+     "tests/test_ingest.py",
+     "src/mneme/store.py",
+     "src/mneme/cli.py",
+     "src/mneme/ingest.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 17907
+   },
+   "grep": {
+    "files": [
+     "src/mneme/source.py",
+     "src/mneme/store.py",
+     "tests/test_ingest.py",
+     "tests/test_crucible_replay.py",
+     "src/mneme/cli.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 585
+   },
+   "map": {
+    "files": [
+     "tools/check_repo_art.py",
+     "src/mneme/source.py",
+     "src/mneme/store.py",
+     "tools/repo_flow.py",
+     "tests/test_crucible_replay.py"
+    ],
+    "question_tokens": 47584,
+    "recall": 0.0,
+    "tokens_shown": 1311
+   },
+   "navigate": {
+    "files": [
+     "tools/repo_flow.py",
+     "tools/check_repo_art.py",
+     "tools/repo_card.py",
+     "verify_audit.py",
+     "examples/tour.py"
+    ],
+    "question_tokens": 8221,
+    "recall": 0.0,
+    "tokens_shown": 904
+   },
+   "pr": 16,
+   "repo": "mneme"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "tests/test_compose.py",
+     "src/mneme/cli.py",
+     "tests/test_crucible_replay.py",
+     "src/mneme/memory.py",
+     "src/mneme/compose.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.5,
+    "tokens_shown": 4463
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "tests/test_compose.py",
+     "src/mneme/cli.py",
+     "tests/test_crucible_replay.py",
+     "src/mneme/memory.py",
+     "src/mneme/compose.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.5,
+    "tokens_shown": 2537
+   },
+   "bm25-file": {
+    "files": [
+     "src/mneme/cli.py",
+     "tests/test_compose.py",
+     "src/mneme/compose.py",
+     "tests/test_crucible_replay.py",
+     "src/mneme/memory.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.5,
+    "tokens_shown": 23353
+   },
+   "grep": {
+    "files": [
+     "src/mneme/cli.py",
+     "tests/test_crucible_replay.py",
+     "tests/test_compose.py",
+     "src/mneme/memory.py",
+     "src/mneme/replay.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.5,
+    "tokens_shown": 10063
+   },
+   "map": {
+    "files": [
+     "src/mneme/memory.py",
+     "tests/test_compose.py",
+     "tests/test_crucible_replay.py",
+     "src/mneme/compose.py",
+     "src/mneme/cli.py"
+    ],
+    "question_tokens": 45257,
+    "recall": 0.5,
+    "tokens_shown": 5894
+   },
+   "navigate": {
+    "files": [
+     "tests/test_compose.py",
+     "src/mneme/cli.py",
+     "src/mneme/memory.py",
+     "src/mneme/compose.py",
+     "tools/repo_flow.py"
+    ],
+    "question_tokens": 30526,
+    "recall": 0.5,
+    "tokens_shown": 2553
+   },
+   "pr": 15,
+   "repo": "mneme"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "tests/test_ingest.py",
+     "src/mneme/source.py",
+     "src/mneme/ingest.py",
+     "src/mneme/drift.py",
+     "tests/test_drift_content.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.25,
+    "tokens_shown": 2576
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "tests/test_ingest.py",
+     "src/mneme/source.py",
+     "src/mneme/ingest.py",
+     "src/mneme/drift.py",
+     "tests/test_drift_content.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.25,
+    "tokens_shown": 2066
+   },
+   "bm25-file": {
+    "files": [
+     "src/mneme/drift.py",
+     "tests/test_provenance_grounding.py",
+     "src/mneme/ingest.py",
+     "tests/test_ingest.py",
+     "src/mneme/source.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.25,
+    "tokens_shown": 9000
+   },
+   "grep": {
+    "files": [
+     "src/mneme/memory.py",
+     "src/mneme/drift.py",
+     "tests/test_crucible_replay.py",
+     "tests/test_drift_content.py",
+     "tests/test_ingest.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.25,
+    "tokens_shown": 9043
+   },
+   "map": {
+    "files": [
+     "tests/test_ingest.py",
+     "tests/test_drift_content.py",
+     "src/mneme/source.py",
+     "src/mneme/ingest.py",
+     "tests/test_repo_art.py"
+    ],
+    "question_tokens": 41207,
+    "recall": 0.25,
+    "tokens_shown": 1986
+   },
+   "navigate": {
+    "files": [
+     "src/mneme/source.py",
+     "tests/test_drift_content.py",
+     "tests/test_ingest.py",
+     "src/mneme/drift.py",
+     "src/mneme/receipt.py"
+    ],
+    "question_tokens": 25878,
+    "recall": 0.0,
+    "tokens_shown": 1265
+   },
+   "pr": 13,
+   "repo": "mneme"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "tests/test_repo_art.py",
+     "tools/check_repo_card.py",
+     "tests/test_crucible_replay.py",
+     "tools/repo_card.py",
+     "tools/repo_flow.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 3736
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "tests/test_repo_art.py",
+     "tools/check_repo_card.py",
+     "tests/test_crucible_replay.py",
+     "tools/repo_card.py",
+     "tools/repo_flow.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 2494
+   },
+   "bm25-file": {
+    "files": [
+     "tools/repo_card.py",
+     "tests/test_repo_art.py",
+     "tools/render_repo_art.py",
+     "tools/check_repo_card.py",
+     "src/mneme/bench.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 7794
+   },
+   "grep": {
+    "files": [
+     "tools/repo_card.py",
+     "tests/test_repo_art.py",
+     "tools/check_repo_card.py",
+     "tests/test_crucible_replay.py",
+     "tools/check_repo_art.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 3857
+   },
+   "map": {
+    "files": [
+     "tools/check_repo_card.py",
+     "tests/test_ingest.py",
+     "tools/check_repo_art.py",
+     "tools/render_repo_art.py",
+     "src/mneme/memory.py"
+    ],
+    "question_tokens": 37531,
+    "recall": 0.5,
+    "tokens_shown": 1581
+   },
+   "navigate": {
+    "files": [
+     "tools/check_repo_card.py",
+     "tools/render_repo_art.py",
+     "tests/test_repo_art.py",
+     "tests/test_crucible_replay.py",
+     "tools/check_repo_art.py"
+    ],
+    "question_tokens": 24011,
+    "recall": 0.5,
+    "tokens_shown": 1183
+   },
+   "pr": 11,
+   "repo": "mneme"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "tools/check_repo_art.py",
+     "src/mneme/drift.py",
+     "tests/test_provenance_grounding.py",
+     "tests/test_repo_art.py",
+     "src/mneme/memory.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.5,
+    "tokens_shown": 1778
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "tools/check_repo_art.py",
+     "src/mneme/drift.py",
+     "tests/test_provenance_grounding.py",
+     "tests/test_repo_art.py",
+     "src/mneme/memory.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.5,
+    "tokens_shown": 880
+   },
+   "bm25-file": {
+    "files": [
+     "tools/check_repo_art.py",
+     "tests/test_repo_art.py",
+     "tools/repo_art.py",
+     "src/mneme/drift.py",
+     "src/mneme/compose.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.5,
+    "tokens_shown": 9772
+   },
+   "grep": {
+    "files": [
+     "src/mneme/mcp.py",
+     "tools/check_repo_art.py",
+     "src/mneme/drift.py",
+     "tests/test_compose.py",
+     "src/mneme/replay.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.5,
+    "tokens_shown": 2461
+   },
+   "map": {
+    "files": [
+     "tools/check_repo_art.py",
+     "tests/test_provenance_grounding.py",
+     "src/mneme/memory.py",
+     "src/mneme/drift.py",
+     "tests/test_compose.py"
+    ],
+    "question_tokens": 35259,
+    "recall": 0.5,
+    "tokens_shown": 2666
+   },
+   "navigate": {
+    "files": [
+     "tools/check_repo_art.py",
+     "tests/test_provenance_grounding.py",
+     "tests/test_compose.py",
+     "tests/test_repo_art.py",
+     "src/mneme/drift.py"
+    ],
+    "question_tokens": 25260,
+    "recall": 0.5,
+    "tokens_shown": 957
+   },
+   "pr": 10,
+   "repo": "mneme"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "tests/test_repo_art.py",
+     "tools/check_repo_art.py",
+     "tools/render_repo_art.py",
+     "tests/test_drift_content.py",
+     "tests/test_verify_audit_cli.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 2969
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "tests/test_repo_art.py",
+     "tools/check_repo_art.py",
+     "tools/render_repo_art.py",
+     "tests/test_drift_content.py",
+     "tests/test_verify_audit_cli.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 1766
+   },
+   "bm25-file": {
+    "files": [
+     "tests/test_repo_art.py",
+     "tools/check_repo_art.py",
+     "tools/render_repo_art.py",
+     "tools/repo_art.py",
+     "src/mneme/drift.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 9338
+   },
+   "grep": {
+    "files": [
+     "tools/check_repo_art.py",
+     "tests/test_repo_art.py",
+     "tools/repo_art.py",
+     "tools/render_repo_art.py",
+     "src/mneme/drift.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 3112
+   },
+   "map": {
+    "files": [
+     "tests/test_repo_art.py",
+     "tools/check_repo_art.py",
+     "tests/test_drift_content.py",
+     "tools/render_repo_art.py",
+     "tools/repo_art.py"
+    ],
+    "question_tokens": 35257,
+    "recall": 1.0,
+    "tokens_shown": 4304
+   },
+   "navigate": {
+    "files": [
+     "tools/check_repo_art.py",
+     "tests/test_repo_art.py",
+     "tools/render_repo_art.py",
+     "tools/repo_art.py",
+     "src/mneme/store.py"
+    ],
+    "question_tokens": 25859,
+    "recall": 1.0,
+    "tokens_shown": 1357
+   },
+   "pr": 9,
+   "repo": "mneme"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "tests/test_repo_art.py",
+     "tools/check_repo_art.py",
+     "tests/test_crucible_replay.py",
+     "tests/test_compose.py",
+     "tests/test_llm_extract.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 1681
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "tests/test_repo_art.py",
+     "tools/check_repo_art.py",
+     "tests/test_crucible_replay.py",
+     "tests/test_compose.py",
+     "tests/test_llm_extract.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 1259
+   },
+   "bm25-file": {
+    "files": [
+     "tools/check_repo_art.py",
+     "tests/test_repo_art.py",
+     "tests/test_llm_extract.py",
+     "tests/test_compose.py",
+     "src/mneme/compose.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 7867
+   },
+   "grep": {
+    "files": [
+     "tools/check_repo_art.py",
+     "tests/test_crucible_replay.py",
+     "tests/test_compose.py",
+     "src/mneme/replay.py",
+     "tests/test_repo_art.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 1570
+   },
+   "map": {
+    "files": [
+     "tests/test_repo_art.py",
+     "tools/check_repo_art.py",
+     "tests/test_compose.py",
+     "tests/test_crucible_replay.py",
+     "src/mneme/compose.py"
+    ],
+    "question_tokens": 35060,
+    "recall": 1.0,
+    "tokens_shown": 1696
+   },
+   "navigate": {
+    "files": [
+     "tests/test_repo_art.py",
+     "tools/check_repo_art.py",
+     "tests/test_recency.py",
+     "tests/test_compose.py",
+     "tests/test_union_and_migration.py"
+    ],
+    "question_tokens": 17212,
+    "recall": 1.0,
+    "tokens_shown": 1008
+   },
+   "pr": 8,
+   "repo": "mneme"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "tests/test_crucible_replay.py",
+     "src/mneme/replay.py",
+     "src/mneme/store.py",
+     "src/mneme/memory.py",
+     "src/mneme/receipt.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.6666666666666666,
+    "tokens_shown": 4008
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "tests/test_crucible_replay.py",
+     "src/mneme/replay.py",
+     "src/mneme/store.py",
+     "src/mneme/memory.py",
+     "src/mneme/receipt.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.6666666666666666,
+    "tokens_shown": 1310
+   },
+   "bm25-file": {
+    "files": [
+     "src/mneme/replay.py",
+     "tests/test_crucible_replay.py",
+     "src/mneme/store.py",
+     "src/mneme/compose.py",
+     "src/mneme/cli.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.6666666666666666,
+    "tokens_shown": 19406
+   },
+   "grep": {
+    "files": [
+     "tests/test_crucible_replay.py",
+     "src/mneme/replay.py",
+     "src/mneme/store.py",
+     "src/mneme/compose.py",
+     "src/mneme/cli.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.6666666666666666,
+    "tokens_shown": 5462
+   },
+   "map": {
+    "files": [
+     "tests/test_crucible_replay.py",
+     "src/mneme/replay.py",
+     "src/mneme/compose.py",
+     "src/mneme/inspect.py",
+     "tests/test_inspect.py"
+    ],
+    "question_tokens": 28080,
+    "recall": 0.0,
+    "tokens_shown": 2727
+   },
+   "navigate": {
+    "files": [
+     "tests/test_crucible_replay.py",
+     "src/mneme/replay.py",
+     "tests/test_inspect.py",
+     "tests/test_drift_content.py",
+     "src/mneme/compose.py"
+    ],
+    "question_tokens": 23468,
+    "recall": 0.0,
+    "tokens_shown": 699
+   },
+   "pr": 4,
+   "repo": "mneme"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "src/mneme/compose.py",
+     "src/mneme/cli.py",
+     "tests/test_compose.py",
+     "src/mneme/memory.py",
+     "src/mneme/store.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.6666666666666666,
+    "tokens_shown": 3998
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "src/mneme/compose.py",
+     "src/mneme/cli.py",
+     "tests/test_compose.py",
+     "src/mneme/memory.py",
+     "src/mneme/store.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.6666666666666666,
+    "tokens_shown": 1952
+   },
+   "bm25-file": {
+    "files": [
+     "src/mneme/compose.py",
+     "src/mneme/cli.py",
+     "src/mneme/memory.py",
+     "tests/test_compose.py",
+     "src/mneme/store.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.6666666666666666,
+    "tokens_shown": 11601
+   },
+   "grep": {
+    "files": [
+     "src/mneme/cli.py",
+     "src/mneme/memory.py",
+     "src/mneme/compose.py",
+     "tests/test_compose.py",
+     "src/mneme/store.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.6666666666666666,
+    "tokens_shown": 2781
+   },
+   "map": {
+    "files": [
+     "src/mneme/compose.py",
+     "src/mneme/store.py",
+     "tests/test_compose.py",
+     "src/mneme/memory.py",
+     "src/mneme/cli.py"
+    ],
+    "question_tokens": 20728,
+    "recall": 0.6666666666666666,
+    "tokens_shown": 4854
+   },
+   "navigate": {
+    "files": [
+     "src/mneme/compose.py",
+     "src/mneme/memory.py",
+     "tests/test_compose.py",
+     "src/mneme/cli.py",
+     "src/mneme/store.py"
+    ],
+    "question_tokens": 18806,
+    "recall": 0.6666666666666666,
+    "tokens_shown": 973
+   },
+   "pr": 3,
+   "repo": "mneme"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "src/mneme/compose.py",
+     "src/mneme/memory.py",
+     "tests/test_compose.py",
+     "src/mneme/cli.py",
+     "tests/test_scenario_mcp.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 1741
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "src/mneme/compose.py",
+     "src/mneme/memory.py",
+     "tests/test_compose.py",
+     "src/mneme/cli.py",
+     "tests/test_scenario_mcp.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 796
+   },
+   "bm25-file": {
+    "files": [
+     "src/mneme/compose.py",
+     "tests/test_compose.py",
+     "src/mneme/memory.py",
+     "src/mneme/cli.py",
+     "src/mneme/bench.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 8879
+   },
+   "grep": {
+    "files": [
+     "tests/test_compose.py",
+     "src/mneme/compose.py",
+     "src/mneme/memory.py",
+     "src/mneme/cli.py",
+     "src/mneme/bench.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 1624
+   },
+   "map": {
+    "files": [
+     "src/mneme/compose.py",
+     "src/mneme/memory.py",
+     "tests/test_compose.py",
+     "src/mneme/cli.py",
+     "src/mneme/mcp.py"
+    ],
+    "question_tokens": 20435,
+    "recall": 1.0,
+    "tokens_shown": 1864
+   },
+   "navigate": {
+    "files": [
+     "src/mneme/compose.py",
+     "tests/test_compose.py",
+     "src/mneme/memory.py",
+     "src/mneme/cli.py",
+     "examples/tour.py"
+    ],
+    "question_tokens": 17081,
+    "recall": 1.0,
+    "tokens_shown": 918
+   },
+   "pr": 2,
+   "repo": "mneme"
+  }
+ ],
+ "schema": "index.navigate-bench/v1",
+ "verdict": {
+  "best_arm": "grep",
+  "mean_recall": {
+   "bm25-chunk": 0.6302083333333334,
+   "bm25-chunk-best": 0.6302083333333334,
+   "bm25-file": 0.609375,
+   "grep": 0.640625,
+   "map": 0.5572916666666666,
+   "navigate": 0.5208333333333334
+  },
+  "primary_pass": false,
+  "recall_diff": {
+   "high": -0.03125,
+   "low": -0.23958333333333331,
+   "mean": -0.11979166666666666
+  },
+  "strong_pass": false,
+  "token_ratio": {
+   "high": 0.5110436351907074,
+   "low": 0.26040507016156733,
+   "ratio": 0.353717093585935
+  }
+ }
+}

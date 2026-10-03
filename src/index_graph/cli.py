@@ -30,6 +30,7 @@ from .cli_handlers import (
     cmd_watch,
     cmd_viz,
 )
+from .cli_handlers.navigate import cmd_navigate, cmd_outline_map
 from .cli_parser import build_parser
 from .router_job_surface import cmd_router_job
 from .route import cmd_route
@@ -55,6 +56,8 @@ _SUBCOMMANDS = {
     "internals",
     "internals-symbols",
     "symbols",
+    "navigate",
+    "outline-map",
     "check",
     "snapshot",
     "drift",
@@ -92,6 +95,8 @@ _DISPATCH = {
     "internals": cmd_internals,
     "internals-symbols": cmd_internals_symbols,
     "symbols": cmd_symbols,
+    "navigate": cmd_navigate,
+    "outline-map": cmd_outline_map,
     "check": cmd_check,
     "snapshot": cmd_snapshot,
     "drift": cmd_drift,

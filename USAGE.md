@@ -666,6 +666,46 @@ navigation is exposed over MCP as `index.symbol-definition`, `index.symbol-refer
 `index.symbol-implementations`. Only Python is AST-exact today; multi-language navigation is
 specced in `docs/PROTOCOL.md`.
 
+### `navigate` and `outline-map` subcommands (code for a question)
+
+```text
+index navigate ROOT QUESTION [--files N] [--beam N] [--ratio R] [--include-docs] [--all-leaves] [--json]
+index outline-map ROOT [--node ID] [--include-docs] [--json]
+```
+
+| Flag             | Default | Meaning                                                                    |
+| ---------------- | ------- | -------------------------------------------------------------------------- |
+| `ROOT`           | required | The repository to walk.                                                   |
+| `QUESTION`       | required | The question, in plain words.                                             |
+| `--files`        | 5       | Stop after this many distinct files.                                       |
+| `--beam`         | 4       | Most children followed at one node.                                        |
+| `--ratio`        | 0.5     | Follow children at least this share of the top child's probability.        |
+| `--include-docs` | off     | Also walk prose and config files; code files only by default.              |
+| `--all-leaves`   | off     | Deliver every leaf reached, not only the best leaf of each file.           |
+| `--json`         | off     | Leaves with source text, token counts and the decision path.               |
+| `--node`         | root    | For `outline-map`: the node id from a previous map's handle.               |
+
+`navigate` walks directory, file and symbol with one typed question per level and returns
+only the leaves it reached. The JSON payload (`index.navigate/v1`) carries `files`,
+`leaves` (id, file, start, end, kind, probability, text), `tokens_shown`,
+`question_tokens` and `path` (`index.decision-path/v1`: each node asked, its options, the
+distribution and the children followed). The exit code is `0` when a leaf was reached and
+`2` when none was.
+
+`outline-map` prints one node's children as a map (`index.outline-map/v1`): each entry has
+a `name`, a `description` for a model and a `handle` with the child's `node` id, kind, file
+and line span. Pass a handle's `node` back to go one level down; a leaf returns its `text`.
+An unknown node id exits non-zero with the id named.
+
+```bash
+index navigate . "path selection with typed rejection receipts" --files 3
+index outline-map . --node src/index_graph/navigate/
+```
+
+The same tools are exposed over MCP as `index.navigate` and `index.outline-map`, in the
+full server and in the read-only client profile. The benchmark behind the defaults, with
+its frozen query file and results, is in `docs/NAVIGATE.md` and `benchmarks/navigate/`.
+
 ### The `[architecture]` criterion
 
 A check needs a rule to measure against. Declare one in `.index.toml`:

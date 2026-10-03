@@ -9,7 +9,7 @@ from native_windows_process import run_process
 
 SPEC = json.loads(Path(__file__).with_name("client-package.json").read_text())
 
-EXPECTED_TOOLS = {"index.map","index.select","index.symbol-graph","index.symbol-definition","index.symbol-references","index.symbol-implementations"}
+EXPECTED_TOOLS = {"index.map","index.select","index.symbol-graph","index.symbol-definition","index.symbol-references","index.symbol-implementations","index.navigate","index.outline-map"}
 
 def strict_json(text):
     def unique(pairs):

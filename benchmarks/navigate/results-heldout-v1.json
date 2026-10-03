@@ -1,0 +1,4594 @@
+{
+ "params": {
+  "beam": 4,
+  "ratio": 0.5,
+  "temperature": 0.3
+ },
+ "queries_sha256": "a264681f55123d9bdd62a07446eb1a70d61f9ed02e2c9d696ee5bed3118eaade",
+ "rows": [
+  {
+   "bm25-chunk": {
+    "files": [
+     "client-plugin/server/src/index_graph/client_mcp.py",
+     "src/index_graph/client_mcp.py",
+     "tests/test_mcp_annotations.py",
+     "client-plugin/server/src/index_graph/viz/workbench_js2.py",
+     "src/index_graph/viz/workbench_js2.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.5,
+    "tokens_shown": 3881
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "client-plugin/server/src/index_graph/client_mcp.py",
+     "src/index_graph/client_mcp.py",
+     "tests/test_mcp_annotations.py",
+     "client-plugin/server/src/index_graph/viz/workbench_js2.py",
+     "src/index_graph/viz/workbench_js2.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.5,
+    "tokens_shown": 3881
+   },
+   "bm25-file": {
+    "files": [
+     "client-plugin/server/src/index_graph/client_mcp.py",
+     "src/index_graph/client_mcp.py",
+     "tests/test_client_profile.py",
+     "client-plugin/server/src/index_graph/viz/workbench_js2.py",
+     "src/index_graph/viz/workbench_js2.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.5,
+    "tokens_shown": 9168
+   },
+   "grep": {
+    "files": [
+     "tests/test_release_workflow.py",
+     "client-plugin/server/src/index_graph/client_mcp.py",
+     "src/index_graph/client_mcp.py",
+     "tests/test_client_profile.py",
+     "tests/test_gitmeta.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.5,
+    "tokens_shown": 3313
+   },
+   "map": {
+    "files": [
+     "tests/test_client_profile.py",
+     "client-plugin/server/src/index_graph/client_mcp.py",
+     "src/index_graph/client_mcp.py",
+     "client-plugin/server/src/index_graph/workbench.py",
+     "src/index_graph/workbench.py"
+    ],
+    "question_tokens": 217463,
+    "recall": 0.5,
+    "tokens_shown": 1645
+   },
+   "navigate": {
+    "files": [
+     "tests/test_client_profile.py",
+     "client-plugin/server/src/index_graph/client_mcp.py",
+     "client-plugin/server/src/index_graph/workbench.py",
+     "src/index_graph/client_mcp.py",
+     "scripts/build_client_package.py"
+    ],
+    "question_tokens": 90162,
+    "recall": 0.5,
+    "tokens_shown": 853
+   },
+   "pr": 56,
+   "repo": "index"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "tests/test_client_package.py",
+     "tests/test_client_profile.py",
+     "src/index_graph/client_state.py",
+     "tests/test_client_state.py",
+     "client-plugin/server/serve.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.5,
+    "tokens_shown": 1999
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "tests/test_client_package.py",
+     "tests/test_client_profile.py",
+     "src/index_graph/client_state.py",
+     "tests/test_client_state.py",
+     "client-plugin/server/serve.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.5,
+    "tokens_shown": 714
+   },
+   "bm25-file": {
+    "files": [
+     "tests/test_client_package.py",
+     "scripts/client_manifest.py",
+     "src/index_graph/client_mcp.py",
+     "scripts/check_native_client.py",
+     "scripts/build_client_package.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.5,
+    "tokens_shown": 9264
+   },
+   "grep": {
+    "files": [
+     "tests/test_client_package.py",
+     "src/index_graph/client_mcp.py",
+     "scripts/check_native_client.py",
+     "scripts/client_manifest.py",
+     "tests/test_wiki_serve.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 2912
+   },
+   "map": {
+    "files": [
+     "client-plugin/server/serve.py",
+     "tests/test_client_package.py",
+     "src/index_graph/client_state.py",
+     "src/index_graph/client_mcp.py",
+     "scripts/client_manifest.py"
+    ],
+    "question_tokens": 144367,
+    "recall": 0.5,
+    "tokens_shown": 1615
+   },
+   "navigate": {
+    "files": [
+     "client-plugin/server/serve.py",
+     "scripts/client_manifest.py",
+     "tests/test_client_package.py",
+     "src/index_graph/client_mcp.py",
+     "scripts/build_client_package.py"
+    ],
+    "question_tokens": 68826,
+    "recall": 1.0,
+    "tokens_shown": 1088
+   },
+   "pr": 54,
+   "repo": "index"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "tests/test_client_package.py",
+     "scripts/build_client_package.py",
+     "tests/test_client_state.py",
+     "tests/test_client_setup.py",
+     "tests/test_config.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 2394
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "tests/test_client_package.py",
+     "scripts/build_client_package.py",
+     "tests/test_client_state.py",
+     "tests/test_client_setup.py",
+     "tests/test_config.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 840
+   },
+   "bm25-file": {
+    "files": [
+     "tests/test_client_package.py",
+     "scripts/build_client_package.py",
+     "tests/test_client_setup.py",
+     "client-plugin/server/serve.py",
+     "tests/test_client_state.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 5579
+   },
+   "grep": {
+    "files": [
+     "scripts/build_client_package.py",
+     "tests/test_client_package.py",
+     "tests/test_client_setup.py",
+     "tests/test_client_state.py",
+     "src/index_graph/cli_parser.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 834
+   },
+   "map": {
+    "files": [
+     "client-plugin/server/serve.py",
+     "src/index_graph/router.py",
+     "scripts/build_client_package.py",
+     "src/index_graph/graph/walk.py",
+     "src/index_graph/flagship.py"
+    ],
+    "question_tokens": 143673,
+    "recall": 0.0,
+    "tokens_shown": 980
+   },
+   "navigate": {
+    "files": [
+     "client-plugin/server/serve.py",
+     "scripts/build_client_package.py",
+     "scripts/client_manifest.py",
+     "examples/wiki_demo.py",
+     "examples/demo.py"
+    ],
+    "question_tokens": 7583,
+    "recall": 1.0,
+    "tokens_shown": 1040
+   },
+   "pr": 52,
+   "repo": "index"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "scripts/client_manifest.py",
+     "tests/test_model.py",
+     "tests/test_release_workflow.py",
+     "src/index_graph/context/pack.py",
+     "tests/test_build.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 1870
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "scripts/client_manifest.py",
+     "tests/test_model.py",
+     "tests/test_release_workflow.py",
+     "src/index_graph/context/pack.py",
+     "tests/test_build.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 529
+   },
+   "bm25-file": {
+    "files": [
+     "scripts/client_manifest.py",
+     "tests/test_model.py",
+     "tests/test_release_workflow.py",
+     "tests/viz_fixtures.py",
+     "tests/test_roles.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 5735
+   },
+   "grep": {
+    "files": [
+     "scripts/client_manifest.py",
+     "tests/test_release_workflow.py",
+     "src/index_graph/graph/build.py",
+     "src/index_graph/context/pack.py",
+     "src/index_graph/graph/roles.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 2577
+   },
+   "map": {
+    "files": [
+     "scripts/client_manifest.py",
+     "tests/test_release_workflow.py",
+     "tests/test_model.py",
+     "tests/test_build.py",
+     "src/index_graph/graph/roles.py"
+    ],
+    "question_tokens": 143673,
+    "recall": 0.0,
+    "tokens_shown": 1188
+   },
+   "navigate": {
+    "files": [
+     "scripts/client_manifest.py",
+     "tests/test_model.py",
+     "tests/test_build.py",
+     "tests/test_release_workflow.py",
+     "src/index_graph/graph/roles.py"
+    ],
+    "question_tokens": 73433,
+    "recall": 0.0,
+    "tokens_shown": 728
+   },
+   "pr": 51,
+   "repo": "index"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "tests/test_mcp.py",
+     "tests/test_invalidate.py",
+     "tests/test_symbols_nav_cli.py",
+     "tests/test_route.py",
+     "src/index_graph/flagship.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 677
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "tests/test_mcp.py",
+     "tests/test_invalidate.py",
+     "tests/test_symbols_nav_cli.py",
+     "tests/test_route.py",
+     "src/index_graph/flagship.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 677
+   },
+   "bm25-file": {
+    "files": [
+     "tests/test_context_envelope.py",
+     "src/index_graph/context/envelope.py",
+     "scripts/build_client_package.py",
+     "src/index_graph/config.py",
+     "src/index_graph/flagship.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 15340
+   },
+   "grep": {
+    "files": [
+     "tests/test_context_envelope.py",
+     "src/index_graph/mcp.py",
+     "src/index_graph/context/envelope.py",
+     "src/index_graph/graph/walk.py",
+     "src/index_graph/flagship.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.5,
+    "tokens_shown": 2292
+   },
+   "map": {
+    "files": [
+     "tests/test_config.py",
+     "tests/test_mcp.py",
+     "tests/test_symbols_nav_cli.py",
+     "tests/test_context_envelope.py",
+     "tests/test_route.py"
+    ],
+    "question_tokens": 143201,
+    "recall": 0.0,
+    "tokens_shown": 718
+   },
+   "navigate": {
+    "files": [
+     "examples/demo.py",
+     "src/index_graph/context/envelope.py",
+     "scripts/client_manifest.py",
+     "src/index_graph/flagship.py",
+     "scripts/check_native_client.py"
+    ],
+    "question_tokens": 29697,
+    "recall": 0.0,
+    "tokens_shown": 2665
+   },
+   "pr": 50,
+   "repo": "index"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "tests/test_invalidate.py",
+     "tests/test_flagship_cli.py",
+     "tests/test_wiki_cli.py",
+     "tests/test_wiki_serve.py",
+     "tests/test_release_workflow.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 648
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "tests/test_invalidate.py",
+     "tests/test_flagship_cli.py",
+     "tests/test_wiki_cli.py",
+     "tests/test_wiki_serve.py",
+     "tests/test_release_workflow.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 559
+   },
+   "bm25-file": {
+    "files": [
+     "tests/test_invalidate.py",
+     "tests/test_wiki_serve.py",
+     "tests/test_flagship_cli.py",
+     "src/index_graph/graph/walk.py",
+     "src/index_graph/flagship.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 9424
+   },
+   "grep": {
+    "files": [
+     "tests/test_invalidate.py",
+     "tests/test_wiki_serve.py",
+     "src/index_graph/graph/walk.py",
+     "src/index_graph/mcp.py",
+     "tests/test_mcp.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 4175
+   },
+   "map": {
+    "files": [
+     "tests/test_wiki_serve.py",
+     "src/index_graph/flagship.py",
+     "tests/test_release_workflow.py",
+     "src/index_graph/lsp/server.py",
+     "tests/test_flagship_cli.py"
+    ],
+    "question_tokens": 137040,
+    "recall": 0.0,
+    "tokens_shown": 550
+   },
+   "navigate": {
+    "files": [
+     "tests/test_wiki_serve.py",
+     "index/__main__.py",
+     "index/__init__.py",
+     "src/index_graph/flagship.py",
+     "src/index_graph/lsp/server.py"
+    ],
+    "question_tokens": 64466,
+    "recall": 0.0,
+    "tokens_shown": 403
+   },
+   "pr": 48,
+   "repo": "index"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "tests/test_router_inventory.py",
+     "tests/test_resolver_php.py",
+     "src/index_graph/router_jobs.py",
+     "tests/test_resolver_cpp.py",
+     "tests/test_resolver_csharp.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 305
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "tests/test_router_inventory.py",
+     "tests/test_resolver_php.py",
+     "src/index_graph/router_jobs.py",
+     "tests/test_resolver_cpp.py",
+     "tests/test_resolver_csharp.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 305
+   },
+   "bm25-file": {
+    "files": [
+     "tests/test_graph_progress.py",
+     "tests/test_resolver_java.py",
+     "tests/test_resolver_rust.py",
+     "tests/test_resolver_go.py",
+     "tests/test_resolver_php.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 2738
+   },
+   "grep": {
+    "files": [
+     "tests/test_graph_progress.py",
+     "tests/test_router_jobs.py",
+     "src/index_graph/router_jobs.py",
+     "tests/test_mcp.py",
+     "src/index_graph/mcp.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 15331
+   },
+   "map": {
+    "files": [
+     "src/index_graph/router_inventory.py",
+     "src/index_graph/cli_handlers/maps.py",
+     "src/index_graph/router_jobs.py",
+     "tests/test_build.py",
+     "tests/test_pack.py"
+    ],
+    "question_tokens": 135523,
+    "recall": 0.3333333333333333,
+    "tokens_shown": 818
+   },
+   "navigate": {
+    "files": [
+     "tests/test_graph_progress.py",
+     "examples/router_job_flow.py",
+     "src/index_graph/router_job_surface.py",
+     "src/index_graph/router_inventory.py",
+     "src/index_graph/router_job_telemetry.py"
+    ],
+    "question_tokens": 65802,
+    "recall": 0.3333333333333333,
+    "tokens_shown": 920
+   },
+   "pr": 47,
+   "repo": "index"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "tests/test_scan.py",
+     "tests/test_model.py",
+     "src/index_graph/wiki/serve.py",
+     "src/index_graph/scan.py",
+     "src/index_graph/lsp/server.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 1402
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "tests/test_scan.py",
+     "tests/test_model.py",
+     "src/index_graph/wiki/serve.py",
+     "src/index_graph/scan.py",
+     "src/index_graph/lsp/server.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 709
+   },
+   "bm25-file": {
+    "files": [
+     "tests/test_model.py",
+     "src/index_graph/wiki/serve.py",
+     "src/index_graph/scan.py",
+     "tests/test_wiki_serve.py",
+     "tests/test_scan.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 12892
+   },
+   "grep": {
+    "files": [
+     "tests/test_scan.py",
+     "src/index_graph/scan.py",
+     "src/index_graph/mcp.py",
+     "tests/test_router_inventory.py",
+     "tests/test_source_read_reuse.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.2,
+    "tokens_shown": 8554
+   },
+   "map": {
+    "files": [
+     "tests/test_scan.py",
+     "src/index_graph/lsp/server.py",
+     "tests/test_model.py",
+     "src/index_graph/wiki/serve.py",
+     "tests/test_wiki_serve.py"
+    ],
+    "question_tokens": 131409,
+    "recall": 0.0,
+    "tokens_shown": 1091
+   },
+   "navigate": {
+    "files": [
+     "src/index_graph/lsp/server.py",
+     "src/index_graph/wiki/pack.py",
+     "src/index_graph/wiki/serve.py",
+     "tests/test_model.py",
+     "tests/test_wiki_pack.py"
+    ],
+    "question_tokens": 65085,
+    "recall": 0.0,
+    "tokens_shown": 814
+   },
+   "pr": 45,
+   "repo": "index"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "src/index_graph/cli_parser.py",
+     "src/index_graph/interop.py",
+     "tests/test_focus_rejection.py",
+     "tests/test_lens.py",
+     "src/index_graph/context/lens.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.25,
+    "tokens_shown": 1087
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "src/index_graph/cli_parser.py",
+     "src/index_graph/interop.py",
+     "tests/test_focus_rejection.py",
+     "tests/test_lens.py",
+     "src/index_graph/context/lens.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.25,
+    "tokens_shown": 1087
+   },
+   "bm25-file": {
+    "files": [
+     "src/index_graph/flagship.py",
+     "src/index_graph/cli_parser.py",
+     "tests/test_focus_rejection.py",
+     "src/index_graph/cli.py",
+     "src/index_graph/viz/workbench_js2.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.25,
+    "tokens_shown": 10146
+   },
+   "grep": {
+    "files": [
+     "src/index_graph/workbench.py",
+     "src/index_graph/cli_parser.py",
+     "src/index_graph/viz/workbench_js2.py",
+     "src/index_graph/flagship.py",
+     "tests/test_walk.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.25,
+    "tokens_shown": 5251
+   },
+   "map": {
+    "files": [
+     "src/index_graph/cli_parser.py",
+     "src/index_graph/interop.py",
+     "src/index_graph/context/lens.py",
+     "src/index_graph/context/pack.py",
+     "tests/test_envelope_freshness_verify.py"
+    ],
+    "question_tokens": 128409,
+    "recall": 0.25,
+    "tokens_shown": 1701
+   },
+   "navigate": {
+    "files": [
+     "tests/test_focus_rejection.py",
+     "src/index_graph/cli_parser.py",
+     "src/index_graph/context/lens.py",
+     "src/index_graph/context/pack.py",
+     "examples/router_job_flow.py"
+    ],
+    "question_tokens": 62577,
+    "recall": 0.25,
+    "tokens_shown": 1016
+   },
+   "pr": 44,
+   "repo": "index"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "tests/test_router_docs_prefix_index.py",
+     "tests/test_router_jobs.py",
+     "src/index_graph/router_jobs.py",
+     "examples/router_job_flow.py",
+     "tests/test_graph_progress.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 10459
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "tests/test_router_docs_prefix_index.py",
+     "tests/test_router_jobs.py",
+     "src/index_graph/router_jobs.py",
+     "examples/router_job_flow.py",
+     "tests/test_graph_progress.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 2025
+   },
+   "bm25-file": {
+    "files": [
+     "src/index_graph/router_jobs.py",
+     "tests/test_router_jobs.py",
+     "tests/test_router_docs_prefix_index.py",
+     "tests/test_graph_progress.py",
+     "examples/router_job_flow.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 21322
+   },
+   "grep": {
+    "files": [
+     "src/index_graph/router_jobs.py",
+     "tests/test_router_jobs.py",
+     "tests/test_router_docs_prefix_index.py",
+     "tests/test_graph_progress.py",
+     "src/index_graph/scan.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 13032
+   },
+   "map": {
+    "files": [
+     "src/index_graph/router_jobs.py",
+     "tests/test_router_jobs.py",
+     "src/index_graph/router_job_telemetry.py",
+     "tests/test_router_docs_prefix_index.py",
+     "examples/router_job_flow.py"
+    ],
+    "question_tokens": 127677,
+    "recall": 1.0,
+    "tokens_shown": 10857
+   },
+   "navigate": {
+    "files": [
+     "src/index_graph/router_jobs.py",
+     "tests/test_router_jobs.py",
+     "examples/router_job_flow.py",
+     "src/index_graph/router_job_telemetry.py",
+     "src/index_graph/scan.py"
+    ],
+    "question_tokens": 65503,
+    "recall": 1.0,
+    "tokens_shown": 3847
+   },
+   "pr": 42,
+   "repo": "index"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "src/index_graph/arch/check.py",
+     "src/index_graph/verify.py",
+     "tests/test_repo_art.py",
+     "scripts/repo_flow.py",
+     "src/index_graph/freshness/invalidate_cli.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 1561
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "src/index_graph/arch/check.py",
+     "src/index_graph/verify.py",
+     "tests/test_repo_art.py",
+     "scripts/repo_flow.py",
+     "src/index_graph/freshness/invalidate_cli.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 1246
+   },
+   "bm25-file": {
+    "files": [
+     "tests/test_repo_art.py",
+     "scripts/render_repo_art.py",
+     "scripts/repo_card.py",
+     "src/index_graph/lsp/symbols_lsp.py",
+     "src/index_graph/context/focus.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 7681
+   },
+   "grep": {
+    "files": [
+     "tests/test_repo_art.py",
+     "scripts/repo_card.py",
+     "src/index_graph/cli_parser.py",
+     "src/index_graph/lsp/server.py",
+     "scripts/render_repo_art.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 2690
+   },
+   "map": {
+    "files": [
+     "src/index_graph/arch/check.py",
+     "tests/test_repo_art.py",
+     "src/index_graph/freshness/invalidate_cli.py",
+     "src/index_graph/wiki/seal.py",
+     "scripts/render_repo_art.py"
+    ],
+    "question_tokens": 99925,
+    "recall": 0.0,
+    "tokens_shown": 1700
+   },
+   "navigate": {
+    "files": [
+     "scripts/render_repo_art.py",
+     "scripts/repo_card.py",
+     "scripts/repo_flow.py",
+     "tests/test_symbols_coverage.py",
+     "tests/test_symbols_shadowing.py"
+    ],
+    "question_tokens": 35195,
+    "recall": 1.0,
+    "tokens_shown": 665
+   },
+   "pr": 38,
+   "repo": "index"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "tests/test_lsp_initialize.py",
+     "tests/test_symbols_edge_cases.py",
+     "scripts/repo_art.py",
+     "src/index_graph/symbols/calls.py",
+     "src/index_graph/flagship.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 917
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "tests/test_lsp_initialize.py",
+     "tests/test_symbols_edge_cases.py",
+     "scripts/repo_art.py",
+     "src/index_graph/symbols/calls.py",
+     "src/index_graph/flagship.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 917
+   },
+   "bm25-file": {
+    "files": [
+     "tests/test_lsp_initialize.py",
+     "src/index_graph/wiki/seal.py",
+     "tests/test_symbols_edge_cases.py",
+     "src/index_graph/cli_handlers/_common.py",
+     "src/index_graph/viz/workbench_js2.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 5998
+   },
+   "grep": {
+    "files": [
+     "src/index_graph/viz/workbench_html.py",
+     "src/index_graph/wiki/seal.py",
+     "src/index_graph/context/select.py",
+     "src/index_graph/wiki/cli.py",
+     "scripts/repo_art.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 1157
+   },
+   "map": {
+    "files": [
+     "tests/test_lsp_initialize.py",
+     "tests/test_symbols_edge_cases.py",
+     "src/index_graph/lsp/server.py",
+     "src/index_graph/wiki/seal.py",
+     "src/index_graph/flagship.py"
+    ],
+    "question_tokens": 98152,
+    "recall": 0.0,
+    "tokens_shown": 790
+   },
+   "navigate": {
+    "files": [
+     "tests/test_lsp_initialize.py",
+     "src/index_graph/freshness/invalidate.py",
+     "src/index_graph/wiki/seal.py",
+     "src/index_graph/cli_parser.py",
+     "scripts/repo_art.py"
+    ],
+    "question_tokens": 53536,
+    "recall": 0.0,
+    "tokens_shown": 387
+   },
+   "pr": 37,
+   "repo": "index"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "scripts/render_repo_art.py",
+     "tests/test_repo_art.py",
+     "tests/test_atlas_html.py",
+     "src/index_graph/knowledge/markdown.py",
+     "src/index_graph/lsp/server.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 2117
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "scripts/render_repo_art.py",
+     "tests/test_repo_art.py",
+     "tests/test_atlas_html.py",
+     "src/index_graph/knowledge/markdown.py",
+     "src/index_graph/lsp/server.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 1582
+   },
+   "bm25-file": {
+    "files": [
+     "scripts/render_repo_art.py",
+     "tests/test_repo_art.py",
+     "scripts/repo_art.py",
+     "src/index_graph/wiki/seal.py",
+     "tests/test_atlas_html.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 9658
+   },
+   "grep": {
+    "files": [
+     "tests/test_repo_art.py",
+     "scripts/repo_art.py",
+     "scripts/render_repo_art.py",
+     "tests/test_mcp.py",
+     "src/index_graph/mcp.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 2792
+   },
+   "map": {
+    "files": [
+     "scripts/render_repo_art.py",
+     "tests/test_repo_art.py",
+     "scripts/repo_art.py",
+     "src/index_graph/cli_handlers/verify.py",
+     "tests/test_cli_verify.py"
+    ],
+    "question_tokens": 98144,
+    "recall": 1.0,
+    "tokens_shown": 2808
+   },
+   "navigate": {
+    "files": [
+     "scripts/render_repo_art.py",
+     "tests/test_repo_art.py",
+     "scripts/repo_art.py",
+     "src/index_graph/cli_handlers/verify.py",
+     "src/index_graph/cli_handlers/certify.py"
+    ],
+    "question_tokens": 53826,
+    "recall": 1.0,
+    "tokens_shown": 1516
+   },
+   "pr": 36,
+   "repo": "index"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "tests/test_readme_onboarding.py",
+     "src/index_graph/wiki/serve_pages.py",
+     "src/index_graph/wiki/serve.py",
+     "src/index_graph/lsp/protocol.py",
+     "tests/test_lsp_protocol.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 1205
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "tests/test_readme_onboarding.py",
+     "src/index_graph/wiki/serve_pages.py",
+     "src/index_graph/wiki/serve.py",
+     "src/index_graph/lsp/protocol.py",
+     "tests/test_lsp_protocol.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 451
+   },
+   "bm25-file": {
+    "files": [
+     "src/index_graph/wiki/serve.py",
+     "tests/test_readme_onboarding.py",
+     "src/index_graph/wiki/serve_pages.py",
+     "src/index_graph/lsp/protocol.py",
+     "tests/test_lsp_protocol.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 4322
+   },
+   "grep": {
+    "files": [
+     "tests/test_readme_onboarding.py",
+     "src/index_graph/wiki/serve.py",
+     "tests/test_docs.py",
+     "src/index_graph/freshness/invalidate.py",
+     "src/index_graph/lsp/protocol.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 1013
+   },
+   "map": {
+    "files": [
+     "tests/test_readme_onboarding.py",
+     "src/index_graph/wiki/serve_pages.py",
+     "src/index_graph/lsp/protocol.py",
+     "src/index_graph/wiki/serve.py",
+     "tests/test_lsp_protocol.py"
+    ],
+    "question_tokens": 81844,
+    "recall": 0.0,
+    "tokens_shown": 1432
+   },
+   "navigate": {
+    "files": [
+     "src/index_graph/wiki/serve.py",
+     "src/index_graph/lsp/protocol.py",
+     "tests/test_readme_onboarding.py",
+     "src/index_graph/wiki/serve_pages.py",
+     "src/index_graph/router.py"
+    ],
+    "question_tokens": 43399,
+    "recall": 0.0,
+    "tokens_shown": 768
+   },
+   "pr": 25,
+   "repo": "index"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "tests/test_lsp_symbol_lookup.py",
+     "src/index_graph/graph/resolvers/java.py",
+     "src/index_graph/lsp/server.py",
+     "tests/test_atlas_html.py",
+     "src/index_graph/lsp/symbols_lsp.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.14285714285714285,
+    "tokens_shown": 1020
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "tests/test_lsp_symbol_lookup.py",
+     "src/index_graph/graph/resolvers/java.py",
+     "src/index_graph/lsp/server.py",
+     "tests/test_atlas_html.py",
+     "src/index_graph/lsp/symbols_lsp.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.14285714285714285,
+    "tokens_shown": 568
+   },
+   "bm25-file": {
+    "files": [
+     "src/index_graph/cli_handlers/__init__.py",
+     "tests/test_lsp_symbol_lookup.py",
+     "src/index_graph/lsp/__init__.py",
+     "src/index_graph/lsp/symbols_lsp.py",
+     "tests/test_lsp_references.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.2857142857142857,
+    "tokens_shown": 2917
+   },
+   "grep": {
+    "files": [
+     "src/index_graph/mcp.py",
+     "tests/test_lsp_symbol_lookup.py",
+     "src/index_graph/lsp/symbols_lsp.py",
+     "src/index_graph/wiki/seal.py",
+     "src/index_graph/lsp/server.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.2857142857142857,
+    "tokens_shown": 3859
+   },
+   "map": {
+    "files": [
+     "tests/test_lsp_symbol_lookup.py",
+     "src/index_graph/lsp/server.py",
+     "src/index_graph/lsp/symbols_lsp.py",
+     "tests/test_atlas_html.py",
+     "src/index_graph/lsp/__init__.py"
+    ],
+    "question_tokens": 78486,
+    "recall": 0.14285714285714285,
+    "tokens_shown": 1221
+   },
+   "navigate": {
+    "files": [
+     "tests/test_atlas_html.py",
+     "tests/test_lsp_symbol_lookup.py",
+     "src/index_graph/lsp/symbols_lsp.py",
+     "src/index_graph/cli_handlers/graph.py",
+     "src/index_graph/lsp/__init__.py"
+    ],
+    "question_tokens": 45014,
+    "recall": 0.14285714285714285,
+    "tokens_shown": 1018
+   },
+   "pr": 24,
+   "repo": "index"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "tests/test_mcp.py",
+     "src/index_graph/wiki/cli.py",
+     "src/index_graph/router.py",
+     "src/index_graph/mcp.py",
+     "tests/wiki_fixtures.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.16666666666666666,
+    "tokens_shown": 669
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "tests/test_mcp.py",
+     "src/index_graph/wiki/cli.py",
+     "src/index_graph/router.py",
+     "src/index_graph/mcp.py",
+     "tests/wiki_fixtures.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.16666666666666666,
+    "tokens_shown": 669
+   },
+   "bm25-file": {
+    "files": [
+     "src/index_graph/wiki/cli.py",
+     "src/index_graph/mcp.py",
+     "src/index_graph/wiki/__init__.py",
+     "tests/test_wiki_demo.py",
+     "tests/test_router_deep_dives.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.3333333333333333,
+    "tokens_shown": 5337
+   },
+   "grep": {
+    "files": [
+     "src/index_graph/mcp.py",
+     "src/index_graph/wiki/cli.py",
+     "tests/test_mcp.py",
+     "examples/wiki_demo.py",
+     "src/index_graph/cli_parser.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.3333333333333333,
+    "tokens_shown": 2274
+   },
+   "map": {
+    "files": [
+     "tests/test_mcp.py",
+     "src/index_graph/wiki/__init__.py",
+     "src/index_graph/router.py",
+     "src/index_graph/wiki/pack.py",
+     "tests/wiki_fixtures.py"
+    ],
+    "question_tokens": 63428,
+    "recall": 0.16666666666666666,
+    "tokens_shown": 741
+   },
+   "navigate": {
+    "files": [
+     "examples/wiki_demo.py",
+     "src/index_graph/mcp.py",
+     "tests/test_mcp.py",
+     "tests/test_wiki_source.py",
+     "tests/test_router_deep_dives.py"
+    ],
+    "question_tokens": 33937,
+    "recall": 0.0,
+    "tokens_shown": 746
+   },
+   "pr": 23,
+   "repo": "index"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "tests/test_atlas_cli.py",
+     "src/index_graph/knowledge/markdown.py",
+     "tests/test_router.py",
+     "tests/test_cli_subcommands.py",
+     "src/index_graph/flagship.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 1132
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "tests/test_atlas_cli.py",
+     "src/index_graph/knowledge/markdown.py",
+     "tests/test_router.py",
+     "tests/test_cli_subcommands.py",
+     "src/index_graph/flagship.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 835
+   },
+   "bm25-file": {
+    "files": [
+     "examples/wiki_demo.py",
+     "tests/test_atlas_cli.py",
+     "src/index_graph/cli.py",
+     "tests/test_cli_subcommands.py",
+     "src/index_graph/knowledge/markdown.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 4508
+   },
+   "grep": {
+    "files": [
+     "src/index_graph/mcp.py",
+     "src/index_graph/flagship.py",
+     "examples/wiki_demo.py",
+     "src/index_graph/cli_parser.py",
+     "tests/test_atlas_html.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 2283
+   },
+   "map": {
+    "files": [
+     "src/index_graph/knowledge/markdown.py",
+     "src/index_graph/router.py",
+     "tests/test_router.py",
+     "src/index_graph/cli.py",
+     "tests/test_atlas_cli.py"
+    ],
+    "question_tokens": 62649,
+    "recall": 0.3333333333333333,
+    "tokens_shown": 1196
+   },
+   "navigate": {
+    "files": [
+     "examples/wiki_demo.py",
+     "tests/test_router.py",
+     "src/index_graph/knowledge/markdown.py",
+     "tests/test_atlas_cli.py",
+     "tests/test_cli_subcommands.py"
+    ],
+    "question_tokens": 33559,
+    "recall": 0.0,
+    "tokens_shown": 766
+   },
+   "pr": 22,
+   "repo": "index"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "tests/test_internals_modules.py",
+     "src/index_graph/graph/resolvers/python.py",
+     "tests/test_walk.py",
+     "tests/test_select.py",
+     "tests/test_internals_build.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 806
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "tests/test_internals_modules.py",
+     "src/index_graph/graph/resolvers/python.py",
+     "tests/test_walk.py",
+     "tests/test_select.py",
+     "tests/test_internals_build.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 806
+   },
+   "bm25-file": {
+    "files": [
+     "src/index_graph/graph/resolvers/python.py",
+     "src/index_graph/cli.py",
+     "src/index_graph/wiki/__init__.py",
+     "src/index_graph/internals/modules.py",
+     "tests/test_select.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 14815
+   },
+   "grep": {
+    "files": [
+     "src/index_graph/cli.py",
+     "src/index_graph/graph/resolvers/python.py",
+     "tests/test_select.py",
+     "src/index_graph/internals/modules.py",
+     "src/index_graph/graph/build.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 1954
+   },
+   "map": {
+    "files": [
+     "src/index_graph/cli.py",
+     "src/index_graph/wiki/cli.py",
+     "src/index_graph/internals/modules.py",
+     "tests/test_select.py",
+     "src/index_graph/context/select.py"
+    ],
+    "question_tokens": 60306,
+    "recall": 1.0,
+    "tokens_shown": 3646
+   },
+   "navigate": {
+    "files": [
+     "src/index_graph/wiki/cli.py",
+     "src/index_graph/cli.py",
+     "tests/test_select.py",
+     "scripts/dogfood_recovery.py",
+     "src/index_graph/graph/build.py"
+    ],
+    "question_tokens": 36285,
+    "recall": 1.0,
+    "tokens_shown": 2640
+   },
+   "pr": 21,
+   "repo": "index"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "tests/test_docs.py",
+     "tests/test_gitmeta.py",
+     "src/index_graph/router.py",
+     "src/index_graph/flagship.py",
+     "tests/test_router.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 930
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "tests/test_docs.py",
+     "tests/test_gitmeta.py",
+     "src/index_graph/router.py",
+     "src/index_graph/flagship.py",
+     "tests/test_router.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 930
+   },
+   "bm25-file": {
+    "files": [
+     "examples/demo.py",
+     "tests/test_router.py",
+     "src/index_graph/router.py",
+     "tests/test_docs.py",
+     "tests/test_verify.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 3752
+   },
+   "grep": {
+    "files": [
+     "examples/demo.py",
+     "tests/test_router.py",
+     "src/index_graph/mcp.py",
+     "src/index_graph/cli.py",
+     "src/index_graph/flagship.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 3081
+   },
+   "map": {
+    "files": [
+     "tests/test_router.py",
+     "src/index_graph/scan.py",
+     "tests/test_freshness.py",
+     "src/index_graph/__init__.py",
+     "src/index_graph/cli.py"
+    ],
+    "question_tokens": 58727,
+    "recall": 1.0,
+    "tokens_shown": 582
+   },
+   "navigate": {
+    "files": [
+     "examples/demo.py",
+     "src/index_graph/cli.py",
+     "src/index_graph/scan.py",
+     "src/index_graph/router.py",
+     "tests/test_router.py"
+    ],
+    "question_tokens": 32700,
+    "recall": 1.0,
+    "tokens_shown": 775
+   },
+   "pr": 20,
+   "repo": "index"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "tests/test_select.py",
+     "src/index_graph/context/select.py",
+     "src/index_graph/flagship.py",
+     "tests/test_flagship_cli.py",
+     "tests/test_wiki_cli.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.25,
+    "tokens_shown": 1158
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "tests/test_select.py",
+     "src/index_graph/context/select.py",
+     "src/index_graph/flagship.py",
+     "tests/test_flagship_cli.py",
+     "tests/test_wiki_cli.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.25,
+    "tokens_shown": 1158
+   },
+   "bm25-file": {
+    "files": [
+     "src/index_graph/context/select.py",
+     "tests/test_flagship_cli.py",
+     "src/index_graph/flagship.py",
+     "src/index_graph/mcp.py",
+     "tests/test_cli_verify.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.5,
+    "tokens_shown": 9303
+   },
+   "grep": {
+    "files": [
+     "src/index_graph/mcp.py",
+     "src/index_graph/cli.py",
+     "src/index_graph/flagship.py",
+     "tests/test_cli_verify.py",
+     "src/index_graph/context/select.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.75,
+    "tokens_shown": 2676
+   },
+   "map": {
+    "files": [
+     "tests/test_select.py",
+     "src/index_graph/context/select.py",
+     "src/index_graph/flagship.py",
+     "src/index_graph/mcp.py",
+     "tests/test_flagship_cli.py"
+    ],
+    "question_tokens": 53975,
+    "recall": 0.5,
+    "tokens_shown": 1912
+   },
+   "navigate": {
+    "files": [
+     "src/index_graph/context/select.py",
+     "src/index_graph/flagship.py",
+     "src/index_graph/mcp.py",
+     "tests/test_select.py",
+     "src/index_graph/context/pack.py"
+    ],
+    "question_tokens": 31931,
+    "recall": 0.5,
+    "tokens_shown": 1888
+   },
+   "pr": 18,
+   "repo": "index"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "src/index_graph/cli.py",
+     "tests/test_cli_verify.py",
+     "src/index_graph/scan.py",
+     "index/__init__.py",
+     "tests/test_internals_reach.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 877
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "src/index_graph/cli.py",
+     "tests/test_cli_verify.py",
+     "src/index_graph/scan.py",
+     "index/__init__.py",
+     "tests/test_internals_reach.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 877
+   },
+   "bm25-file": {
+    "files": [
+     "src/index_graph/context/envelope.py",
+     "src/index_graph/scan.py",
+     "src/index_graph/cli.py",
+     "index/__init__.py",
+     "src/index_graph/context/pack.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 12568
+   },
+   "grep": {
+    "files": [
+     "src/index_graph/context/envelope.py",
+     "src/index_graph/cli.py",
+     "src/index_graph/mcp.py",
+     "src/index_graph/context/pack.py",
+     "src/index_graph/scan.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 824
+   },
+   "map": {
+    "files": [
+     "src/index_graph/scan.py",
+     "src/index_graph/context/pack.py",
+     "src/index_graph/context/envelope.py",
+     "tests/test_atlas_html.py",
+     "tests/test_cli_verify.py"
+    ],
+    "question_tokens": 53797,
+    "recall": 1.0,
+    "tokens_shown": 828
+   },
+   "navigate": {
+    "files": [
+     "src/index_graph/context/envelope.py",
+     "src/index_graph/scan.py",
+     "tests/test_resolver_python.py",
+     "tests/test_atlas_html.py",
+     "tests/test_resolver_rust.py"
+    ],
+    "question_tokens": 31065,
+    "recall": 1.0,
+    "tokens_shown": 669
+   },
+   "pr": 19,
+   "repo": "index"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "tests/test_viz_manifest.py",
+     "src/index_graph/context/select.py",
+     "src/index_graph/viz/manifest.py",
+     "src/index_graph/graph/roles.py",
+     "tests/test_select.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 953
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "tests/test_viz_manifest.py",
+     "src/index_graph/context/select.py",
+     "src/index_graph/viz/manifest.py",
+     "src/index_graph/graph/roles.py",
+     "tests/test_select.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 953
+   },
+   "bm25-file": {
+    "files": [
+     "src/index_graph/viz/manifest.py",
+     "tests/test_viz_manifest.py",
+     "examples/demo.py",
+     "src/index_graph/context/select.py",
+     "src/index_graph/mcp.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.25,
+    "tokens_shown": 7139
+   },
+   "grep": {
+    "files": [
+     "src/index_graph/mcp.py",
+     "src/index_graph/context/select.py",
+     "src/index_graph/cli.py",
+     "examples/demo.py",
+     "tests/test_viz_manifest.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.5,
+    "tokens_shown": 2680
+   },
+   "map": {
+    "files": [
+     "src/index_graph/viz/charts.py",
+     "tests/test_viz_manifest.py",
+     "src/index_graph/verify.py",
+     "src/index_graph/knowledge/markdown.py",
+     "src/index_graph/graph/roles.py"
+    ],
+    "question_tokens": 48651,
+    "recall": 0.25,
+    "tokens_shown": 459
+   },
+   "navigate": {
+    "files": [
+     "examples/demo.py",
+     "src/index_graph/verify.py",
+     "src/index_graph/viz/manifest.py",
+     "src/index_graph/viz/charts.py",
+     "src/index_graph/knowledge/markdown.py"
+    ],
+    "question_tokens": 13822,
+    "recall": 0.25,
+    "tokens_shown": 730
+   },
+   "pr": 17,
+   "repo": "index"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "src/index_graph/flagship.py",
+     "tests/test_context_envelope.py",
+     "tests/test_cli_verify.py",
+     "src/index_graph/context/envelope.py",
+     "src/index_graph/viz/manifest.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.3333333333333333,
+    "tokens_shown": 2376
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "src/index_graph/flagship.py",
+     "tests/test_context_envelope.py",
+     "tests/test_cli_verify.py",
+     "src/index_graph/context/envelope.py",
+     "src/index_graph/viz/manifest.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.3333333333333333,
+    "tokens_shown": 1727
+   },
+   "bm25-file": {
+    "files": [
+     "src/index_graph/flagship.py",
+     "tests/test_context_envelope.py",
+     "src/index_graph/context/envelope.py",
+     "src/index_graph/viz/manifest.py",
+     "tests/test_flagship_cli.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.3333333333333333,
+    "tokens_shown": 5797
+   },
+   "grep": {
+    "files": [
+     "tests/test_context_envelope.py",
+     "src/index_graph/context/envelope.py",
+     "src/index_graph/flagship.py",
+     "src/index_graph/cli.py",
+     "tests/test_cli_verify.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.6666666666666666,
+    "tokens_shown": 4962
+   },
+   "map": {
+    "files": [
+     "tests/test_context_envelope.py",
+     "src/index_graph/flagship.py",
+     "src/index_graph/viz/manifest.py",
+     "tests/test_flagship_cli.py",
+     "src/index_graph/context/envelope.py"
+    ],
+    "question_tokens": 46285,
+    "recall": 0.3333333333333333,
+    "tokens_shown": 1307
+   },
+   "navigate": {
+    "files": [
+     "index/__init__.py",
+     "src/index_graph/context/envelope.py",
+     "examples/demo.py",
+     "tests/test_context_envelope.py",
+     "examples/atlas_demo.py"
+    ],
+    "question_tokens": 27277,
+    "recall": 0.0,
+    "tokens_shown": 1065
+   },
+   "pr": 16,
+   "repo": "index"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "src/index_graph/mcp.py",
+     "tests/test_mcp.py",
+     "src/index_graph/cli.py",
+     "tests/viz_fixtures.py",
+     "src/index_graph/graph/resolvers/base.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 2872
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "src/index_graph/mcp.py",
+     "tests/test_mcp.py",
+     "src/index_graph/cli.py",
+     "tests/viz_fixtures.py",
+     "src/index_graph/graph/resolvers/base.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 237
+   },
+   "bm25-file": {
+    "files": [
+     "src/index_graph/mcp.py",
+     "tests/test_mcp.py",
+     "src/index_graph/cli.py",
+     "src/index_graph/graph/resolvers/base.py",
+     "tests/viz_fixtures.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 9592
+   },
+   "grep": {
+    "files": [
+     "src/index_graph/mcp.py",
+     "src/index_graph/cli.py",
+     "tests/test_mcp.py",
+     "tests/viz_fixtures.py",
+     "tests/test_edges.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 1346
+   },
+   "map": {
+    "files": [
+     "src/index_graph/mcp.py",
+     "tests/test_mcp.py",
+     "src/index_graph/graph/resolvers/base.py",
+     "tests/viz_fixtures.py",
+     "src/index_graph/cli.py"
+    ],
+    "question_tokens": 36205,
+    "recall": 1.0,
+    "tokens_shown": 3001
+   },
+   "navigate": {
+    "files": [
+     "src/index_graph/mcp.py",
+     "tests/test_mcp.py",
+     "examples/demo.py",
+     "src/index_graph/cli.py",
+     "src/index_graph/graph/resolvers/base.py"
+    ],
+    "question_tokens": 24796,
+    "recall": 1.0,
+    "tokens_shown": 413
+   },
+   "pr": 9,
+   "repo": "index"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "src/index_graph/verify.py",
+     "tests/test_verify.py",
+     "src/index_graph/cli.py",
+     "src/index_graph/certify/certificate.py",
+     "tests/test_cli_verify.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 1987
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "src/index_graph/verify.py",
+     "tests/test_verify.py",
+     "src/index_graph/cli.py",
+     "src/index_graph/certify/certificate.py",
+     "tests/test_cli_verify.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 897
+   },
+   "bm25-file": {
+    "files": [
+     "src/index_graph/verify.py",
+     "tests/test_verify.py",
+     "src/index_graph/cli.py",
+     "src/index_graph/certify/certificate.py",
+     "tests/test_cli_verify.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 8998
+   },
+   "grep": {
+    "files": [
+     "src/index_graph/verify.py",
+     "src/index_graph/cli.py",
+     "tests/test_verify.py",
+     "tests/test_cli_verify.py",
+     "src/index_graph/certify/certificate.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 1080
+   },
+   "map": {
+    "files": [
+     "src/index_graph/verify.py",
+     "tests/test_verify.py",
+     "src/index_graph/cli.py",
+     "tests/test_cli_verify.py",
+     "tests/test_edges.py"
+    ],
+    "question_tokens": 35198,
+    "recall": 1.0,
+    "tokens_shown": 3808
+   },
+   "navigate": {
+    "files": [
+     "tests/test_verify.py",
+     "src/index_graph/verify.py",
+     "tests/test_cli_verify.py",
+     "examples/demo.py",
+     "scripts/dogfood_recovery.py"
+    ],
+    "question_tokens": 21407,
+    "recall": 0.5,
+    "tokens_shown": 644
+   },
+   "pr": 8,
+   "repo": "index"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "src/index_graph/context/pack.py",
+     "tests/test_cli_subcommands.py",
+     "tests/test_viz_cli.py",
+     "tests/test_router.py",
+     "src/index_graph/router.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 971
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "src/index_graph/context/pack.py",
+     "tests/test_cli_subcommands.py",
+     "tests/test_viz_cli.py",
+     "tests/test_router.py",
+     "src/index_graph/router.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 576
+   },
+   "bm25-file": {
+    "files": [
+     "src/index_graph/context/pack.py",
+     "tests/test_router.py",
+     "src/index_graph/router.py",
+     "src/index_graph/cli.py",
+     "tests/test_cli_subcommands.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 8557
+   },
+   "grep": {
+    "files": [
+     "src/index_graph/cli.py",
+     "tests/test_viz_cli.py",
+     "tests/test_router.py",
+     "tests/test_cli_subcommands.py",
+     "src/index_graph/context/pack.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 1628
+   },
+   "map": {
+    "files": [
+     "src/index_graph/router.py",
+     "tests/test_router.py",
+     "tests/test_cli_subcommands.py",
+     "tests/test_viz_cli.py",
+     "src/index_graph/context/pack.py"
+    ],
+    "question_tokens": 34363,
+    "recall": 0.0,
+    "tokens_shown": 1411
+   },
+   "navigate": {
+    "files": [
+     "src/index_graph/router.py",
+     "tests/test_viz_cli.py",
+     "tests/test_router.py",
+     "tests/test_cli_subcommands.py",
+     "src/index_graph/cli.py"
+    ],
+    "question_tokens": 20994,
+    "recall": 1.0,
+    "tokens_shown": 486
+   },
+   "pr": 7,
+   "repo": "index"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "src/crucible/examples_cmd.py",
+     "tests/test_client_process.py",
+     "tests/test_client_profile.py",
+     "tests/test_client_package.py",
+     "client-plugin/server/serve.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.3333333333333333,
+    "tokens_shown": 1086
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "src/crucible/examples_cmd.py",
+     "tests/test_client_process.py",
+     "tests/test_client_profile.py",
+     "tests/test_client_package.py",
+     "client-plugin/server/serve.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.3333333333333333,
+    "tokens_shown": 571
+   },
+   "bm25-file": {
+    "files": [
+     "tests/test_client_package.py",
+     "tests/test_packaged_examples.py",
+     "scripts/build_client_package.py",
+     "src/crucible/examples_cmd.py",
+     "scripts/check_native_client.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.3333333333333333,
+    "tokens_shown": 7665
+   },
+   "grep": {
+    "files": [
+     "tests/test_client_package.py",
+     "src/crucible/client_mcp.py",
+     "scripts/build_client_package.py",
+     "scripts/check_native_client.py",
+     "tests/test_packaged_examples.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.3333333333333333,
+    "tokens_shown": 2623
+   },
+   "map": {
+    "files": [
+     "tests/test_packaged_examples.py",
+     "tests/test_client_package.py",
+     "client-plugin/server/serve.py",
+     "src/crucible/client_mcp.py",
+     "scripts/check_native_client.py"
+    ],
+    "question_tokens": 82232,
+    "recall": 0.3333333333333333,
+    "tokens_shown": 3265
+   },
+   "navigate": {
+    "files": [
+     "client-plugin/server/serve.py",
+     "scripts/check_native_client.py",
+     "scripts/build_client_package.py",
+     "scripts/smoke_wheel.py",
+     "tests/test_packaged_examples.py"
+    ],
+    "question_tokens": 31486,
+    "recall": 0.6666666666666666,
+    "tokens_shown": 1682
+   },
+   "pr": 30,
+   "repo": "crucible"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "scripts/build_client_package.py",
+     "tests/test_release_hygiene.py",
+     "src/crucible/client_mcp.py",
+     "src/crucible/judge.py",
+     "src/crucible/subprocess_edges.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 1282
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "scripts/build_client_package.py",
+     "tests/test_release_hygiene.py",
+     "src/crucible/client_mcp.py",
+     "src/crucible/judge.py",
+     "src/crucible/subprocess_edges.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 859
+   },
+   "bm25-file": {
+    "files": [
+     "scripts/build_client_package.py",
+     "tests/test_release_hygiene.py",
+     "src/crucible/client_mcp.py",
+     "scripts/check_version_sites.py",
+     "src/crucible/mcp_tools.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 10647
+   },
+   "grep": {
+    "files": [
+     "scripts/build_client_package.py",
+     "tests/test_release_hygiene.py",
+     "src/crucible/client_mcp.py",
+     "src/crucible/mcp_tools.py",
+     "tests/test_cli_batch.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 2490
+   },
+   "map": {
+    "files": [
+     "scripts/build_client_package.py",
+     "tests/test_release_hygiene.py",
+     "src/crucible/subprocess_edges.py",
+     "src/crucible/judge.py",
+     "scripts/repo_art.py"
+    ],
+    "question_tokens": 81829,
+    "recall": 1.0,
+    "tokens_shown": 939
+   },
+   "navigate": {
+    "files": [
+     "client-plugin/server/serve.py",
+     "examples/demo.py",
+     "verify_seals.py",
+     "src/crucible/mcp.py",
+     "src/crucible/telos_measure.py"
+    ],
+    "question_tokens": 20967,
+    "recall": 0.0,
+    "tokens_shown": 1156
+   },
+   "pr": 26,
+   "repo": "crucible"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "tests/test_readiness.py",
+     "scripts/smoke_wheel.py",
+     "src/crucible/mcp.py",
+     "src/crucible/flagship.py",
+     "tests/test_release_hygiene.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 956
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "tests/test_readiness.py",
+     "scripts/smoke_wheel.py",
+     "src/crucible/mcp.py",
+     "src/crucible/flagship.py",
+     "tests/test_release_hygiene.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 956
+   },
+   "bm25-file": {
+    "files": [
+     "tests/test_readiness.py",
+     "tests/test_verdict_card.py",
+     "scripts/build_client_package.py",
+     "scripts/smoke_wheel.py",
+     "src/crucible/flagship.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 10822
+   },
+   "grep": {
+    "files": [
+     "tests/test_readiness.py",
+     "src/crucible/mcp_tools.py",
+     "src/crucible/flagship.py",
+     "scripts/smoke_wheel.py",
+     "src/crucible/measurement_gate.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.5,
+    "tokens_shown": 1251
+   },
+   "map": {
+    "files": [
+     "scripts/smoke_wheel.py",
+     "tests/test_verdict_card.py",
+     "tests/test_readiness.py",
+     "tests/test_release_hygiene.py",
+     "tests/test_cli_measurement_gate.py"
+    ],
+    "question_tokens": 81318,
+    "recall": 0.0,
+    "tokens_shown": 976
+   },
+   "navigate": {
+    "files": [
+     "tests/test_cli_recheck.py",
+     "tests/test_verdict_card.py",
+     "tests/test_readiness.py",
+     "src/crucible/flagship.py",
+     "scripts/repo_card.py"
+    ],
+    "question_tokens": 47134,
+    "recall": 0.0,
+    "tokens_shown": 2009
+   },
+   "pr": 25,
+   "repo": "crucible"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "tests/test_version_sites.py",
+     "tests/test_flagship_cli.py",
+     "scripts/smoke_wheel.py",
+     "src/crucible/examples_cmd.py",
+     "tests/test_release_hygiene.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 994
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "tests/test_version_sites.py",
+     "tests/test_flagship_cli.py",
+     "scripts/smoke_wheel.py",
+     "src/crucible/examples_cmd.py",
+     "tests/test_release_hygiene.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 870
+   },
+   "bm25-file": {
+    "files": [
+     "scripts/smoke_wheel.py",
+     "tests/test_flagship_cli.py",
+     "src/crucible/examples_cmd.py",
+     "src/crucible/flagship.py",
+     "tests/test_version_sites.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 5731
+   },
+   "grep": {
+    "files": [
+     "scripts/smoke_wheel.py",
+     "src/crucible/cli.py",
+     "src/crucible/flagship.py",
+     "tests/test_flagship_cli.py",
+     "src/crucible/examples_cmd.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 2022
+   },
+   "map": {
+    "files": [
+     "src/crucible/flagship.py",
+     "src/crucible/ci_cmd.py",
+     "src/crucible/subprocess_edges.py",
+     "src/crucible/gate.py",
+     "scripts/smoke_wheel.py"
+    ],
+    "question_tokens": 75821,
+    "recall": 0.0,
+    "tokens_shown": 854
+   },
+   "navigate": {
+    "files": [
+     "scripts/smoke_wheel.py",
+     "tests/test_packaged_examples.py",
+     "tests/test_gate.py",
+     "tests/test_flagship_cli.py",
+     "tests/test_version_sites.py"
+    ],
+    "question_tokens": 28379,
+    "recall": 0.0,
+    "tokens_shown": 459
+   },
+   "pr": 23,
+   "repo": "crucible"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "src/crucible/cli.py",
+     "src/crucible/recheck_cmd.py",
+     "tests/test_cli_recheck.py",
+     "src/crucible/flagship.py",
+     "src/crucible/judge.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.6666666666666666,
+    "tokens_shown": 2652
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "src/crucible/cli.py",
+     "src/crucible/recheck_cmd.py",
+     "tests/test_cli_recheck.py",
+     "src/crucible/flagship.py",
+     "src/crucible/judge.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.6666666666666666,
+    "tokens_shown": 1042
+   },
+   "bm25-file": {
+    "files": [
+     "src/crucible/cli.py",
+     "tests/test_cli_recheck.py",
+     "src/crucible/recheck_cmd.py",
+     "tests/test_mcp.py",
+     "src/crucible/judge.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.3333333333333333,
+    "tokens_shown": 13346
+   },
+   "grep": {
+    "files": [
+     "src/crucible/cli.py",
+     "tests/test_cli_recheck.py",
+     "src/crucible/recheck_cmd.py",
+     "tests/test_mcp.py",
+     "src/crucible/assess.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.3333333333333333,
+    "tokens_shown": 5493
+   },
+   "map": {
+    "files": [
+     "src/crucible/cli.py",
+     "tests/test_cli_recheck.py",
+     "src/crucible/recheck_cmd.py",
+     "src/crucible/judge.py",
+     "tests/test_mcp.py"
+    ],
+    "question_tokens": 71572,
+    "recall": 0.3333333333333333,
+    "tokens_shown": 4518
+   },
+   "navigate": {
+    "files": [
+     "src/crucible/cli.py",
+     "tests/test_cli_recheck.py",
+     "src/crucible/recheck_cmd.py",
+     "scripts/render_repo_art.py",
+     "src/crucible/judge.py"
+    ],
+    "question_tokens": 40302,
+    "recall": 0.3333333333333333,
+    "tokens_shown": 1099
+   },
+   "pr": 21,
+   "repo": "crucible"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "tests/test_repo_art.py",
+     "src/crucible/measure.py",
+     "scripts/repo_flow.py",
+     "src/crucible/judge.py",
+     "tests/test_verdict_card.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 2133
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "tests/test_repo_art.py",
+     "src/crucible/measure.py",
+     "scripts/repo_flow.py",
+     "src/crucible/judge.py",
+     "tests/test_verdict_card.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 1879
+   },
+   "bm25-file": {
+    "files": [
+     "scripts/repo_card.py",
+     "scripts/render_repo_art.py",
+     "tests/test_repo_art.py",
+     "tests/test_verdict_card.py",
+     "src/crucible/cli.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 10939
+   },
+   "grep": {
+    "files": [
+     "scripts/repo_card.py",
+     "tests/test_repo_art.py",
+     "src/crucible/commands.py",
+     "src/crucible/cli.py",
+     "tests/test_verdict_card.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 3378
+   },
+   "map": {
+    "files": [
+     "src/crucible/measure.py",
+     "tests/test_repo_art.py",
+     "src/crucible/ecosystem_measure.py",
+     "src/crucible/judge.py",
+     "src/crucible/cli.py"
+    ],
+    "question_tokens": 70799,
+    "recall": 0.0,
+    "tokens_shown": 1854
+   },
+   "navigate": {
+    "files": [
+     "src/crucible/measure.py",
+     "src/crucible/commands.py",
+     "scripts/render_repo_art.py",
+     "tests/test_cli_measure.py",
+     "tests/test_repo_art.py"
+    ],
+    "question_tokens": 40555,
+    "recall": 0.0,
+    "tokens_shown": 522
+   },
+   "pr": 20,
+   "repo": "crucible"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "tests/test_repo_art.py",
+     "tests/test_thesis.py",
+     "tests/test_gate.py",
+     "src/crucible/ci_gate.py",
+     "tests/test_registry.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 458
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "tests/test_repo_art.py",
+     "tests/test_thesis.py",
+     "tests/test_gate.py",
+     "src/crucible/ci_gate.py",
+     "tests/test_registry.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 458
+   },
+   "bm25-file": {
+    "files": [
+     "tests/test_repo_art.py",
+     "scripts/repo_art.py",
+     "scripts/repo_flow.py",
+     "tests/test_claim.py",
+     "src/crucible/assess.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 11147
+   },
+   "grep": {
+    "files": [
+     "src/crucible/assess.py",
+     "tests/test_assess.py",
+     "tests/test_claim.py",
+     "src/crucible/verdict.py",
+     "verify_seals.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 3155
+   },
+   "map": {
+    "files": [
+     "tests/test_repo_art.py",
+     "src/crucible/measure.py",
+     "src/crucible/steelman.py",
+     "src/crucible/explain.py",
+     "tests/test_thesis.py"
+    ],
+    "question_tokens": 68249,
+    "recall": 0.0,
+    "tokens_shown": 756
+   },
+   "navigate": {
+    "files": [
+     "verify_seals.py",
+     "tests/test_repo_art.py",
+     "src/crucible/refine_cmd.py",
+     "src/crucible/steelman.py",
+     "src/crucible/explain.py"
+    ],
+    "question_tokens": 38649,
+    "recall": 0.0,
+    "tokens_shown": 837
+   },
+   "pr": 19,
+   "repo": "crucible"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "scripts/render_repo_art.py",
+     "tests/test_repo_art.py",
+     "tests/test_judge_measure.py",
+     "src/crucible/ci_report.py",
+     "tests/test_claim.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 1499
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "scripts/render_repo_art.py",
+     "tests/test_repo_art.py",
+     "tests/test_judge_measure.py",
+     "src/crucible/ci_report.py",
+     "tests/test_claim.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 1068
+   },
+   "bm25-file": {
+    "files": [
+     "tests/test_repo_art.py",
+     "scripts/render_repo_art.py",
+     "scripts/repo_art.py",
+     "verify_seals.py",
+     "tests/test_readiness.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 9453
+   },
+   "grep": {
+    "files": [
+     "tests/test_repo_art.py",
+     "scripts/repo_art.py",
+     "scripts/render_repo_art.py",
+     "tests/test_readiness.py",
+     "tests/test_claim.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 2231
+   },
+   "map": {
+    "files": [
+     "scripts/render_repo_art.py",
+     "tests/test_repo_art.py",
+     "scripts/repo_art.py",
+     "src/crucible/subprocess_edges.py",
+     "src/crucible/ci_gate.py"
+    ],
+    "question_tokens": 68248,
+    "recall": 1.0,
+    "tokens_shown": 1694
+   },
+   "navigate": {
+    "files": [
+     "scripts/render_repo_art.py",
+     "scripts/repo_art.py",
+     "src/crucible/gate.py",
+     "src/crucible/judge.py",
+     "src/crucible/subprocess_edges.py"
+    ],
+    "question_tokens": 19353,
+    "recall": 1.0,
+    "tokens_shown": 750
+   },
+   "pr": 18,
+   "repo": "crucible"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "src/crucible/recheck_cmd.py",
+     "tests/test_cli_recheck.py",
+     "src/crucible/assess.py",
+     "src/crucible/drift_cmd.py",
+     "tests/test_telos_measure.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 1860
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "src/crucible/recheck_cmd.py",
+     "tests/test_cli_recheck.py",
+     "src/crucible/assess.py",
+     "src/crucible/drift_cmd.py",
+     "tests/test_telos_measure.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 902
+   },
+   "bm25-file": {
+    "files": [
+     "src/crucible/mcp_tools.py",
+     "tests/test_cli_recheck.py",
+     "src/crucible/recheck_cmd.py",
+     "tests/test_telos_measure.py",
+     "tests/test_mcp.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 11091
+   },
+   "grep": {
+    "files": [
+     "src/crucible/cli.py",
+     "src/crucible/recheck_cmd.py",
+     "tests/test_cli_recheck.py",
+     "src/crucible/assess.py",
+     "src/crucible/mcp_tools.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 3779
+   },
+   "map": {
+    "files": [
+     "src/crucible/recheck_cmd.py",
+     "tests/test_cli_recheck.py",
+     "src/crucible/drift_cmd.py",
+     "tests/test_proof_measure.py",
+     "tests/test_judge_measure.py"
+    ],
+    "question_tokens": 63334,
+    "recall": 1.0,
+    "tokens_shown": 1832
+   },
+   "navigate": {
+    "files": [
+     "src/crucible/recheck_cmd.py",
+     "tests/test_telos_measure.py",
+     "tests/test_cli_recheck.py",
+     "src/crucible/mcp_tools.py",
+     "src/crucible/drift_cmd.py"
+    ],
+    "question_tokens": 35456,
+    "recall": 1.0,
+    "tokens_shown": 599
+   },
+   "pr": 12,
+   "repo": "crucible"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "src/crucible/proof_measure.py",
+     "tests/test_proof_measure.py",
+     "src/crucible/ci_cmd.py",
+     "src/crucible/ci_gate.py",
+     "tests/test_cli_refine.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.5,
+    "tokens_shown": 2284
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "src/crucible/proof_measure.py",
+     "tests/test_proof_measure.py",
+     "src/crucible/ci_cmd.py",
+     "src/crucible/ci_gate.py",
+     "tests/test_cli_refine.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.5,
+    "tokens_shown": 954
+   },
+   "bm25-file": {
+    "files": [
+     "src/crucible/proof_measure.py",
+     "tests/test_proof_measure.py",
+     "src/crucible/ci_cmd.py",
+     "src/crucible/cli.py",
+     "src/crucible/measure.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.5,
+    "tokens_shown": 6898
+   },
+   "grep": {
+    "files": [
+     "src/crucible/proof_measure.py",
+     "tests/test_proof_measure.py",
+     "src/crucible/ci_cmd.py",
+     "src/crucible/cli.py",
+     "src/crucible/flagship.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.5,
+    "tokens_shown": 2056
+   },
+   "map": {
+    "files": [
+     "tests/test_proof_measure.py",
+     "src/crucible/proof_measure.py",
+     "src/crucible/ci_cmd.py",
+     "tests/test_verdict.py",
+     "tests/test_refine.py"
+    ],
+    "question_tokens": 63170,
+    "recall": 0.5,
+    "tokens_shown": 512
+   },
+   "navigate": {
+    "files": [
+     "tests/test_proof_measure.py",
+     "src/crucible/ci_cmd.py",
+     "tests/test_cli_run.py",
+     "tests/test_refine.py",
+     "tests/test_verdict.py"
+    ],
+    "question_tokens": 35295,
+    "recall": 0.0,
+    "tokens_shown": 536
+   },
+   "pr": 11,
+   "repo": "crucible"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "tests/test_flagship_cli.py",
+     "src/crucible/flagship.py",
+     "tests/test_readiness.py",
+     "tests/test_cli_measurement_gate.py",
+     "tests/test_cli_registry_ops.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 1493
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "tests/test_flagship_cli.py",
+     "src/crucible/flagship.py",
+     "tests/test_readiness.py",
+     "tests/test_cli_measurement_gate.py",
+     "tests/test_cli_registry_ops.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 1202
+   },
+   "bm25-file": {
+    "files": [
+     "src/crucible/flagship.py",
+     "tests/test_flagship_cli.py",
+     "src/crucible/drift.py",
+     "src/crucible/__init__.py",
+     "src/crucible/cli.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 6543
+   },
+   "grep": {
+    "files": [
+     "src/crucible/flagship.py",
+     "src/crucible/cli.py",
+     "src/crucible/mcp_tools.py",
+     "src/crucible/commands.py",
+     "tests/test_cli_registry_ops.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.5,
+    "tokens_shown": 3767
+   },
+   "map": {
+    "files": [
+     "src/crucible/flagship.py",
+     "tests/test_flagship_cli.py",
+     "tests/test_cli_measurement_gate.py",
+     "src/crucible/measurement_gate.py",
+     "src/crucible/mcp_tools.py"
+    ],
+    "question_tokens": 56495,
+    "recall": 0.0,
+    "tokens_shown": 1340
+   },
+   "navigate": {
+    "files": [
+     "tests/test_flagship_cli.py",
+     "src/crucible/flagship.py",
+     "tests/test_cli_registry_ops.py",
+     "examples/demo.py",
+     "tests/test_mcp.py"
+    ],
+    "question_tokens": 31487,
+    "recall": 0.0,
+    "tokens_shown": 1472
+   },
+   "pr": 7,
+   "repo": "crucible"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "tests/test_browser_evidence.py",
+     "src/crucible/browser_evidence.py",
+     "src/crucible/measurement_gate.py",
+     "src/crucible/report.py",
+     "src/crucible/ecosystem_measure.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 1408
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "tests/test_browser_evidence.py",
+     "src/crucible/browser_evidence.py",
+     "src/crucible/measurement_gate.py",
+     "src/crucible/report.py",
+     "src/crucible/ecosystem_measure.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 1352
+   },
+   "bm25-file": {
+    "files": [
+     "src/crucible/report.py",
+     "src/crucible/ecosystem_measure.py",
+     "src/crucible/measurement_gate.py",
+     "src/crucible/browser_evidence.py",
+     "tests/test_browser_evidence.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 7723
+   },
+   "grep": {
+    "files": [
+     "src/crucible/assess.py",
+     "tests/test_mcp.py",
+     "src/crucible/measurement_gate.py",
+     "src/crucible/ecosystem_measure.py",
+     "src/crucible/report.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 5297
+   },
+   "map": {
+    "files": [
+     "tests/test_browser_evidence.py",
+     "src/crucible/browser_evidence.py",
+     "src/crucible/report.py",
+     "tests/test_ecosystem_measure.py",
+     "tests/test_measure.py"
+    ],
+    "question_tokens": 48796,
+    "recall": 0.0,
+    "tokens_shown": 1319
+   },
+   "navigate": {
+    "files": [
+     "tests/test_browser_evidence.py",
+     "tests/test_measure.py",
+     "src/crucible/browser_evidence.py",
+     "src/crucible/report.py",
+     "src/crucible/measurement_gate.py"
+    ],
+    "question_tokens": 27824,
+    "recall": 0.0,
+    "tokens_shown": 977
+   },
+   "pr": 5,
+   "repo": "crucible"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "src/crucible/registry.py",
+     "src/crucible/assess.py",
+     "src/crucible/report.py",
+     "tests/test_readiness.py",
+     "src/crucible/subprocess_edges.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 866
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "src/crucible/registry.py",
+     "src/crucible/assess.py",
+     "src/crucible/report.py",
+     "tests/test_readiness.py",
+     "src/crucible/subprocess_edges.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 733
+   },
+   "bm25-file": {
+    "files": [
+     "src/crucible/assess.py",
+     "src/crucible/refine.py",
+     "tests/test_readiness.py",
+     "src/crucible/report.py",
+     "src/crucible/registry.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 12702
+   },
+   "grep": {
+    "files": [
+     "src/crucible/assess.py",
+     "tests/test_readiness.py",
+     "src/crucible/report.py",
+     "src/crucible/ecosystem_measure.py",
+     "src/crucible/telos_measure.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 1055
+   },
+   "map": {
+    "files": [
+     "tests/test_readiness.py",
+     "src/crucible/registry.py",
+     "src/crucible/report.py",
+     "src/crucible/measurement_gate.py",
+     "src/crucible/subprocess_edges.py"
+    ],
+    "question_tokens": 48290,
+    "recall": 0.0,
+    "tokens_shown": 502
+   },
+   "navigate": {
+    "files": [
+     "src/crucible/report.py",
+     "tests/test_readiness.py",
+     "src/crucible/registry.py",
+     "tests/test_cli_run.py",
+     "src/crucible/subprocess_edges.py"
+    ],
+    "question_tokens": 30360,
+    "recall": 0.0,
+    "tokens_shown": 676
+   },
+   "pr": 6,
+   "repo": "crucible"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "src/crucible/measurement_gate.py",
+     "tests/test_measurement_gate.py",
+     "tests/test_mcp.py",
+     "tests/test_cli_measurement_gate.py",
+     "src/crucible/mcp_tools.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 2149
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "src/crucible/measurement_gate.py",
+     "tests/test_measurement_gate.py",
+     "tests/test_mcp.py",
+     "tests/test_cli_measurement_gate.py",
+     "src/crucible/mcp_tools.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 1418
+   },
+   "bm25-file": {
+    "files": [
+     "tests/test_measurement_gate.py",
+     "src/crucible/measurement_gate.py",
+     "src/crucible/mcp_tools.py",
+     "tests/test_mcp.py",
+     "tests/test_cli_measurement_gate.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 10652
+   },
+   "grep": {
+    "files": [
+     "tests/test_mcp.py",
+     "tests/test_measurement_gate.py",
+     "src/crucible/mcp_tools.py",
+     "src/crucible/measurement_gate.py",
+     "tests/test_cli_measurement_gate.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 3336
+   },
+   "map": {
+    "files": [
+     "src/crucible/measurement_gate.py",
+     "src/crucible/verdict.py",
+     "tests/test_measurement_gate.py",
+     "tests/test_mcp.py",
+     "tests/test_cli_measurement_gate.py"
+    ],
+    "question_tokens": 47694,
+    "recall": 0.0,
+    "tokens_shown": 1986
+   },
+   "navigate": {
+    "files": [
+     "src/crucible/measurement_gate.py",
+     "tests/test_mcp.py",
+     "tests/test_measurement_gate.py",
+     "src/crucible/assess.py",
+     "src/crucible/verdict.py"
+    ],
+    "question_tokens": 29708,
+    "recall": 0.0,
+    "tokens_shown": 1286
+   },
+   "pr": 4,
+   "repo": "crucible"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "tests/test_client_vendored.py",
+     "scripts/build_client_package.py",
+     "client-plugin/server/serve.py",
+     "tests/test_package.py",
+     "client-plugin/server/src/gather/client_mcp.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.2857142857142857,
+    "tokens_shown": 1691
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "tests/test_client_vendored.py",
+     "scripts/build_client_package.py",
+     "client-plugin/server/serve.py",
+     "tests/test_package.py",
+     "client-plugin/server/src/gather/client_mcp.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.2857142857142857,
+    "tokens_shown": 858
+   },
+   "bm25-file": {
+    "files": [
+     "scripts/build_client_package.py",
+     "tests/test_client_vendored.py",
+     "tests/test_package.py",
+     "client-plugin/server/src/gather/client_mcp.py",
+     "src/gather/client_mcp.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.42857142857142855,
+    "tokens_shown": 9117
+   },
+   "grep": {
+    "files": [
+     "scripts/build_client_package.py",
+     "client-plugin/server/src/gather/client_mcp.py",
+     "src/gather/client_mcp.py",
+     "tests/test_client_vendored.py",
+     "tests/test_client_network.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.42857142857142855,
+    "tokens_shown": 2801
+   },
+   "map": {
+    "files": [
+     "scripts/build_client_package.py",
+     "tests/test_client_vendored.py",
+     "tests/test_package.py",
+     "client-plugin/server/src/gather/_vendor/safe_spawn.py",
+     "client-plugin/server/src/gather/_vendor/__init__.py"
+    ],
+    "question_tokens": 229701,
+    "recall": 0.14285714285714285,
+    "tokens_shown": 2762
+   },
+   "navigate": {
+    "files": [
+     "scripts/build_client_package.py",
+     "client-plugin/server/src/gather/spawn.py",
+     "client-plugin/server/src/gather/_vendor/__init__.py",
+     "tests/test_package.py",
+     "tests/test_client_vendored.py"
+    ],
+    "question_tokens": 80587,
+    "recall": 0.14285714285714285,
+    "tokens_shown": 938
+   },
+   "pr": 43,
+   "repo": "gather"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "tests/test_client_disclosure.py",
+     "tests/test_client_profile.py",
+     "tests/test_client_setup.py",
+     "tests/test_client_package.py",
+     "client-plugin/server/serve.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.5,
+    "tokens_shown": 1625
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "tests/test_client_disclosure.py",
+     "tests/test_client_profile.py",
+     "tests/test_client_setup.py",
+     "tests/test_client_package.py",
+     "client-plugin/server/serve.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.5,
+    "tokens_shown": 1253
+   },
+   "bm25-file": {
+    "files": [
+     "tests/test_client_package.py",
+     "tests/test_client_disclosure.py",
+     "scripts/client_manifest.py",
+     "tests/test_client_setup.py",
+     "scripts/check_native_client.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 5863
+   },
+   "grep": {
+    "files": [
+     "tests/test_client_package.py",
+     "src/gather/_vendor/safe_spawn.py",
+     "src/gather/client_mcp.py",
+     "tests/test_client_disclosure.py",
+     "scripts/check_native_client.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 3203
+   },
+   "map": {
+    "files": [
+     "tests/test_client_disclosure.py",
+     "client-plugin/server/serve.py",
+     "tests/test_client_setup.py",
+     "src/gather/_vendor/safe_spawn.py",
+     "tests/test_spawn_working_folder.py"
+    ],
+    "question_tokens": 151922,
+    "recall": 0.5,
+    "tokens_shown": 972
+   },
+   "navigate": {
+    "files": [
+     "client-plugin/server/serve.py",
+     "tests/test_client_setup.py",
+     "tests/test_client_disclosure.py",
+     "scripts/client_manifest.py",
+     "scripts/check_native_client.py"
+    ],
+    "question_tokens": 50137,
+    "recall": 0.5,
+    "tokens_shown": 1894
+   },
+   "pr": 42,
+   "repo": "gather"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "tests/test_client_package.py",
+     "src/gather/_vendor/safe_spawn.py",
+     "scripts/build_client_package.py",
+     "scripts/client_manifest.py",
+     "tests/test_client_setup.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 1973
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "tests/test_client_package.py",
+     "src/gather/_vendor/safe_spawn.py",
+     "scripts/build_client_package.py",
+     "scripts/client_manifest.py",
+     "tests/test_client_setup.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 1973
+   },
+   "bm25-file": {
+    "files": [
+     "src/gather/_vendor/safe_spawn.py",
+     "scripts/build_client_package.py",
+     "tests/test_client_package.py",
+     "scripts/client_manifest.py",
+     "src/gather/ytdlp.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 12059
+   },
+   "grep": {
+    "files": [
+     "src/gather/_vendor/safe_spawn.py",
+     "src/gather/cli.py",
+     "src/gather/pilot_manifest.py",
+     "src/gather/store.py",
+     "scripts/build_client_package.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 4825
+   },
+   "map": {
+    "files": [
+     "scripts/client_manifest.py",
+     "scripts/native_windows_process.py",
+     "tests/test_client_setup.py",
+     "tests/test_ytdlp.py",
+     "src/gather/cli.py"
+    ],
+    "question_tokens": 150949,
+    "recall": 1.0,
+    "tokens_shown": 1451
+   },
+   "navigate": {
+    "files": [
+     "scripts/client_manifest.py",
+     "src/gather/video_cmd.py",
+     "src/gather/ytdlp.py",
+     "src/gather/cli.py",
+     "src/gather/pilot_manifest.py"
+    ],
+    "question_tokens": 35828,
+    "recall": 1.0,
+    "tokens_shown": 1538
+   },
+   "pr": 40,
+   "repo": "gather"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "scripts/client_manifest.py",
+     "tests/test_release_workflow.py",
+     "tests/test_arxiv.py",
+     "src/gather/net.py",
+     "src/gather/arxiv.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 1633
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "scripts/client_manifest.py",
+     "tests/test_release_workflow.py",
+     "tests/test_arxiv.py",
+     "src/gather/net.py",
+     "src/gather/arxiv.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 1454
+   },
+   "bm25-file": {
+    "files": [
+     "scripts/client_manifest.py",
+     "tests/test_release_workflow.py",
+     "src/gather/arxiv.py",
+     "tests/test_arxiv.py",
+     "src/gather/net.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 5128
+   },
+   "grep": {
+    "files": [
+     "scripts/client_manifest.py",
+     "tests/test_release_workflow.py",
+     "src/gather/arxiv.py",
+     "src/gather/feed.py",
+     "src/gather/net.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 751
+   },
+   "map": {
+    "files": [
+     "scripts/client_manifest.py",
+     "tests/test_release_workflow.py",
+     "src/gather/arxiv.py",
+     "tests/test_device_names.py",
+     "scripts/repo_art.py"
+    ],
+    "question_tokens": 150942,
+    "recall": 1.0,
+    "tokens_shown": 1898
+   },
+   "navigate": {
+    "files": [
+     "scripts/client_manifest.py",
+     "client-plugin/server/serve.py",
+     "verify_pilot.py",
+     "examples/context_selection.py",
+     "examples/bench.py"
+    ],
+    "question_tokens": 6968,
+    "recall": 0.0,
+    "tokens_shown": 962
+   },
+   "pr": 39,
+   "repo": "gather"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "tests/test_vendored.py",
+     "src/gather/flagship.py",
+     "tests/test_spawn_working_folder.py",
+     "src/gather/federation_policy.py",
+     "src/gather/provenance.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 622
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "tests/test_vendored.py",
+     "src/gather/flagship.py",
+     "tests/test_spawn_working_folder.py",
+     "src/gather/federation_policy.py",
+     "src/gather/provenance.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 622
+   },
+   "bm25-file": {
+    "files": [
+     "src/gather/federation_policy.py",
+     "tests/test_vendored.py",
+     "scripts/build_client_package.py",
+     "src/gather/ytdlp.py",
+     "tests/test_flagship_cli.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 8095
+   },
+   "grep": {
+    "files": [
+     "src/gather/ytdlp.py",
+     "src/gather/video_source.py",
+     "src/gather/federation_policy.py",
+     "src/gather/cli.py",
+     "src/gather/video_cmd.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 1930
+   },
+   "map": {
+    "files": [
+     "tests/test_vendored.py",
+     "src/gather/federation_policy.py",
+     "tests/test_spawn_working_folder.py",
+     "tests/test_flagship_cli.py",
+     "src/gather/flagship.py"
+    ],
+    "question_tokens": 150530,
+    "recall": 0.0,
+    "tokens_shown": 780
+   },
+   "navigate": {
+    "files": [
+     "src/gather/ytdlp.py",
+     "src/gather/flagship.py",
+     "src/gather/federation_policy.py",
+     "tests/test_flagship_cli.py",
+     "tests/test_channel.py"
+    ],
+    "question_tokens": 75254,
+    "recall": 0.0,
+    "tokens_shown": 1129
+   },
+   "pr": 38,
+   "repo": "gather"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "tests/test_package.py",
+     "tests/test_release_workflow.py",
+     "tests/test_flagship_cli.py",
+     "tests/test_federation_cli.py",
+     "src/gather/fastparse.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 901
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "tests/test_package.py",
+     "tests/test_release_workflow.py",
+     "tests/test_flagship_cli.py",
+     "tests/test_federation_cli.py",
+     "src/gather/fastparse.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 698
+   },
+   "bm25-file": {
+    "files": [
+     "tests/test_package.py",
+     "tests/test_release_workflow.py",
+     "src/gather/fastparse.py",
+     "tests/test_flagship_cli.py",
+     "examples/pipeline.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 3977
+   },
+   "grep": {
+    "files": [
+     "tests/test_package.py",
+     "src/gather/context.py",
+     "src/gather/fastparse.py",
+     "tests/test_context.py",
+     "tests/test_pilot_report.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 3896
+   },
+   "map": {
+    "files": [
+     "tests/test_release_workflow.py",
+     "src/gather/scholar.py",
+     "src/gather/backends.py",
+     "tests/test_run.py",
+     "src/gather/dom.py"
+    ],
+    "question_tokens": 144545,
+    "recall": 0.0,
+    "tokens_shown": 592
+   },
+   "navigate": {
+    "files": [
+     "tests/test_package.py",
+     "verify_pilot.py",
+     "gather/__init__.py",
+     "examples/bench.py",
+     "examples/pipeline.py"
+    ],
+    "question_tokens": 45676,
+    "recall": 0.0,
+    "tokens_shown": 1387
+   },
+   "pr": 37,
+   "repo": "gather"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "tests/test_run.py",
+     "tests/test_federation_cli.py",
+     "src/gather/payloads.py",
+     "tests/test_federation.py",
+     "tests/test_pilot.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 486
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "tests/test_run.py",
+     "tests/test_federation_cli.py",
+     "src/gather/payloads.py",
+     "tests/test_federation.py",
+     "tests/test_pilot.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 422
+   },
+   "bm25-file": {
+    "files": [
+     "src/gather/__init__.py",
+     "tests/test_grants.py",
+     "tests/test_credentials.py",
+     "src/gather/interop.py",
+     "src/gather/run_config.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.14285714285714285,
+    "tokens_shown": 7596
+   },
+   "grep": {
+    "files": [
+     "tests/test_pilot_report.py",
+     "tests/test_context.py",
+     "tests/test_grants.py",
+     "src/gather/mcp.py",
+     "tests/test_nonlocal_paths.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 6394
+   },
+   "map": {
+    "files": [
+     "src/gather/spawn.py",
+     "gather/__init__.py",
+     "tests/test_spawn_working_folder.py",
+     "tests/test_grants.py",
+     "src/gather/grants.py"
+    ],
+    "question_tokens": 142467,
+    "recall": 0.0,
+    "tokens_shown": 1700
+   },
+   "navigate": {
+    "files": [
+     "verify_pilot.py",
+     "gather/__init__.py",
+     "examples/bench.py",
+     "examples/pipeline.py",
+     "examples/demo.py"
+    ],
+    "question_tokens": 4561,
+    "recall": 0.0,
+    "tokens_shown": 1519
+   },
+   "pr": 36,
+   "repo": "gather"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "src/gather/backends.py",
+     "tests/test_backends.py",
+     "src/gather/backends_stealth.py",
+     "tests/test_backends_stealth.py",
+     "tests/test_backends_card.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.5,
+    "tokens_shown": 2526
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "src/gather/backends.py",
+     "tests/test_backends.py",
+     "src/gather/backends_stealth.py",
+     "tests/test_backends_stealth.py",
+     "tests/test_backends_card.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.5,
+    "tokens_shown": 951
+   },
+   "bm25-file": {
+    "files": [
+     "src/gather/backends.py",
+     "src/gather/backends_stealth.py",
+     "tests/test_backends_stealth.py",
+     "tests/test_backends.py",
+     "tests/test_backends_card.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.5,
+    "tokens_shown": 5768
+   },
+   "grep": {
+    "files": [
+     "src/gather/backends.py",
+     "tests/test_backends.py",
+     "src/gather/backends_stealth.py",
+     "tests/test_backends_stealth.py",
+     "tests/test_backends_card.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.5,
+    "tokens_shown": 3035
+   },
+   "map": {
+    "files": [
+     "src/gather/backends_stealth.py",
+     "tests/test_backends.py",
+     "tests/test_backends_stealth.py",
+     "src/gather/backends.py",
+     "tests/test_backends_card.py"
+    ],
+    "question_tokens": 142932,
+    "recall": 0.5,
+    "tokens_shown": 3105
+   },
+   "navigate": {
+    "files": [
+     "tests/test_backends.py",
+     "tests/test_backends_stealth.py",
+     "src/gather/backends_stealth.py",
+     "src/gather/backends.py",
+     "tests/test_backends_card.py"
+    ],
+    "question_tokens": 71279,
+    "recall": 0.5,
+    "tokens_shown": 875
+   },
+   "pr": 35,
+   "repo": "gather"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "src/gather/video.py",
+     "examples/demo.py",
+     "src/gather/transcribe.py",
+     "tests/test_video.py",
+     "src/gather/pilot_sources.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.2,
+    "tokens_shown": 1839
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "src/gather/video.py",
+     "examples/demo.py",
+     "src/gather/transcribe.py",
+     "tests/test_video.py",
+     "src/gather/pilot_sources.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.2,
+    "tokens_shown": 914
+   },
+   "bm25-file": {
+    "files": [
+     "src/gather/video.py",
+     "examples/demo.py",
+     "src/gather/item.py",
+     "src/gather/feed.py",
+     "tests/test_repo_card.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.2,
+    "tokens_shown": 7335
+   },
+   "grep": {
+    "files": [
+     "src/gather/video.py",
+     "tests/test_context.py",
+     "src/gather/cli.py",
+     "src/gather/item.py",
+     "src/gather/store.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.4,
+    "tokens_shown": 2533
+   },
+   "map": {
+    "files": [
+     "src/gather/video.py",
+     "src/gather/track.py",
+     "tests/test_video.py",
+     "src/gather/extract.py",
+     "src/gather/crawl.py"
+    ],
+    "question_tokens": 126534,
+    "recall": 0.2,
+    "tokens_shown": 1501
+   },
+   "navigate": {
+    "files": [
+     "src/gather/video.py",
+     "examples/demo.py",
+     "tests/test_repo_card.py",
+     "tests/test_benchmark.py",
+     "tests/test_model.py"
+    ],
+    "question_tokens": 66179,
+    "recall": 0.2,
+    "tokens_shown": 816
+   },
+   "pr": 30,
+   "repo": "gather"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "src/gather/corpus_cmd.py",
+     "src/gather/context.py",
+     "tests/test_store.py",
+     "tests/test_context.py",
+     "src/gather/recall.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 4228
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "src/gather/corpus_cmd.py",
+     "src/gather/context.py",
+     "tests/test_store.py",
+     "tests/test_context.py",
+     "src/gather/recall.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 970
+   },
+   "bm25-file": {
+    "files": [
+     "tests/test_store.py",
+     "src/gather/corpus_cmd.py",
+     "src/gather/commands.py",
+     "src/gather/context.py",
+     "src/gather/mcp.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 24389
+   },
+   "grep": {
+    "files": [
+     "tests/test_store.py",
+     "tests/test_context.py",
+     "src/gather/context.py",
+     "src/gather/pilot_report.py",
+     "src/gather/mcp.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 11293
+   },
+   "map": {
+    "files": [
+     "src/gather/corpus_cmd.py",
+     "src/gather/context.py",
+     "tests/test_context.py",
+     "src/gather/store.py",
+     "src/gather/commands.py"
+    ],
+    "question_tokens": 110191,
+    "recall": 1.0,
+    "tokens_shown": 4468
+   },
+   "navigate": {
+    "files": [
+     "src/gather/corpus_cmd.py",
+     "src/gather/commands.py",
+     "src/gather/mcp.py",
+     "src/gather/context.py",
+     "tests/test_context.py"
+    ],
+    "question_tokens": 65654,
+    "recall": 1.0,
+    "tokens_shown": 2381
+   },
+   "pr": 31,
+   "repo": "gather"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "src/gather/mcp.py",
+     "tests/test_scope.py",
+     "src/gather/run.py",
+     "src/gather/commands.py",
+     "src/gather/scope.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 843
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "src/gather/mcp.py",
+     "tests/test_scope.py",
+     "src/gather/run.py",
+     "src/gather/commands.py",
+     "src/gather/scope.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 738
+   },
+   "bm25-file": {
+    "files": [
+     "src/gather/mcp.py",
+     "tests/test_scope.py",
+     "tests/test_mcp.py",
+     "src/gather/run.py",
+     "src/gather/scope.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 9492
+   },
+   "grep": {
+    "files": [
+     "src/gather/mcp.py",
+     "tests/test_context.py",
+     "src/gather/run.py",
+     "tests/test_mcp.py",
+     "src/gather/commands.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 5140
+   },
+   "map": {
+    "files": [
+     "src/gather/mcp.py",
+     "src/gather/run.py",
+     "tests/test_scope.py",
+     "src/gather/scope.py",
+     "src/gather/commands.py"
+    ],
+    "question_tokens": 110187,
+    "recall": 1.0,
+    "tokens_shown": 1677
+   },
+   "navigate": {
+    "files": [
+     "examples/demo.py",
+     "tests/test_scope.py",
+     "tests/test_cli.py",
+     "src/gather/mcp.py",
+     "src/gather/scope.py"
+    ],
+    "question_tokens": 55059,
+    "recall": 1.0,
+    "tokens_shown": 496
+   },
+   "pr": 27,
+   "repo": "gather"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "src/gather/context.py",
+     "src/gather/docs.py",
+     "src/gather/federation.py",
+     "tests/test_pilot.py",
+     "tests/test_store.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.3333333333333333,
+    "tokens_shown": 1501
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "src/gather/context.py",
+     "src/gather/docs.py",
+     "src/gather/federation.py",
+     "tests/test_pilot.py",
+     "tests/test_store.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.3333333333333333,
+    "tokens_shown": 451
+   },
+   "bm25-file": {
+    "files": [
+     "src/gather/context.py",
+     "src/gather/docs.py",
+     "scripts/render_repo_art.py",
+     "src/gather/interop.py",
+     "tests/test_context.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.3333333333333333,
+    "tokens_shown": 27477
+   },
+   "grep": {
+    "files": [
+     "tests/test_context.py",
+     "src/gather/context.py",
+     "src/gather/cli.py",
+     "src/gather/federation.py",
+     "scripts/render_repo_art.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.3333333333333333,
+    "tokens_shown": 755
+   },
+   "map": {
+    "files": [
+     "src/gather/federation.py",
+     "src/gather/context.py",
+     "tests/test_pilot.py",
+     "src/gather/federation_policy.py",
+     "src/gather/cli.py"
+    ],
+    "question_tokens": 108209,
+    "recall": 0.3333333333333333,
+    "tokens_shown": 2937
+   },
+   "navigate": {
+    "files": [
+     "src/gather/federation_policy.py",
+     "src/gather/context.py",
+     "src/gather/cli.py",
+     "src/gather/net.py",
+     "src/gather/federation.py"
+    ],
+    "question_tokens": 30100,
+    "recall": 0.3333333333333333,
+    "tokens_shown": 1608
+   },
+   "pr": 26,
+   "repo": "gather"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "src/gather/flagship.py",
+     "tests/test_flagship_cli.py",
+     "src/gather/federation_cmd.py",
+     "tests/test_mcp.py",
+     "tests/test_federation_cli.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.2,
+    "tokens_shown": 1220
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "src/gather/flagship.py",
+     "tests/test_flagship_cli.py",
+     "src/gather/federation_cmd.py",
+     "tests/test_mcp.py",
+     "tests/test_federation_cli.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.2,
+    "tokens_shown": 878
+   },
+   "bm25-file": {
+    "files": [
+     "src/gather/flagship.py",
+     "tests/test_flagship_cli.py",
+     "tests/test_benchmark.py",
+     "tests/test_dom.py",
+     "src/gather/dom.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.2,
+    "tokens_shown": 4021
+   },
+   "grep": {
+    "files": [
+     "src/gather/flagship.py",
+     "tests/test_benchmark.py",
+     "tests/test_flagship_cli.py",
+     "src/gather/video.py",
+     "src/gather/federation_cmd.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.2,
+    "tokens_shown": 558
+   },
+   "map": {
+    "files": [
+     "src/gather/federation_cmd.py",
+     "src/gather/flagship.py",
+     "tests/test_benchmark.py",
+     "src/gather/web.py",
+     "tests/test_flagship_cli.py"
+    ],
+    "question_tokens": 96273,
+    "recall": 0.2,
+    "tokens_shown": 809
+   },
+   "navigate": {
+    "files": [
+     "tests/test_benchmark.py",
+     "tests/test_dom.py",
+     "src/gather/federation_cmd.py",
+     "src/gather/flagship.py",
+     "verify_pilot.py"
+    ],
+    "question_tokens": 49814,
+    "recall": 0.2,
+    "tokens_shown": 709
+   },
+   "pr": 23,
+   "repo": "gather"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "src/gather/track.py",
+     "tests/test_repo_art.py",
+     "src/gather/docs.py",
+     "tests/test_backends_card.py",
+     "scripts/repo_flow.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 1316
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "src/gather/track.py",
+     "tests/test_repo_art.py",
+     "src/gather/docs.py",
+     "tests/test_backends_card.py",
+     "scripts/repo_flow.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 1281
+   },
+   "bm25-file": {
+    "files": [
+     "scripts/repo_card.py",
+     "scripts/render_repo_art.py",
+     "tests/test_repo_art.py",
+     "tests/test_backends_card.py",
+     "src/gather/benchmark.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 8057
+   },
+   "grep": {
+    "files": [
+     "scripts/repo_card.py",
+     "tests/test_repo_art.py",
+     "src/gather/track.py",
+     "tests/test_backends_card.py",
+     "scripts/render_repo_art.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 2952
+   },
+   "map": {
+    "files": [
+     "tests/test_repo_art.py",
+     "tests/test_benchmark.py",
+     "tests/test_backends_card.py",
+     "src/gather/store.py",
+     "scripts/render_repo_art.py"
+    ],
+    "question_tokens": 95317,
+    "recall": 0.0,
+    "tokens_shown": 1478
+   },
+   "navigate": {
+    "files": [
+     "scripts/render_repo_art.py",
+     "scripts/repo_card.py",
+     "scripts/repo_flow.py",
+     "tests/test_repo_art.py",
+     "scripts/repo_art.py"
+    ],
+    "question_tokens": 33306,
+    "recall": 1.0,
+    "tokens_shown": 909
+   },
+   "pr": 22,
+   "repo": "gather"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "src/gather/backends.py",
+     "tests/test_backends.py",
+     "src/gather/backends_browser.py",
+     "src/gather/web_commands.py",
+     "tests/test_backends_browser.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 2052
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "src/gather/backends.py",
+     "tests/test_backends.py",
+     "src/gather/backends_browser.py",
+     "src/gather/web_commands.py",
+     "tests/test_backends_browser.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 454
+   },
+   "bm25-file": {
+    "files": [
+     "src/gather/backends.py",
+     "tests/test_backends.py",
+     "src/gather/backends_browser.py",
+     "tests/test_backends_browser.py",
+     "src/gather/web_commands.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 4015
+   },
+   "grep": {
+    "files": [
+     "src/gather/backends.py",
+     "tests/test_backends.py",
+     "src/gather/web_commands.py",
+     "src/gather/backends_browser.py",
+     "tests/test_web_refine.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 2500
+   },
+   "map": {
+    "files": [
+     "src/gather/backends.py",
+     "tests/test_backends.py",
+     "tests/test_backends_browser.py",
+     "src/gather/web_commands.py",
+     "src/gather/backends_browser.py"
+    ],
+    "question_tokens": 92861,
+    "recall": 0.0,
+    "tokens_shown": 2176
+   },
+   "navigate": {
+    "files": [
+     "tests/test_backends.py",
+     "tests/test_backends_browser.py",
+     "src/gather/backends.py",
+     "tests/test_repo_art.py",
+     "src/gather/web_commands.py"
+    ],
+    "question_tokens": 49633,
+    "recall": 0.0,
+    "tokens_shown": 364
+   },
+   "pr": 21,
+   "repo": "gather"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "scripts/render_repo_art.py",
+     "tests/test_repo_art.py",
+     "verify_pilot.py",
+     "src/gather/availability.py",
+     "src/gather/pilot.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 1965
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "scripts/render_repo_art.py",
+     "tests/test_repo_art.py",
+     "verify_pilot.py",
+     "src/gather/availability.py",
+     "src/gather/pilot.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 1631
+   },
+   "bm25-file": {
+    "files": [
+     "tests/test_repo_art.py",
+     "scripts/render_repo_art.py",
+     "scripts/repo_art.py",
+     "verify_pilot.py",
+     "src/gather/monitor.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 8821
+   },
+   "grep": {
+    "files": [
+     "tests/test_repo_art.py",
+     "scripts/repo_art.py",
+     "scripts/render_repo_art.py",
+     "src/gather/pilot_report.py",
+     "src/gather/fetch.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 3032
+   },
+   "map": {
+    "files": [
+     "scripts/render_repo_art.py",
+     "tests/test_repo_art.py",
+     "src/gather/availability.py",
+     "scripts/repo_art.py",
+     "src/gather/digest.py"
+    ],
+    "question_tokens": 92857,
+    "recall": 1.0,
+    "tokens_shown": 3300
+   },
+   "navigate": {
+    "files": [
+     "scripts/render_repo_art.py",
+     "tests/test_repo_art.py",
+     "scripts/repo_art.py",
+     "src/gather/availability.py",
+     "src/gather/fetch.py"
+    ],
+    "question_tokens": 52046,
+    "recall": 1.0,
+    "tokens_shown": 843
+   },
+   "pr": 20,
+   "repo": "gather"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "tests/test_extract.py",
+     "src/gather/backends_stealth.py",
+     "tests/test_federation_receipt.py",
+     "src/gather/browser_evidence.py",
+     "src/gather/track.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 617
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "tests/test_extract.py",
+     "src/gather/backends_stealth.py",
+     "tests/test_federation_receipt.py",
+     "src/gather/browser_evidence.py",
+     "src/gather/track.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 569
+   },
+   "bm25-file": {
+    "files": [
+     "src/gather/backends_stealth.py",
+     "tests/test_extract.py",
+     "src/gather/dom.py",
+     "tests/test_browser_evidence.py",
+     "src/gather/backends_browser.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 4254
+   },
+   "grep": {
+    "files": [
+     "src/gather/backends_stealth.py",
+     "src/gather/dom.py",
+     "tests/test_extract.py",
+     "src/gather/federation_receipt.py",
+     "tests/test_federation_receipt.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 648
+   },
+   "map": {
+    "files": [
+     "tests/test_extract.py",
+     "src/gather/ocr.py",
+     "src/gather/fetch.py",
+     "tests/test_fetch.py",
+     "src/gather/extract.py"
+    ],
+    "question_tokens": 63016,
+    "recall": 0.0,
+    "tokens_shown": 1322
+   },
+   "navigate": {
+    "files": [
+     "tests/test_extract.py",
+     "src/gather/ocr.py",
+     "src/gather/__init__.py",
+     "src/gather/extract.py",
+     "src/gather/browser_evidence.py"
+    ],
+    "question_tokens": 35439,
+    "recall": 0.0,
+    "tokens_shown": 1537
+   },
+   "pr": 14,
+   "repo": "gather"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "src/gather/flagship.py",
+     "src/gather/backends_stealth.py",
+     "src/gather/dom.py",
+     "tests/test_video.py",
+     "tests/test_arxiv.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 1473
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "src/gather/flagship.py",
+     "src/gather/backends_stealth.py",
+     "src/gather/dom.py",
+     "tests/test_video.py",
+     "tests/test_arxiv.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 1473
+   },
+   "bm25-file": {
+    "files": [
+     "src/gather/flagship.py",
+     "src/gather/backends_stealth.py",
+     "tests/test_video.py",
+     "src/gather/availability.py",
+     "src/gather/dom.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 6776
+   },
+   "grep": {
+    "files": [
+     "src/gather/flagship.py",
+     "src/gather/availability.py",
+     "src/gather/backends_stealth.py",
+     "src/gather/mcp.py",
+     "src/gather/interop.py"
+    ],
+    "question_tokens": 0,
+    "recall": 1.0,
+    "tokens_shown": 1378
+   },
+   "map": {
+    "files": [
+     "src/gather/flagship.py",
+     "src/gather/backends_stealth.py",
+     "src/gather/dom.py",
+     "src/gather/federation.py",
+     "tests/test_backends_stealth.py"
+    ],
+    "question_tokens": 63024,
+    "recall": 1.0,
+    "tokens_shown": 969
+   },
+   "navigate": {
+    "files": [
+     "src/gather/flagship.py",
+     "examples/pipeline.py",
+     "tests/test_flagship_cli.py",
+     "tests/test_mcp.py",
+     "tests/test_recall.py"
+    ],
+    "question_tokens": 36475,
+    "recall": 1.0,
+    "tokens_shown": 836
+   },
+   "pr": 15,
+   "repo": "gather"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "tests/test_federation_cli.py",
+     "src/gather/web.py",
+     "tests/test_model.py",
+     "src/gather/provenance.py",
+     "src/gather/model.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 843
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "tests/test_federation_cli.py",
+     "src/gather/web.py",
+     "tests/test_model.py",
+     "src/gather/provenance.py",
+     "src/gather/model.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 843
+   },
+   "bm25-file": {
+    "files": [
+     "src/gather/federation_cmd.py",
+     "tests/test_federation_cli.py",
+     "tests/test_federation.py",
+     "src/gather/payloads.py",
+     "tests/test_federation_receipt.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 9256
+   },
+   "grep": {
+    "files": [
+     "tests/test_federation_cli.py",
+     "src/gather/federation_cmd.py",
+     "src/gather/run_config.py",
+     "src/gather/docs.py",
+     "src/gather/video.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.0,
+    "tokens_shown": 1883
+   },
+   "map": {
+    "files": [
+     "src/gather/provenance.py",
+     "src/gather/web.py",
+     "tests/test_model.py",
+     "tests/test_federation.py",
+     "src/gather/federation_cmd.py"
+    ],
+    "question_tokens": 39403,
+    "recall": 0.0,
+    "tokens_shown": 508
+   },
+   "navigate": {
+    "files": [
+     "src/gather/provenance.py",
+     "src/gather/web.py",
+     "src/gather/transcribe.py",
+     "src/gather/run_config.py",
+     "tests/test_model.py"
+    ],
+    "question_tokens": 26550,
+    "recall": 0.0,
+    "tokens_shown": 619
+   },
+   "pr": 8,
+   "repo": "gather"
+  },
+  {
+   "bm25-chunk": {
+    "files": [
+     "tests/test_federation.py",
+     "src/gather/federation.py",
+     "src/gather/payloads.py",
+     "src/gather/federation_cmd.py",
+     "tests/test_xml_safety.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.6666666666666666,
+    "tokens_shown": 2351
+   },
+   "bm25-chunk-best": {
+    "files": [
+     "tests/test_federation.py",
+     "src/gather/federation.py",
+     "src/gather/payloads.py",
+     "src/gather/federation_cmd.py",
+     "tests/test_xml_safety.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.6666666666666666,
+    "tokens_shown": 1171
+   },
+   "bm25-file": {
+    "files": [
+     "src/gather/federation.py",
+     "src/gather/payloads.py",
+     "tests/test_federation.py",
+     "src/gather/federation_policy.py",
+     "src/gather/federation_cmd.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.6666666666666666,
+    "tokens_shown": 7380
+   },
+   "grep": {
+    "files": [
+     "src/gather/federation.py",
+     "tests/test_federation.py",
+     "src/gather/mcp.py",
+     "src/gather/federation_policy.py",
+     "src/gather/payloads.py"
+    ],
+    "question_tokens": 0,
+    "recall": 0.3333333333333333,
+    "tokens_shown": 1847
+   },
+   "map": {
+    "files": [
+     "tests/test_federation.py",
+     "src/gather/federation_policy.py",
+     "src/gather/federation.py",
+     "src/gather/digest.py",
+     "src/gather/availability.py"
+    ],
+    "question_tokens": 34378,
+    "recall": 0.0,
+    "tokens_shown": 1784
+   },
+   "navigate": {
+    "files": [
+     "tests/test_federation.py",
+     "src/gather/federation.py",
+     "src/gather/federation_policy.py",
+     "examples/demo.py",
+     "tests/test_digest.py"
+    ],
+    "question_tokens": 24595,
+    "recall": 0.0,
+    "tokens_shown": 1502
+   },
+   "pr": 7,
+   "repo": "gather"
+  }
+ ],
+ "schema": "index.navigate-bench/v1",
+ "verdict": {
+  "best_arm": "grep",
+  "mean_recall": {
+   "bm25-chunk": 0.2888095238095238,
+   "bm25-chunk-best": 0.2888095238095238,
+   "bm25-file": 0.40984126984126984,
+   "grep": 0.4224603174603175,
+   "map": 0.3725396825396825,
+   "navigate": 0.38920634920634917
+  },
+  "primary_pass": true,
+  "recall_diff": {
+   "high": 0.0550019841269841,
+   "low": -0.11428968253968254,
+   "mean": -0.03325396825396825
+  },
+  "strong_pass": false,
+  "token_ratio": {
+   "high": 0.4080973758829463,
+   "low": 0.2698928237404549,
+   "ratio": 0.33090565408350475
+  }
+ }
+}
