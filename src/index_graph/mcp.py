@@ -234,6 +234,8 @@ TOOL_ANNOTATIONS = {
     "index.symbol-definition": _hints("Go to a symbol definition"),
     "index.symbol-references": _hints("Find symbol references"),
     "index.symbol-implementations": _hints("Find symbol implementations"),
+    "index.navigate": _hints("Find code for a question"),
+    "index.outline-map": _hints("Outline node as a map"),
     "index.status": _hints("Index status"),
     "index.doctor": _hints("Index readiness check"),
     "index_graph": _hints("Workspace dependency graph"),
@@ -262,9 +264,10 @@ def _tool_defs() -> list[dict]:
 
 
 def _raw_tool_defs() -> list[dict]:
+    from .navigate.api import tool_definitions as navigate_tool_definitions
     from .route import tool_definition as route_tool_definition
     from .router_job_surface import tool_definitions
-    return [
+    return navigate_tool_definitions(_root_schema) + [
         {"name": "index.map",
          "description": "Repository inventory map as JSON, matching the `index map --json` CLI surface.",
          "inputSchema": _root_schema({"resume_state": {"type": "string", "description": "optional JSONL state file for resumable complete map builds"}})},
@@ -457,6 +460,11 @@ def call_tool(name: str, args: dict, response_id=None) -> str:
     if name in ("index.symbol-graph", "index.symbol-definition",
                 "index.symbol-references", "index.symbol-implementations"):
         return _symbol_tool(name, root, args)
+
+    if name in ("index.navigate", "index.outline-map"):
+        from .navigate.api import call_navigate_tool
+        return json.dumps(call_navigate_tool(name, {**args, "root": str(root)}),
+                          indent=2, sort_keys=True)
 
     if name == "index.invalidate":
         # without 'pin' this mints one; with 'pin' it emits the typed report.

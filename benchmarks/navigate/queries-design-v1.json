@@ -1,0 +1,186 @@
+{
+ "rows": [
+  {
+   "answer": [
+    "scripts/build_client_package.py"
+   ],
+   "base": "1b02d09942afc9cca8ec0831be3f927c6193c136",
+   "merge": "7ee351b472aa495e2226c20b3f38b73cd0cdf86f",
+   "pr": 28,
+   "query": "Ship only the modules the client server can import",
+   "repo": "mneme"
+  },
+  {
+   "answer": [
+    "client-plugin/server/serve.py",
+    "scripts/build_client_package.py",
+    "src/mneme/mcp.py"
+   ],
+   "base": "db8886b11d2975fe3e27f77907544d3a1259d67f",
+   "merge": "1b02d09942afc9cca8ec0831be3f927c6193c136",
+   "pr": 27,
+   "query": "Carry the server code inside the Claude plugin folder",
+   "repo": "mneme"
+  },
+  {
+   "answer": [
+    "scripts/build_client_package.py"
+   ],
+   "base": "e9bd5d69eef9332ab1deb61a51785e9c40ad029b",
+   "merge": "3d4475aadc4dde35d45931d260adcc1127517301",
+   "pr": 25,
+   "query": "Add directory listing fields, icon and userConfig bindings to the Claude plugin",
+   "repo": "mneme"
+  },
+  {
+   "answer": [
+    "tools/repo_art.py"
+   ],
+   "base": "fdc79d666f7a5ccdf1ad69f4798159290dc9baab",
+   "merge": "e9bd5d69eef9332ab1deb61a51785e9c40ad029b",
+   "pr": 24,
+   "query": "Publish under the operating name Zain Dana Harper",
+   "repo": "mneme"
+  },
+  {
+   "answer": [
+    "scripts/build_client_package.py",
+    "src/mneme/mcp.py"
+   ],
+   "base": "fc7097e38f20724dceb6b804a2e722f65236b2ec",
+   "merge": "e16f7d588b3ae3024ee5213b9e44fc8582371a05",
+   "pr": 22,
+   "query": "Marketplace readiness: tool annotations, privacy policy, listing copy",
+   "repo": "mneme"
+  },
+  {
+   "answer": [
+    "src/mneme/__init__.py",
+    "src/mneme/erase_outside.py",
+    "src/mneme/snapshot_dir.py"
+   ],
+   "base": "3009bedeaee621857599f753a4010ec909e97001",
+   "merge": "fc7097e38f20724dceb6b804a2e722f65236b2ec",
+   "pr": 21,
+   "query": "Mneme 0.6.0: native client packages and scoped permissions",
+   "repo": "mneme"
+  },
+  {
+   "answer": [
+    "src/mneme/__init__.py"
+   ],
+   "base": "34e3257cd573f64d5555413c2f44a8e329921895",
+   "merge": "76215f21e39c547028cd1cea00deb5122cdb25b6",
+   "pr": 16,
+   "query": "Prepare 0.4.1 candidate and guard publication metadata",
+   "repo": "mneme"
+  },
+  {
+   "answer": [
+    "src/mneme/compose.py",
+    "src/mneme/mcp.py",
+    "src/mneme/memory.py",
+    "src/mneme/replay.py"
+   ],
+   "base": "2331c9e44f4c4ec99fab27aa31d9d774c86e8296",
+   "merge": "34e3257cd573f64d5555413c2f44a8e329921895",
+   "pr": 15,
+   "query": "Add MCP Crucible export and replay candidate",
+   "repo": "mneme"
+  },
+  {
+   "answer": [
+    "src/mneme/cli.py",
+    "src/mneme/ingest.py",
+    "src/mneme/mcp.py",
+    "src/mneme/memory.py"
+   ],
+   "base": "dc0356abba92c27259b0d88587b66d82297b8da7",
+   "merge": "eecf1c04411f903dbbc61ed22fdd1beecf54b82a",
+   "pr": 13,
+   "query": "Recheck approved local origins separately from stored memory drift",
+   "repo": "mneme"
+  },
+  {
+   "answer": [
+    "tools/check_repo_card.py",
+    "tools/repo_card.py"
+   ],
+   "base": "0fb6282e3fe5dd66b97b478cc188df7d857e328e",
+   "merge": "6f82198586be690413f80a763a5d3ee954addee6",
+   "pr": 11,
+   "query": "Measure card text against the real faces instead of a guess",
+   "repo": "mneme"
+  },
+  {
+   "answer": [
+    "tools/check_repo_art.py",
+    "tools/render_repo_art.py"
+   ],
+   "base": "e47db69f2c55068ac4a7420df15865ef794c4907",
+   "merge": "0fb6282e3fe5dd66b97b478cc188df7d857e328e",
+   "pr": 10,
+   "query": "draw every verdict a grounding check can reach",
+   "repo": "mneme"
+  },
+  {
+   "answer": [
+    "tools/render_repo_art.py"
+   ],
+   "base": "7c17fe857a54fc03d23eb78aaa3e33526653c5d6",
+   "merge": "e47db69f2c55068ac4a7420df15865ef794c4907",
+   "pr": 9,
+   "query": "the art check compares text, not bytes",
+   "repo": "mneme"
+  },
+  {
+   "answer": [
+    "tools/check_repo_art.py"
+   ],
+   "base": "28b537a01026ee887dca8847baef1f77239fed5d",
+   "merge": "7c17fe857a54fc03d23eb78aaa3e33526653c5d6",
+   "pr": 8,
+   "query": "Correct a false claim in .gitattributes, and control two uncontrolled gates",
+   "repo": "mneme"
+  },
+  {
+   "answer": [
+    "src/mneme/cli.py",
+    "src/mneme/memory.py",
+    "src/mneme/store.py"
+   ],
+   "base": "e7bf124830245bcbea8b1b2a835daba9c02afe2f",
+   "merge": "989952396326322fb33e4dc270b63c2d48c4fc6a",
+   "pr": 4,
+   "query": "Replay from a process-owned immutable snapshot",
+   "repo": "mneme"
+  },
+  {
+   "answer": [
+    "src/mneme/cli.py",
+    "src/mneme/compose.py",
+    "src/mneme/drift.py",
+    "src/mneme/memory.py",
+    "src/mneme/receipt.py",
+    "src/mneme/store.py"
+   ],
+   "base": "2facab82aa974a3f31e865b2c56400871bb3bdf4",
+   "merge": "e7bf124830245bcbea8b1b2a835daba9c02afe2f",
+   "pr": 3,
+   "query": "add assessment-bound Crucible replay",
+   "repo": "mneme"
+  },
+  {
+   "answer": [
+    "src/mneme/cli.py",
+    "src/mneme/compose.py"
+   ],
+   "base": "454fc3026c0b585a5f461c2ee6cdd3020b733c18",
+   "merge": "2facab82aa974a3f31e865b2c56400871bb3bdf4",
+   "pr": 2,
+   "query": "Fix Mneme-to-Crucible measurement interoperability",
+   "repo": "mneme"
+  }
+ ],
+ "schema": "index.navigate-queries/v1"
+}

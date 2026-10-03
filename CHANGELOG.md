@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+- `index navigate ROOT "question"` finds the code for a plain-language question. It walks
+  directory, file and symbol with one typed question per level, follows every child at
+  least half as likely as the top child (up to four), keeps the rest in a backlog for
+  backtracking, and delivers only the best leaf of each file it reached. `--json` adds
+  the source text and the decision path (`index.decision-path/v1`). Code files only by
+  default; `--include-docs` adds prose and config.
+- `index outline-map ROOT --node ID` prints one outline node's children as a map: a name
+  and description for a model, and a handle with the node id for the code. A host model
+  can walk the tree itself and only ever choose among nodes that exist.
+- MCP tools `index.navigate` and `index.outline-map`, in the full server and the
+  read-only client profile.
+- Benchmark on 60 frozen questions from merged pull requests (query file SHA-256
+  `a264681f...`): navigate recall@5 0.389 against grep 0.422 (difference -0.033,
+  interval -0.114 to 0.055) at 0.33 of grep's tokens (interval 0.27 to 0.41). The bar
+  set before the run passes on point estimates; the stricter interval version does not.
+  Details, the design-set shortfall and limits in `docs/NAVIGATE.md`; inputs, builder
+  and results in `benchmarks/navigate/`.
+
 - The local client profile marks Git as unavailable before any Git code runs. In a
   Git workspace, `index.map` no longer reads `INDEX_GIT_TIMEOUT_SECONDS` or copies the
   environment for a Git call that the audit hook would refuse. A test with a planted
