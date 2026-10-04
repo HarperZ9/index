@@ -21,9 +21,9 @@ def test_flagship_brand_assets_and_atlas_theme():
     # alternation: docs/art/index-header.svg is generated from
     # docs/art/index.art.json and is what the README shows now.
     for rel in [
-        "docs/brand/index-mark.svg",
-        "docs/brand/index-hero.png",
-        "docs/brand/index-hero.svg",
+        "docs/brand/mark-tile.svg",
+        "docs/art/social.png",
+        "docs/art/hero-light.svg",
         "examples/index-demo.html",
     ]:
         assert (root / rel).exists(), rel

@@ -1,13 +1,20 @@
-<p align="center"><img src="docs/art/index-header.svg" alt="index: map a workspace offline, and refute a claim the code does not support." width="100%"></p>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/art/hero-dark.svg">
+  <img src="docs/art/hero-light.svg" alt="index: Map a workspace offline. Refute a claim the code does not support. Rings of small nodes, repositories, modules and symbols, linked by fine lines around a bright core. One dashed edge between two modules is crossed out and marked REFUTED." width="100%">
+</picture>
 
-**Maps a multi-repo workspace in seconds on the nine-ecosystem reference tree it ships with (self-measured): nine ecosystems, dependency and symbol graphs, fully offline, zero dependencies.**
+# index
 
-[![PyPI](https://img.shields.io/pypi/v/index-graph?style=flat-square&labelColor=14041b&color=26dfe8)](https://pypi.org/project/index-graph/)
-[![license: FSL-1.1-MIT](https://img.shields.io/badge/license-FSL--1.1--MIT-8f8095?style=flat-square&labelColor=14041b)](LICENSE)
+Map a workspace offline. Refute a claim the code does not support.
+
+```bash
+pip install index-graph
+```
+
+[![version: 2.16.0](https://img.shields.io/badge/version-2.16.0-e6e1d6?style=flat-square&labelColor=1a1712)](https://pypi.org/project/index-graph/)
 [![CI](https://github.com/HarperZ9/index/actions/workflows/ci.yml/badge.svg)](https://github.com/HarperZ9/index/actions/workflows/ci.yml)
-[![downloads](https://img.shields.io/pypi/dm/index-graph?label=downloads&style=flat-square&labelColor=14041b)](https://pypi.org/project/index-graph/)
-![python: 3.11+](https://img.shields.io/badge/python-3.11%2B-blue?style=flat-square&labelColor=14041b)
-![deps: none](https://img.shields.io/badge/deps-none-success?style=flat-square&labelColor=14041b)
+[![license](https://img.shields.io/badge/license-FSL--1.1--MIT-e6e1d6?style=flat-square&labelColor=1a1712)](LICENSE)
+![python 3.11+](https://img.shields.io/badge/python-3.11%2B-e6e1d6?style=flat-square&labelColor=1a1712)
 
 [Project Telos](https://harperz9.github.io) | [gather](https://github.com/HarperZ9/gather) | [crucible](https://github.com/HarperZ9/crucible) | [index](https://github.com/HarperZ9/index) | [forum](https://github.com/HarperZ9/forum) | [telos](https://github.com/HarperZ9/telos) | [learn](https://github.com/HarperZ9/learn) | [emet](https://github.com/HarperZ9/emet) | [buildlang](https://github.com/HarperZ9/buildlang)
 
