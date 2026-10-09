@@ -121,6 +121,14 @@ footer.foot p{max-width:70ch;margin:0 0 .6rem}
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{transition-duration:0s!important;animation-duration:0s!important;animation-iteration-count:1!important;scroll-behavior:auto!important}
 }
+.film{margin:1rem 0 0;max-width:56rem}
+.film video{width:100%;height:auto;display:block;background:#000;border:1px solid var(--line)}
+.film figcaption{font-size:.9rem;color:var(--ink-soft);margin-top:.55rem;max-width:44rem;line-height:1.5}
+.soon{font-family:var(--font-mono);font-size:.8rem;color:var(--muted);margin-top:.8rem}
+ol.walkthrough{padding-left:1.4rem;max-width:56rem;margin:1rem 0 0}
+ol.walkthrough li{margin:0 0 1.4rem}
+ol.walkthrough h3{margin:0 0 .3rem;font-size:1.05rem}
+ol.walkthrough p{margin:0 0 .3rem;max-width:44rem}
 
 /* generic scene kit: a pipeline strip, an input/output panel, a case picker, a table */
 .kscene{display:flex;flex-direction:column;gap:.8rem}
@@ -172,6 +180,18 @@ footer.foot p{max-width:70ch;margin:0 0 .6rem}
     <li><b>Architecture as a test</b>Declare the shape you meant in <code>.index.toml</code>, and <code>index check</code> fails when the code breaks it.</li>
   </ul>
   <p class="src">Source: <a href="https://github.com/HarperZ9/index/blob/50069a8b9b411fa508165c2e1cf88717c4b0a6ae/README.md">README.md</a> at 50069a8 (release 2.16.0)</p>
+</section>
+
+<section class="block wrap" aria-labelledby="watch">
+  <h2 id="watch">Watch</h2>
+  <figure class="film">
+    <video controls preload="none" playsinline crossorigin="anonymous" width="1920" height="1080" poster="https://harperz9.github.io/media/explainers/rederive/poster.jpg">
+      <source src="https://harperz9.github.io/media/explainers/rederive/rederive.mp4" type="video/mp4">
+      <track kind="captions" src="https://harperz9.github.io/media/explainers/rederive/rederive.vtt" srclang="en" label="English">
+    </video>
+    <figcaption><b>Re-derive it. Don&#x27;t take it on trust.</b> (2 min 5 s, narrated, captioned). Index re-derives its sealed wiki from the code and says when the two disagree. <a href="https://harperz9.github.io/explainers.html#rederive-h">Transcript, sources and recall questions</a>.</figcaption>
+  </figure>
+  <p class="soon">Video walkthrough: coming with the next release.</p>
 </section>
 
 <section class="block wrap" aria-labelledby="how">
@@ -238,14 +258,24 @@ footer.foot p{max-width:70ch;margin:0 0 .6rem}
   </div>
 </section>
 
-<section class="block wrap" aria-labelledby="try">
-  <h2 id="try">Try it</h2>
-  <div class="measure"><p>Install from PyPI (Python 3.11 or newer). Everything runs offline.</p></div>
-<pre class="cmd"><code>$ pip install index-graph
-$ index wiki --root /path/to/one/repo --out wiki.html
-$ index wiki --verify wiki.html --root /path/to/one/repo
-<span class="out">verdict=MATCH pages=10 edges=4</span>
-$ index workbench --root /path/to/workspace --out workbench.html</code></pre>
+<section class="block wrap" aria-labelledby="walkthrough">
+  <h2 id="walkthrough">Walkthrough</h2>
+  <p class="measure">Install it, run it once, then use the main feature. Each command below is real, and so is its output.</p>
+  <ol class="walkthrough">
+    <li><h3>Install</h3><p>Install from PyPI. Python 3.11 or newer; everything runs offline.</p>
+<pre class="cmd"><code>$ pip install index-graph</code></pre></li>
+    <li><h3>First run: write a sealed wiki</h3><p>Map one repository into an offline wiki whose pages and edges are sealed.</p>
+<pre class="cmd"><code>$ index wiki --root . --out wiki.html
+<span class="out">wrote wiki.html</span></code></pre></li>
+    <li><h3>Verify it against the code</h3><p>Later, verify the wiki against the code as it is now.</p>
+<pre class="cmd"><code>$ index wiki --verify wiki.html --root .
+<span class="out">verdict=MATCH pages=10 edges=4</span></code></pre></li>
+    <li><h3>Ask who calls a function</h3><p>Every edge cites the file and line it came from.</p>
+<pre class="cmd"><code>$ index symbols price --root . --refs
+<span class="out">symbol query: price  (repo shop)
+references (1 resolved, 0 unresolved):
+  shop/service::quote  shop/service.py:5  [cross_module, moderate]</span></code></pre></li>
+  </ol>
   <p class="src">The verify line shows the result for the shop package above. Output from index at 50069a8, run from source; index-graph 2.16.0 is the current PyPI release.</p>
 </section>
 

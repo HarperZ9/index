@@ -56,6 +56,47 @@ The [animated explainer](https://harperz9.github.io/repo-explainers/index-graph.
 walks through a three-module package: the module graph with a file and line on every edge, symbol references, a sealed wiki, a back-import that creates a cycle, the architecture rule that fails on it, and the wiki re-check reading DRIFT, MATCH and UNVERIFIABLE. Every value on it is output from this repository. Its
 source is [docs/explainer/index.html](docs/explainer/index.html).
 
+## Watch
+
+[![Re-derive it. Don't take it on trust.: a narrated film, 2 min 5 s](https://harperz9.github.io/media/explainers/rederive/poster.jpg)](https://harperz9.github.io/explainers.html#rederive-h)
+
+**[Re-derive it. Don't take it on trust.](https://harperz9.github.io/explainers.html#rederive-h)** (2 min 5 s, narrated, captioned). Index re-derives its sealed wiki from the code and says when the two disagree. The film page carries the transcript, the sources and recall questions.
+
+Video walkthrough: coming with the next release.
+
+## Walkthrough
+
+Install it, run it once, then use the main feature. Each command below is real, and so is its output.
+
+1. **Install.** Install from PyPI. Python 3.11 or newer; everything runs offline.
+
+   ```text
+   $ pip install index-graph
+   ```
+
+2. **First run: write a sealed wiki.** Map one repository into an offline wiki whose pages and edges are sealed.
+
+   ```text
+   $ index wiki --root . --out wiki.html
+   wrote wiki.html
+   ```
+
+3. **Verify it against the code.** Later, verify the wiki against the code as it is now.
+
+   ```text
+   $ index wiki --verify wiki.html --root .
+   verdict=MATCH pages=10 edges=4
+   ```
+
+4. **Ask who calls a function.** Every edge cites the file and line it came from.
+
+   ```text
+   $ index symbols price --root . --refs
+   symbol query: price  (repo shop)
+   references (1 resolved, 0 unresolved):
+     shop/service::quote  shop/service.py:5  [cross_module, moderate]
+   ```
+
 ## What it does
 
 Every codebase has a shape. Past a handful of repos, that shape lives only in someone's head, and they are usually busy or already gone. `index` draws it for you: how your repositories depend on each other, what lives inside each one down to the symbol level, and the docs that explain why, as maps you can open, search, and re-derive. It reads nine ecosystems (Python, JavaScript and TypeScript, Rust, Go, Java, C#, Ruby, PHP, C and C++) from their manifests and their real imports, and it records each dependency edge with the file and line that shows it. Pure Python 3.11+ standard library, zero runtime dependencies.
