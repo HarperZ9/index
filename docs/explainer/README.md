@@ -2,7 +2,7 @@
 
 `index.html` is a single self-contained page that walks through how this
 repository works. It is published at
-<https://harperz9.github.io/repo-explainers/index.html>.
+<https://harperz9.github.io/repo-explainers/index-graph.html>.
 
 Open `index.html` in a browser to read it from a checkout. It loads two
 typefaces from harperz9.github.io and falls back to system fonts offline.

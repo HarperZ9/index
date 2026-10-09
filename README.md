@@ -52,7 +52,7 @@ completion from an accepted router result; the result API validates completion.
 
 ## See it work, step by step
 
-The [animated explainer](https://harperz9.github.io/repo-explainers/index.html)
+The [animated explainer](https://harperz9.github.io/repo-explainers/index-graph.html)
 walks through a three-module package: the module graph with a file and line on every edge, symbol references, a sealed wiki, a back-import that creates a cycle, the architecture rule that fails on it, and the wiki re-check reading DRIFT, MATCH and UNVERIFIABLE. Every value on it is output from this repository. Its
 source is [docs/explainer/index.html](docs/explainer/index.html).
 
