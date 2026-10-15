@@ -62,8 +62,6 @@ source is [docs/explainer/index.html](docs/explainer/index.html).
 
 **[Re-derive it. Don't take it on trust.](https://harperz9.github.io/explainers.html#rederive-h)** (2 min 5 s, narrated, captioned). Index re-derives its sealed wiki from the code and says when the two disagree. The film page carries the transcript, the sources and recall questions.
 
-Video walkthrough: coming with the next release.
-
 ## Walkthrough
 
 Install it, run it once, then use the main feature. Each command below is real, and so is its output.
