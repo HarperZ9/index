@@ -5,11 +5,7 @@
 
 # index
 
-Map a workspace offline. Refute a claim the code does not support.
-
-```bash
-pip install index-graph
-```
+Index maps your code offline. It shows how your repositories depend on each other, what calls what inside one repo, and which docs describe which code. Each map is one HTML file you open in a browser.
 
 [![version: 2.16.0](https://img.shields.io/badge/version-2.16.0-e6e1d6?style=flat-square&labelColor=1a1712)](https://pypi.org/project/index-graph/)
 [![CI](https://github.com/HarperZ9/index/actions/workflows/ci.yml/badge.svg)](https://github.com/HarperZ9/index/actions/workflows/ci.yml)
@@ -18,53 +14,89 @@ pip install index-graph
 
 [Project Telos](https://harperz9.github.io) | [gather](https://github.com/HarperZ9/gather) | [crucible](https://github.com/HarperZ9/crucible) | [index](https://github.com/HarperZ9/index) | [forum](https://github.com/HarperZ9/forum) | [telos](https://github.com/HarperZ9/telos) | [learn](https://github.com/HarperZ9/learn) | [emet](https://github.com/HarperZ9/emet) | [buildlang](https://github.com/HarperZ9/buildlang)
 
-Point `index` at one unfamiliar repo and get a self-contained wiki with module, symbol, and architecture pages. Point it at a whole workspace and get the dependency atlas with your docs joined to the code they explain, or the workbench, which folds map, docs, context lens, and health into one page. Every command writes one offline HTML file: no server, no account, no model, no network. `pip install index-graph` installs it, `index` runs it, `import index_graph` imports it.
+Index reads manifests and imports in Python, JavaScript and TypeScript, Rust, Go, Java, C#, Ruby, PHP, and C and C++. Every dependency edge it draws carries the file and line it came from. It needs Python 3.11 or newer and nothing else: no runtime dependencies, no server, no account, no model, no network. The PyPI package is `index-graph` and the command is `index`.
 
-## Try it in 5 minutes
+Use it when you want to:
+
+- read an unfamiliar repository through a generated wiki of its modules, functions and callers;
+- see how a folder of many repositories fits together, with the docs placed next to the code they describe;
+- fail a CI build when an import breaks the layering you declared;
+- choose what code an AI agent sees, under a token budget, with a list of what was left out.
+
+Coverage differs by level. Repository-level dependencies cover all nine ecosystems. Module-level maps inside one repository cover Python, JavaScript and TypeScript, Rust and Go. Function-level features (callers, callees, go-to-definition, the per-function wiki pages) cover Python only.
+
+## Quickstart
 
 ```bash
 pip install index-graph
-
-# one unfamiliar repo -> one self-contained wiki, then re-check it
-index wiki --root /path/to/one/repo --out wiki.html
-index wiki --verify wiki.html --root /path/to/one/repo
-# verdict=MATCH pages=31 edges=127        (exit 0; DRIFT=1, UNVERIFIABLE=2)
-
-# a whole workspace -> every surface on one page
-index workbench --root /path/to/workspace --out workbench.html
-
-# or individual surfaces:
-index atlas --root /path/to/workspace --format html --out atlas.html
-index viz   --root /path/to/workspace --format html --out graph.html
 ```
 
-Each command writes one self-contained HTML file. Open it in any browser, offline. Nothing to host, nothing phones home.
+Map one repository into a wiki, then check the wiki against the code later:
 
-Want to see the output before installing? Rendered samples ship with the repo: [`examples/wiki-demo.html`](examples/wiki-demo.html) for the single-repo wiki and [`examples/atlas-demo.html`](examples/atlas-demo.html) for the workspace atlas. They regenerate deterministically with `python examples/wiki_demo.py` and `python examples/atlas_demo.py`.
+```bash
+index wiki --root path/to/repo --out wiki.html
+index wiki --verify wiki.html --root path/to/repo
+# verdict=MATCH pages=51 edges=314        (exit 0; DRIFT=1, UNVERIFIABLE=2)
+```
 
-New here? [`docs/INTRODUCTION.md`](docs/INTRODUCTION.md) is the ten-minute walkthrough.
+The wiki has an overview, one page per module with its imports and dependents, one page per Python function, class and method with its callers and callees, and an architecture diagram drawn from the import graph. Index writes no prose of its own. `--verify` returns DRIFT when an import or call the wiki shows has gone from the code, when a page in the file was edited, or when the repository moved to a new commit. It checks what the wiki states. Code you add without committing can still read MATCH.
 
-For router maps that exceed an interactive call's time limit, use
-[background router jobs](docs/ROUTER-JOBS.md). Their progress distinguishes graph
-completion from an accepted router result; the result API validates completion.
+Map a folder that holds several repositories, with every view on one page:
+
+```bash
+index workbench --root path/to/workspace --out workbench.html
+# workbench -> workbench.html  (3 repos, 192 docs, ...)
+```
+
+Find who calls a Python function:
+
+```bash
+index symbols build_route --root path/to/repo --refs
+# references (4 resolved, 0 unresolved):
+#   src/index_graph/route::cmd_route  src/index_graph/route.py:179  [exact, high]
+#   ...
+```
+
+Ask whether one repository depends on another:
+
+```bash
+index verify --root path/to/workspace --depends "telos -> proof-surface"
+# verdict=REFUTED: no dependency telos -> proof-surface in the graph   (exit 1)
+```
+
+Find the code that answers a question in plain words. The default chooser is lexical and runs locally:
+
+```bash
+index navigate path/to/repo "wiki verify drift"
+```
+
+The outputs above come from `index-graph` 2.16.0, installed from PyPI into a fresh virtual environment, run on this repository and two neighbours. Rendered samples ship with the repo if you want to look first: [`examples/wiki-demo.html`](examples/wiki-demo.html) for the single-repo wiki and [`examples/atlas-demo.html`](examples/atlas-demo.html) for the workspace atlas. They regenerate with `python examples/wiki_demo.py` and `python examples/atlas_demo.py`. [`docs/INTRODUCTION.md`](docs/INTRODUCTION.md) is a ten-minute walkthrough.
+
+## How it compares
+
+- **Model-written wikis such as DeepWiki.** These explain a codebase in prose written by a language model. `index wiki` derives every page from the import and call graph, so it explains less, and you can re-run the check at any time.
+- **Repository packers such as Repomix.** These put source into one file for a model to read. `index navigate` hands a model the few functions that match a question, and `index context-envelope` fills a token budget and lists each repository it dropped with a reason code such as `budget_exceeded`.
+- **Dependency graphers such as pydeps, madge and dependency-cruiser.** Each covers one language ecosystem inside one repository and goes deeper there. Index draws one graph across many repositories and nine ecosystems, and joins markdown docs to it.
+- **Layer checkers such as import-linter and ArchUnit.** `index check` enforces layers, forbidden imports and a cycle limit from `.index.toml`, between repositories in all nine ecosystems and between modules in the four above. import-linter (Python) and ArchUnit (Java) offer more contract types.
+- **Code navigation such as Sourcegraph, ctags or an IDE language server.** These index many languages precisely. `index symbols` and `index lsp` cover Python only and work from a static graph with no service to run.
 
 ---
 
 ## See it work, step by step
 
 The [animated explainer](https://harperz9.github.io/repo-explainers/index-graph.html)
-walks through a three-module package: the module graph with a file and line on every edge, symbol references, a sealed wiki, a back-import that creates a cycle, the architecture rule that fails on it, and the wiki re-check reading DRIFT, MATCH and UNVERIFIABLE. Every value on it is output from this repository. Its
+walks through a three-module package: the module graph with a file and line on every edge, symbol references, the wiki, a back-import that creates a cycle, the architecture rule that fails on it, and the wiki check reading DRIFT, MATCH and UNVERIFIABLE. Every value on it is output from this repository. Its
 source is [docs/explainer/index.html](docs/explainer/index.html).
 
 ## Watch
 
 [![Re-derive it. Don't take it on trust.: a narrated film, 2 min 5 s](https://harperz9.github.io/media/explainers/rederive/poster.jpg)](https://harperz9.github.io/explainers.html#rederive-h)
 
-**[Re-derive it. Don't take it on trust.](https://harperz9.github.io/explainers.html#rederive-h)** (2 min 5 s, narrated, captioned). Index re-derives its sealed wiki from the code and says when the two disagree. The film page carries the transcript, the sources and recall questions.
+**[Re-derive it. Don't take it on trust.](https://harperz9.github.io/explainers.html#rederive-h)** (2 min 5 s, narrated, captioned). Index rebuilds its wiki from the code and says when the two disagree. The film page carries the transcript, the sources and recall questions.
 
 ## Walkthrough
 
-Install it, run it once, then use the main feature. Each command below is real, and so is its output.
+The same steps on the explainer's three-module `shop` package. Each command and its output come from a recorded run on the explainer page.
 
 1. **Install.** Install from PyPI. Python 3.11 or newer; everything runs offline.
 
@@ -72,14 +104,14 @@ Install it, run it once, then use the main feature. Each command below is real, 
    $ pip install index-graph
    ```
 
-2. **First run: write a sealed wiki.** Map one repository into an offline wiki whose pages and edges are sealed.
+2. **First run: write the wiki.** Map one repository into an offline wiki. Each page is hashed and the file records the commit it was built from.
 
    ```text
    $ index wiki --root . --out wiki.html
    wrote wiki.html
    ```
 
-3. **Verify it against the code.** Later, verify the wiki against the code as it is now.
+3. **Check it against the code.** Later, check the wiki against the code as it is now.
 
    ```text
    $ index wiki --verify wiki.html --root .
@@ -97,33 +129,32 @@ Install it, run it once, then use the main feature. Each command below is real, 
 
 ## What it does
 
-Every codebase has a shape. Past a handful of repos, that shape lives only in someone's head, and they are usually busy or already gone. `index` draws it for you: how your repositories depend on each other, what lives inside each one down to the symbol level, and the docs that explain why, as maps you can open, search, and re-derive. It reads nine ecosystems (Python, JavaScript and TypeScript, Rust, Go, Java, C#, Ruby, PHP, C and C++) from their manifests and their real imports, and it records each dependency edge with the file and line that shows it. Pure Python 3.11+ standard library, zero runtime dependencies.
+Past a handful of repos, the shape of a codebase lives in someone's head, and that person is usually busy or gone. `index` draws it: how your repositories depend on each other, what lives inside each one down to the symbol level, and the docs that explain why, as maps you can open, search and rebuild. It reads nine ecosystems (Python, JavaScript and TypeScript, Rust, Go, Java, C#, Ruby, PHP, C and C++) from their manifests and their real imports, and it records each dependency edge with the file and line that shows it. Pure Python 3.11+ standard library, zero runtime dependencies.
 
 ## How a claim is settled
 
-`index verify` answers a structural claim from the graph it extracted, not from
-a model's memory. This is the path one claim takes.
+`index verify` answers a structural claim from the graph it extracted from the
+code. This is the path one claim takes.
 
 <p align="center"><img src="docs/art/claim-oracle.svg" alt="Eight stages from workspace discovery to a rechecked certificate: discover, classify, graph, freshness, claim, ground, certificate, recheck. Fingerprints ask whether ground truth has moved, and a graph built over changed code is rebuilt before any claim is grounded against it. A claim is answered from the graph rather than from memory, ending as match, refuted or unverifiable." width="100%"></p>
 
-The triad here is deliberately not the one `index wiki --verify` reports. A
-sealed artifact can DRIFT away from a tree that moved underneath it. A claim
-cannot drift: either the graph carries the edge, or the graph is complete on
-that point and does not, which is REFUTED. UNVERIFIABLE is reserved for the case
-where the question itself falls outside what was scanned, such as an endpoint
-that is not a repository in the workspace. A MATCH on a dependency hands back
-the file and line of its strongest supporting edge, so the answer arrives with
-its witness rather than as an assertion you have to take on faith.
+`index verify` answers with MATCH, REFUTED or UNVERIFIABLE (exit 0, 1, 2).
+REFUTED means the graph covers both repositories and has no such edge.
+UNVERIFIABLE means the question falls outside what was scanned, such as a name
+that is not a repository in the workspace. A MATCH on a dependency returns the
+file and line of its strongest supporting edge. `index wiki --verify` uses DRIFT
+in place of REFUTED, because a saved wiki can fall out of date as the code
+changes.
 
-## The surfaces, coolest first
+## The commands
 
-**`index wiki`, the single-repo wiki.** Model-based wiki generators write confident prose about structure that is not there; repo packers dump source without comprehending it. `index wiki` takes the third path: it derives the wiki for one repo from the module and symbol graph it extracts itself, and generates no prose at all. You get an overview page, one page per module with imports, dependents, and cycle membership, one page per Python function, class, and method with its callers and callees, and an architecture diagram rendered from the real dependency graph. Point it at a git URL (`index wiki https://github.com/org/repo`) and it shallow-clones, derives, and cleans up, so you can read a repo you have not checked out. The artifact is commit-pinned and sealed, and `index wiki --verify` re-checks it against the current tree: MATCH, DRIFT, or UNVERIFIABLE, exit codes 0, 1, 2.
+**`index wiki`, the single-repo wiki.** It derives the wiki for one repo from the module and symbol graph it extracts itself and writes no prose of its own. You get an overview page, one page per module with imports, dependents, and cycle membership, one page per Python function, class, and method with its callers and callees, and an architecture diagram rendered from the real dependency graph. Point it at a git URL (`index wiki https://github.com/org/repo`) and it shallow-clones, derives, and cleans up, so you can read a repo you have not checked out. The file records the commit it was built from and a hash of each page. `index wiki --verify` checks it against the current tree: MATCH, DRIFT, or UNVERIFIABLE, exit codes 0, 1, 2. DRIFT names the rule that failed: an edited page, an import or call the wiki shows that the code no longer has, or a new commit. Code added since the wiki was built does not by itself cause DRIFT until it is committed.
 
 **`index workbench`, every surface on one page.** One pass over a workspace, one HTML file: the repo and doc map you pan and zoom, rendered markdown for the docs, the context lens with its live budget slider, and a health panel with the workspace fingerprint, dependency cycles, and doc-coverage audit. Large workspaces stay renderable: page-weight budgets cap how many doc bodies and weak edges embed, every cap prints what it dropped as "N of M", and every cap is overridable at the CLI (`--max-doc-bodies`).
 
 **`index atlas`, the two-layer map.** Most dependency tools stop at the code. The atlas joins your markdown to it: every doc becomes a node next to the repo it lives in, `[[wiki-links]]` become edges you can click, and you read the rendered doc without leaving the map. Search covers repos and docs at once, double-click narrows to a node's neighborhood, and a breadcrumb trail makes every jump reversible. Four edge kinds, each derived from something real: depends-on (import or manifest line), describes (the doc lives in that repo), links-to (a wiki-link in the body), mentions (name in prose, dimmed, hideable).
 
-**`index lens`, the context lens.** Agent context assembly is usually invisible: a budget retains some files and silently drops the rest. The lens renders it. One page shows what a token budget retains and what it drops with typed failure codes, and a slider replays the exact greedy rule the CLI runs over the exact same numbers, live, without re-running Python. `index context-envelope` is the machine face of the same thing: a budgeted context packet where each retained repo carries hashed source references and every omission carries a failure code such as `budget_exceeded`, so a downstream agent can ask for more instead of inheriting confidence from a missing file. `index route --path REPO` builds that envelope from explicit repository paths without discovering unrelated workspace repositories, for callers that already know the scope. The default budget applies to retained context entries; `--bounded-output` opts in to bounding the emitted JSON response itself, measuring CLI stdout and MCP JSON-RPC wrappers at their actual surfaces; bounded CLI JSON emits the measured UTF-8 LF byte payload directly while oversized source-ref lists become omission counts, hashes, and reissue handles. And `context-envelope --verify` re-derives a cached envelope's freshness against the current workspace: it re-fingerprints the repos, confirms the sealed hashes still hold, and names the repos that drifted, exiting non-zero if the map moved under the envelope, so stale context is caught by a check instead of acted on by mistake.
+**`index lens`, the context lens.** When a tool assembles context for an agent, a budget keeps some files and drops the rest without saying so. The lens shows that step. One page shows what a token budget retains and what it drops with typed failure codes, and a slider replays the exact greedy rule the CLI runs over the exact same numbers, live, without re-running Python. `index context-envelope` gives the same result as JSON: a budgeted context packet where each retained repo carries hashed source references and every omission carries a failure code such as `budget_exceeded`, so a downstream agent can see what it was not given and ask for it. `index route --path REPO` builds that envelope from explicit repository paths without discovering unrelated workspace repositories, for callers that already know the scope. The default budget applies to retained context entries; `--bounded-output` opts in to bounding the emitted JSON response itself, measuring CLI stdout and MCP JSON-RPC wrappers at their actual surfaces; bounded CLI JSON emits the measured UTF-8 LF byte payload directly while oversized source-ref lists become omission counts, hashes, and reissue handles. And `context-envelope --verify` re-derives a cached envelope's freshness against the current workspace: it re-fingerprints the repos, confirms the stored hashes still match, and names the repos that drifted, exiting non-zero if the map moved under the envelope, so a script can refuse stale context before an agent uses it.
 
 **`index navigate`, code for a question.** Ask in plain words and get back the few functions that answer it. The walk goes directory, file, symbol, with one small typed question per level, follows every branch at least half as likely as the best one, and hands your context window only the leaves it reached, with a replayable record of each choice. On 60 frozen questions from our own pull requests it matched grep's recall within 0.05 (0.389 against 0.422) while handing over a third of grep's tokens; the full table, intervals and limits are in [`docs/NAVIGATE.md`](docs/NAVIGATE.md). `index outline-map` exposes the same tree as maps, a name and description for the model and a handle for the code, so an agent can do the choosing with its own model.
 
@@ -185,16 +216,16 @@ index mcp
 
 The full flag reference, the importable Python API, and worked examples live in [`USAGE.md`](USAGE.md). Artifact schemas are written down in [`docs/PROTOCOL.md`](docs/PROTOCOL.md) so other tools can consume them without knowing anything about `index`.
 
-## Command reference
+## Scripts and agent hosts
 
-**Operator surface.** For hosts and unattended workflows, `index status --json`, `index doctor --json`, and `index demo --json` expose the machine-readable action envelope, and `index mcp` serves the same map, context, route, envelope, selection, wiki, symbol, and verification surfaces as native MCP tools. The status payload advertises the shared CLI/MCP/plugin/IDE contracts, so an agent host can discover what this installation supports before calling it:
+For scripts and agent hosts, `index status --json`, `index doctor --json`, and `index demo --json` print machine-readable status, and `index mcp` serves the same map, context, route, envelope, selection, wiki, symbol, and verification surfaces as native MCP tools. The status payload advertises the shared CLI/MCP/plugin/IDE contracts, so an agent host can discover what this installation supports before calling it:
 
 ```bash
 # from a source checkout
 python -m index status --json
 ```
 
-Within [Project Telos](https://harperz9.github.io), this command surface is how `index` acts as the workspace map and context-envelope layer for gather, forum, crucible, and telos. Integration notes for unattended agent workflows are in [`docs/ENTERPRISE-READINESS.md`](docs/ENTERPRISE-READINESS.md).
+Within [Project Telos](https://harperz9.github.io), `index` supplies the workspace map and context packets for gather, forum, crucible, and telos. Integration notes for unattended agent workflows are in [`docs/ENTERPRISE-READINESS.md`](docs/ENTERPRISE-READINESS.md).
 
 ## A worked example
 
@@ -206,7 +237,7 @@ index wiki --root index --out wiki.html
 index wiki --verify wiki.html --root index
 ```
 
-The verify step prints `verdict=MATCH pages=31 edges=127` and exits 0 (page and edge counts move with the code). Edit any source file and verify again: the verdict turns to DRIFT and the exit code to 1, naming the page and rule that failed. That is the property the whole tool is built on: the map is not something you trust, it is something anyone can re-run.
+On 2.16.0 the verify step printed `verdict=MATCH pages=51 edges=314` and exited 0 (page and edge counts move with the code). Remove an import the wiki shows, or commit any change, and verify again: the verdict turns to DRIFT and the exit code to 1, and `--json` names each rule that failed. Anyone can rebuild the map from the code and compare.
 
 ## Configuration
 
@@ -252,7 +283,7 @@ Everything works with zero configuration. An optional `.index.toml` at the works
 
 `index-graph` 2.16.0, command `index`, Python 3.11+, Development Status Beta. It is used as the workspace map layer of [Project Telos](https://harperz9.github.io), alongside [gather](https://github.com/HarperZ9/gather), [crucible](https://github.com/HarperZ9/crucible), [forum](https://github.com/HarperZ9/forum), and [telos](https://github.com/HarperZ9/telos). The PyPI badge shows the latest published package.
 
-One note on why the outputs look the way they do: every claim an `index` artifact makes, an edge, a page, a verdict, carries the evidence to re-derive it, and the verifiers are built to be able to fail. If you only remember one command, make it `index wiki --verify`.
+Every edge, page and verdict an `index` file contains carries what you need to rebuild it, and the checks have tests that make them fail on bad input. If you only remember one command, make it `index wiki --verify`.
 
 ## Install
 
@@ -289,7 +320,7 @@ every surface: knowledge open to anyone who can attain the means; acceptance
 decided by external checks, never reputation; every result re-runnable;
 honest nulls first-class; ownership earned by comprehension; learning woven
 into the work. The full text lives in [CREDO.md](CREDO.md).
-The long form of this belief: [The Unbundling](https://github.com/HarperZ9/flywheel/blob/fix/release-model-identity/docs/essays/2026-07-13-the-unbundling.md).
+The long form of this belief: [The Unbundling](https://github.com/HarperZ9/flywheel/blob/main/docs/essays/2026-07-13-the-unbundling.md).
 
 ---
 
@@ -297,11 +328,11 @@ Built by **[Zain Dana Harper](https://harperz9.github.io)** in Seattle: evidence
 
 ## Local client packages
 
-Persistence is opt-in through `--state-directory`: cached maps and
-existing owned job inspection/cancellation retain process and network denial.
-
-The optional client bundle adds a bounded MCP profile that defaults to read-only access with an explicit
-workspace selected at launch. See [client package setup](client-plugin/README.md).
-Windows x64 MCPB and ZIP bundles include their runtime; source plugins require
-Python 3.11+. The full CLI/MCP retains advanced operations. Client-specific
-installation and marketplace acceptance require separate verification.
+The optional client bundle is a smaller MCP server for desktop AI clients. It
+reads only the workspace you choose at launch and starts read-only. Add
+`--state-directory DIR` if you want it to cache maps between sessions. Windows
+x64 MCPB and ZIP bundles include Python; the source plugin needs Python 3.11+.
+The full CLI and MCP server keep the advanced commands. Setup for each client is
+in [client package setup](client-plugin/README.md). Installation in each
+specific client, and acceptance into any plugin marketplace, have not been
+verified.
