@@ -165,7 +165,7 @@ ol.walkthrough p{margin:0 0 .3rem;max-width:44rem}
 <header class="top wrap">
   <div class="crumbs"><a href="https://github.com/HarperZ9/index">HarperZ9/index</a><span>Explainer, built from commit <a href="https://github.com/HarperZ9/index/tree/50069a8b9b411fa508165c2e1cf88717c4b0a6ae">50069a8</a></span><a href="https://harperz9.github.io/repo-explainers.html">All repository explainers</a><button type="button" class="btn theme" data-theme-toggle>Dark page</button></div>
   <h1>index</h1>
-  <p class="lede">Map a workspace offline, and refute a claim the code does not support.</p>
+  <p class="lede">Map a workspace offline, and check every claim about its structure against the code.</p>
 </header>
 <main id="main">
 <section class="block wrap" aria-labelledby="for-you">
@@ -175,7 +175,7 @@ ol.walkthrough p{margin:0 0 .3rem;max-width:44rem}
   </div>
   <ul class="uses">
     <li><b>Edges with a witness</b>Every dependency edge records the file, line and import text that shows it.</li>
-    <li><b>A wiki with no prose to invent</b><code>index wiki</code> derives its pages from the extracted graph and writes no generated prose.</li>
+    <li><b>A wiki built from the graph</b><code>index wiki</code> derives every page from the extracted graph, so each line traces to an edge or a symbol.</li>
     <li><b>Re-check a map later</b><code>index wiki --verify</code> answers MATCH, DRIFT or UNVERIFIABLE, with exit codes 0, 1 and 2.</li>
     <li><b>Architecture as a test</b>Declare the shape you meant in <code>.index.toml</code>, and <code>index check</code> fails when the code breaks it.</li>
   </ul>
@@ -227,7 +227,7 @@ ol.walkthrough p{margin:0 0 .3rem;max-width:44rem}
       </div></li>
       <li class="step" tabindex="-1" data-scene="k2" data-state="s"><div class="card">
         <span class="num">03</span><h3>Who calls this function?</h3>
-        <p><code>index symbols price --refs</code> resolves references from the call graph. One caller: <code>quote</code> in <code>service.py</code>, line 5. A reference it cannot resolve comes back empty; it never guesses a jump.</p>
+        <p><code>index symbols price --refs</code> resolves references from the call graph. One caller: <code>quote</code> in <code>service.py</code>, line 5. An unresolved reference comes back as an empty list.</p>
         <p class="src">Source: <a href="https://github.com/HarperZ9/index/blob/50069a8b9b411fa508165c2e1cf88717c4b0a6ae/src/index_graph/symbols">src/index_graph/symbols</a></p>
       </div></li>
       <li class="step" tabindex="-1" data-scene="k3" data-state="s"><div class="card">
@@ -239,18 +239,18 @@ ol.walkthrough p{margin:0 0 .3rem;max-width:44rem}
       <li class="step" tabindex="-1" data-scene="k4" data-state="s"><div class="card">
         <span class="num">05</span><h3>Someone adds a back-import</h3>
         <p>Now <code>core.py</code> imports <code>handler</code> from <code>web</code>. The graph gains an edge that closes a loop: core, service, web, back to core.</p>
-        <p><code>index internals --cycles</code> names the cycle. Nothing else had to be told what to look for.</p>
+        <p><code>index internals --cycles</code> finds and names the cycle from the graph alone.</p>
         <p class="src">Source: <a href="https://github.com/HarperZ9/index/blob/50069a8b9b411fa508165c2e1cf88717c4b0a6ae/src/index_graph/internals">src/index_graph/internals</a></p>
       </div></li>
       <li class="step" tabindex="-1" data-scene="k5" data-state="s"><div class="card">
         <span class="num">06</span><h3>The rule you declared fails the build</h3>
-        <p><code>.index.toml</code> declares <code>max_cycles = 0</code>. Before the back-import, <code>index check --internals</code> reported MATCH with no findings. Now it reports DRIFT and exits 1, so it can sit in CI.</p>
+        <p><code>.index.toml</code> declares <code>max_cycles = 0</code>. Before the back-import, <code>index check --internals</code> reported MATCH with zero findings. Now it reports DRIFT and exits 1, so it can sit in CI.</p>
         <p>The rules file can also declare layers between repositories, forbidden imports and required ones.</p>
         <p class="src">Source: <a href="https://github.com/HarperZ9/index/blob/50069a8b9b411fa508165c2e1cf88717c4b0a6ae/src/index_graph/arch">src/index_graph/arch</a>; README.md, the section on <code>index check</code></p>
       </div></li>
       <li class="step" tabindex="-1" data-scene="k6" data-state="s"><div class="card">
         <span class="num">07</span><h3>The sealed wiki now disagrees with the code</h3>
-        <p>Verify the old wiki against the changed tree and it reads DRIFT: its diagram and overview show structure the code no longer has. Remove the back-import and it reads MATCH again. Delete the file and it reads UNVERIFIABLE, exit 2, because there is nothing to check.</p>
+        <p>Verify the old wiki against the changed tree and it reads DRIFT: its diagram and overview show the structure from before the back-import. Remove the back-import and it reads MATCH again. Delete the file and it reads UNVERIFIABLE, exit 2, because the wiki to check is gone.</p>
         <p class="src">Source: <a href="https://github.com/HarperZ9/index/blob/50069a8b9b411fa508165c2e1cf88717c4b0a6ae/src/index_graph/wiki">src/index_graph/wiki</a>; README.md, "Try it in 5 minutes"</p>
       </div></li>
     </ol>
@@ -279,13 +279,13 @@ references (1 resolved, 0 unresolved):
 </section>
 
 <section class="block wrap" aria-labelledby="limits">
-  <h2 id="limits">What it does not do</h2>
+  <h2 id="limits">Scope</h2>
   <ul class="limits">
-    <li>index maps structure from imports and manifests. It does not run the code, so behaviour that only appears at runtime is outside the map.</li>
+    <li>index maps structure from imports and manifests, read statically. Behaviour that appears at runtime is outside the map.</li>
     <li>Dynamic imports are listed in the coverage record when found. An import built from a string at runtime may still be missed.</li>
     <li>Symbol navigation covers Python. Other ecosystems are mapped at the module and repository level.</li>
     <li>The LSP server's fast path trusts unchanged file metadata for two seconds, so an edit that restores size and timestamp inside that window can go unnoticed.</li>
-    <li>A MATCH says the map agrees with the tree. It does not say the architecture is a good one.</li>
+    <li>A MATCH says the map agrees with the tree. Whether the architecture is a good one is your call.</li>
   </ul>
   <p class="src">Source: README.md at 50069a8, "What it does" and "The surfaces"</p>
 </section>
@@ -294,9 +294,9 @@ references (1 resolved, 0 unresolved):
   <h2 id="recall">Check what stuck</h2>
   <p class="measure">Answer each one in your head before you open it.</p>
   <details><summary>What does an edge in index's graph carry besides its two ends?</summary><p>The file, the line and the import text that shows it.</p></details>
-  <details><summary>Why does index wiki write no prose?</summary><p>Its pages are derived from the graph it extracted, so there is no generated text that could describe structure that is not there.</p></details>
-  <details><summary>After a back-import, why do both index check and the wiki verify fail?</summary><p>The check finds a cycle above the declared ceiling of 0. The wiki's diagram and overview no longer match the graph of the changed tree.</p></details>
-  <details><summary>What exit code does wiki --verify give for a missing file, and why not 1?</summary><p>2, UNVERIFIABLE. There is nothing to compare, which is different from a comparison that disagrees.</p></details>
+  <details><summary>Where does every line of an index wiki come from?</summary><p>From the graph it extracted. Each page is derived from edges and symbols, so the wiki describes the structure the code has.</p></details>
+  <details><summary>After a back-import, why do both index check and the wiki verify fail?</summary><p>The check finds one cycle against a declared ceiling of 0. The wiki's diagram and overview still show the graph from before the change.</p></details>
+  <details><summary>What exit code does wiki --verify give for a missing file, and how does it differ from DRIFT's 1?</summary><p>2, UNVERIFIABLE. A missing file leaves one side of the comparison empty, which is a different case from two sides that disagree.</p></details>
 </section>
 </main>
 <footer class="foot wrap">
