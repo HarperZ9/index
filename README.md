@@ -14,7 +14,9 @@ Index maps your code offline. It shows how your repositories depend on each othe
 
 [Project Telos](https://harperz9.github.io) | [gather](https://github.com/HarperZ9/gather) | [crucible](https://github.com/HarperZ9/crucible) | [index](https://github.com/HarperZ9/index) | [forum](https://github.com/HarperZ9/forum) | [telos](https://github.com/HarperZ9/telos) | [learn](https://github.com/HarperZ9/learn) | [emet](https://github.com/HarperZ9/emet) | [buildlang](https://github.com/HarperZ9/buildlang)
 
-Index reads manifests and imports in Python, JavaScript and TypeScript, Rust, Go, Java, C#, Ruby, PHP, and C and C++. Every dependency edge it draws carries the file and line it came from. It needs Python 3.11 or newer and nothing else: no runtime dependencies, no server, no account, no model, no network. The PyPI package is `index-graph` and the command is `index`.
+Index reads manifests and imports in Python, JavaScript and TypeScript, Rust, Go, Java, C#, Ruby, PHP, and C and C++. Every dependency edge it draws carries the file and line it came from. It needs Python 3.11 or newer and nothing else: no runtime dependencies, no server, no account, no model, no network.
+
+Install with `pip install index-graph`, run `index`, or `import index_graph` from Python.
 
 Use it when you want to:
 
@@ -31,6 +33,8 @@ Coverage differs by level. Repository-level dependencies cover all nine ecosyste
 pip install index-graph
 ```
 
+To see the output first, open the rendered samples in the repo: [`examples/wiki-demo.html`](examples/wiki-demo.html) for the single-repo wiki and [`examples/atlas-demo.html`](examples/atlas-demo.html) for the workspace atlas.
+
 Map one repository into a wiki, then check the wiki against the code later:
 
 ```bash
@@ -46,6 +50,12 @@ Map a folder that holds several repositories, with every view on one page:
 ```bash
 index workbench --root path/to/workspace --out workbench.html
 # workbench -> workbench.html  (3 repos, 192 docs, ...)
+```
+
+Or draw only the repositories and docs as a map you can search and click through:
+
+```bash
+index atlas --root path/to/workspace --format html --out atlas.html
 ```
 
 Find who calls a Python function:
@@ -70,7 +80,7 @@ Find the code that answers a question in plain words. The default chooser is lex
 index navigate path/to/repo "wiki verify drift"
 ```
 
-The outputs above come from `index-graph` 2.16.0, installed from PyPI into a fresh virtual environment, run on this repository and two neighbours. Rendered samples ship with the repo if you want to look first: [`examples/wiki-demo.html`](examples/wiki-demo.html) for the single-repo wiki and [`examples/atlas-demo.html`](examples/atlas-demo.html) for the workspace atlas. They regenerate with `python examples/wiki_demo.py` and `python examples/atlas_demo.py`. [`docs/INTRODUCTION.md`](docs/INTRODUCTION.md) is a ten-minute walkthrough.
+The outputs above come from `index-graph` 2.16.0, installed from PyPI into a fresh virtual environment, run on this repository and two neighbours. The rendered samples regenerate with `python examples/wiki_demo.py` and `python examples/atlas_demo.py`. [`docs/INTRODUCTION.md`](docs/INTRODUCTION.md) is a ten-minute walkthrough.
 
 ## How it compares
 
