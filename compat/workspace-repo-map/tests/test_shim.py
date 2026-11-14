@@ -4,7 +4,7 @@ import tomllib
 import warnings
 from pathlib import Path
 
-SHIM = Path(__file__).resolve().parents[1] / "compat" / "workspace-repo-map"
+SHIM = Path(__file__).resolve().parents[1]
 
 
 def _load():
