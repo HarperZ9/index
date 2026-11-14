@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- `compat/workspace-repo-map/` holds the source of the retired `workspace-repo-map` 0.2.1
+  package on PyPI (an import warning that names `index-graph`). The `index-graph` wheel and
+  sdist leave it out.
+
 ## 2.16.0 (2026-10-03)
 
 Adds `index navigate` and `index outline-map`: code for a plain-language question, found one

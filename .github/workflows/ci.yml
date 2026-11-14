@@ -16,6 +16,7 @@ jobs:
           python-version: "3.12"
       - run: python -m pip install -e ".[test]"
       - run: python -m pytest
+      - run: python -m pytest compat/workspace-repo-map/tests -q
   art-receipts:
     runs-on: ubuntu-latest
     steps:
