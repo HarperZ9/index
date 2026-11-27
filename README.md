@@ -310,6 +310,8 @@ python -m pytest
 
 Python 3.11+. That is the entire dependency list.
 
+mcp-name: io.github.harperz9/index
+
 ## Development
 
 Start with [AGENTS.md](AGENTS.md) for the repository contract and
