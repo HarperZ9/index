@@ -9,7 +9,7 @@ Index maps your code offline. It shows how your repositories depend on each othe
 
 [![version: 2.16.0](https://img.shields.io/badge/version-2.16.0-e6e1d6?style=flat-square&labelColor=1a1712)](https://pypi.org/project/index-graph/)
 [![CI](https://github.com/HarperZ9/index/actions/workflows/ci.yml/badge.svg)](https://github.com/HarperZ9/index/actions/workflows/ci.yml)
-[![license](https://img.shields.io/badge/license-FSL--1.1--MIT-e6e1d6?style=flat-square&labelColor=1a1712)](LICENSE)
+[![license](https://img.shields.io/badge/license-MIT-e6e1d6?style=flat-square&labelColor=1a1712)](LICENSE)
 ![python 3.11+](https://img.shields.io/badge/python-3.11%2B-e6e1d6?style=flat-square&labelColor=1a1712)
 
 [Project Telos](https://harperz9.github.io) | [gather](https://github.com/HarperZ9/gather) | [crucible](https://github.com/HarperZ9/crucible) | [index](https://github.com/HarperZ9/index) | [forum](https://github.com/HarperZ9/forum) | [telos](https://github.com/HarperZ9/telos) | [learn](https://github.com/HarperZ9/learn) | [emet](https://github.com/HarperZ9/emet) | [buildlang](https://github.com/HarperZ9/buildlang)
@@ -90,7 +90,7 @@ The outputs above come from `index-graph` 2.16.0, installed from PyPI into a fre
 - **Layer checkers such as import-linter and ArchUnit.** `index check` enforces layers, forbidden imports and a cycle limit from `.index.toml`, between repositories in all nine ecosystems and between modules in the four above. import-linter (Python) and ArchUnit (Java) offer more contract types.
 - **Code navigation such as Sourcegraph, ctags or an IDE language server.** These index many languages precisely. `index symbols` and `index lsp` cover Python only and work from a static graph with no service to run.
 
----
+
 
 ## See it work, step by step
 
@@ -186,7 +186,7 @@ max_cycles = 0
 
 **`index mcp`, the agent face.** A stdio MCP server exposing the map, context, route, envelope, selection, wiki, symbol, and verification surfaces as native tools, so an agent host gets the same evidence-backed answers the CLI gives.
 
----
+
 
 ## Command reference
 
@@ -320,7 +320,7 @@ changed surface, then `python -m pytest` before proposing a release. Keep source
 evidence, cache invalidation, and CLI/MCP behavior aligned; see
 [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidance.
 
----
+
 
 Zain Dana Harper. [Portfolio](https://harperz9.github.io), [GitHub](https://github.com/HarperZ9).
 Built with Claude Code. Reviewed, tested, and owned by me.
@@ -330,11 +330,11 @@ Built with Claude Code. Reviewed, tested, and owned by me.
 This tool is one part of a family that holds a single belief steady across
 every surface: knowledge open to anyone who can attain the means; acceptance
 decided by external checks, never reputation; every result re-runnable;
-honest nulls first-class; ownership earned by comprehension; learning woven
+honest nulls on equal footing; ownership earned by comprehension; learning woven
 into the work. The full text lives in [CREDO.md](CREDO.md).
 The long form of this belief: [The Unbundling](https://github.com/HarperZ9/flywheel/blob/main/docs/essays/2026-07-13-the-unbundling.md).
 
----
+
 
 Built by **[Zain Dana Harper](https://harperz9.github.io)** in Seattle: evidence-first tools that leave a re-checkable artifact behind. The full workbench is at [Project Telos](https://harperz9.github.io).
 
