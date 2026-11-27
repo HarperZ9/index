@@ -18,7 +18,7 @@ def user_config():
 def manifest(spec, version, exe_name):
     return {"manifest_version":"0.3", "name":spec["name"]+"-local",
     "version":version, "display_name":spec["name"].title()+" Local",
-    "description":spec["desc"], "author":{"name":"Zain Dana Harper"}, "license":"FSL-1.1-MIT",
+    "description":spec["desc"], "author":{"name":"Zain Dana Harper"}, "license":"MIT",
     "server":{"type":"binary", "entry_point":"server/"+exe_name, "mcp_config":{
         "command":"${__dirname}/server/"+exe_name,
         "args":["--workspace", "${user_config.workspace}",
@@ -30,7 +30,7 @@ def manifest(spec, version, exe_name):
 def claude_plugin(spec, version):
     """Claude manifest: the shared plugin fields plus the directory listing fields."""
     return {"name":spec["name"]+"-local", "version":version, "description":spec["desc"],
-        "author":{"name":"Zain Dana Harper"}, "license":"FSL-1.1-MIT", "repository":REPOSITORY,
+        "author":{"name":"Zain Dana Harper"}, "license":"MIT", "repository":REPOSITORY,
         "displayName":spec["name"].title(), "keywords":KEYWORDS,
         "homepage":SITE+"/index-graph.html",
         "documentationUrl":REPOSITORY+"/blob/main/client-plugin/README.md",

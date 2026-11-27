@@ -8,7 +8,8 @@ dynamic = ["version"]
 description = "Evidence-built repo and documentation atlas for multi-repo workspaces."
 readme = "README.md"
 requires-python = ">=3.11"
-license = { text = "FSL-1.1-MIT" }
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [{ name = "Zain Dana Harper" }]
 keywords = ["git", "inventory", "workspace", "cli"]
 classifiers = [

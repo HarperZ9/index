@@ -5,7 +5,7 @@
   "author": {
     "name": "Zain Dana Harper"
   },
-  "license": "FSL-1.1-MIT",
+  "license": "MIT",
   "repository": "https://github.com/HarperZ9/index",
   "skills": "./skills/",
   "mcpServers": "./.codex-mcp.json"
